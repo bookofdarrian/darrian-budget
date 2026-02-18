@@ -2,9 +2,11 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from utils.db import get_conn, init_db, read_sql, execute
+from utils.auth import require_password
 
 st.set_page_config(page_title="404 Sole Archive", page_icon="👟", layout="wide")
 init_db()
+require_password()
 
 st.sidebar.title("💰 Budget Dashboard")
 st.sidebar.markdown("---")

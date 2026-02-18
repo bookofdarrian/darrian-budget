@@ -2,9 +2,11 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from utils.db import get_conn, init_db, read_sql
+from utils.auth import require_password
 
 st.set_page_config(page_title="Monthly Trends", page_icon="📈", layout="wide")
 init_db()
+require_password()
 
 st.sidebar.title("💰 Budget Dashboard")
 st.sidebar.markdown("---")
@@ -23,13 +25,33 @@ st.caption("Track your income, spending, and savings rate across every month you
 conn = get_conn()
 income_all  = read_sql("SELECT month, SUM(amount) AS income FROM income GROUP BY month", conn)
 expense_all = read_sql("SELECT month, SUM(projected) AS projected, SUM(actual) AS actual FROM expenses GROUP BY month", conn)
+
+# Pull actual spending from bank_transactions too — sum by month
+txn_all = read_sql("SELECT month, SUM(amount) AS txn_actual FROM bank_transactions GROUP BY month", conn)
+
+# Pull category breakdown from bank_transactions for the category chart
+txn_cat_all = read_sql(
+    "SELECT month, category, SUM(amount) AS actual FROM bank_transactions "
+    "WHERE category IS NOT NULL AND category != '' GROUP BY month, category", conn
+)
 conn.close()
 
-if income_all.empty and expense_all.empty:
+if income_all.empty and expense_all.empty and txn_all.empty:
     st.info("No data yet — visit the Expenses and Income pages to enter some numbers first.")
     st.stop()
 
 trends = pd.merge(income_all, expense_all, on="month", how="outer").fillna(0)
+
+# Merge in bank transaction actuals — use txn total when available, fall back to expense actual
+if not txn_all.empty:
+    trends = pd.merge(trends, txn_all, on="month", how="left")
+    # Where we have real transaction data, use it as the actual; otherwise keep expense actual
+    trends["actual"] = trends.apply(
+        lambda r: r["txn_actual"] if pd.notna(r.get("txn_actual")) and r["txn_actual"] > 0 else r["actual"],
+        axis=1
+    )
+    trends.drop(columns=["txn_actual"], inplace=True)
+
 trends = trends.sort_values("month").reset_index(drop=True)
 trends["savings"]      = trends["income"] - trends["actual"]
 trends["savings_rate"] = (trends["savings"] / trends["income"].replace(0, float("nan"))) * 100
@@ -67,8 +89,19 @@ conn = get_conn()
 cat_all = read_sql("SELECT month, category, SUM(actual) AS actual FROM expenses GROUP BY month, category", conn)
 conn.close()
 
-if not cat_all.empty:
-    cat_pivot = cat_all.pivot_table(index="month", columns="category", values="actual", aggfunc="sum").fillna(0)
+# Merge expense categories with bank transaction categories
+if not txn_cat_all.empty:
+    if not cat_all.empty:
+        # Combine both sources — prefer txn data where it exists
+        combined_cat = pd.concat([cat_all, txn_cat_all], ignore_index=True)
+        combined_cat = combined_cat.groupby(["month", "category"])["actual"].sum().reset_index()
+    else:
+        combined_cat = txn_cat_all.rename(columns={"actual": "actual"})
+else:
+    combined_cat = cat_all
+
+if not combined_cat.empty:
+    cat_pivot = combined_cat.pivot_table(index="month", columns="category", values="actual", aggfunc="sum").fillna(0)
     cat_pivot.index = cat_pivot.index.map(lambda m: datetime.strptime(m, "%Y-%m").strftime("%b %Y"))
     st.bar_chart(cat_pivot, use_container_width=True)
 else:

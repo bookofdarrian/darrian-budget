@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from utils.db import init_db, seed_budget, seed_income, get_conn, read_sql
+from utils.auth import require_password
 
 # ── App config ──────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -12,6 +13,7 @@ st.set_page_config(
 )
 
 init_db()
+require_password()
 
 # ── Sidebar: Month selector ─────────────────────────────────────────────────
 st.sidebar.title("💰 Budget Dashboard")

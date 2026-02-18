@@ -2,9 +2,11 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from utils.db import get_conn, seed_income, init_db, read_sql, execute
+from utils.auth import require_password
 
 st.set_page_config(page_title="Income", page_icon="💵", layout="wide")
 init_db()
+require_password()
 
 st.sidebar.title("💰 Budget Dashboard")
 st.sidebar.markdown("---")

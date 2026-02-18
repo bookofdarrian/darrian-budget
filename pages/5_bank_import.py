@@ -4,9 +4,11 @@ import io
 from datetime import datetime
 from utils.db import get_conn, init_db, read_sql, execute, fetchone
 from utils.nfcu_parser import parse_nfcu_pdf
+from utils.auth import require_password
 
 st.set_page_config(page_title="Bank Import", page_icon="🏦", layout="wide")
 init_db()
+require_password()
 
 st.sidebar.title("💰 Budget Dashboard")
 st.sidebar.markdown("---")
