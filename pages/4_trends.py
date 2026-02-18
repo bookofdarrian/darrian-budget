@@ -26,7 +26,7 @@ conn = get_conn()
 income_all  = read_sql("SELECT month, SUM(amount) AS income FROM income GROUP BY month", conn)
 expense_all = read_sql("SELECT month, SUM(projected) AS projected, SUM(actual) AS actual FROM expenses GROUP BY month", conn)
 
-# Pull actual spending from bank_transactions too — sum by month
+# Pull actual spending from bank_transactions — sum by month (this is the primary source of actuals)
 txn_all = read_sql("SELECT month, SUM(amount) AS txn_actual FROM bank_transactions GROUP BY month", conn)
 
 # Pull category breakdown from bank_transactions for the category chart
@@ -40,12 +40,35 @@ if income_all.empty and expense_all.empty and txn_all.empty:
     st.info("No data yet — visit the Expenses and Income pages to enter some numbers first.")
     st.stop()
 
-trends = pd.merge(income_all, expense_all, on="month", how="outer").fillna(0)
+# Build a unified month list from ALL sources
+all_months = set()
+if not income_all.empty:
+    all_months.update(income_all["month"].tolist())
+if not expense_all.empty:
+    all_months.update(expense_all["month"].tolist())
+if not txn_all.empty:
+    all_months.update(txn_all["month"].tolist())
+
+month_base = pd.DataFrame(sorted(all_months), columns=["month"])
+
+# Merge all sources onto the full month list using outer joins
+trends = month_base.copy()
+if not income_all.empty:
+    trends = pd.merge(trends, income_all, on="month", how="left")
+else:
+    trends["income"] = 0.0
+
+if not expense_all.empty:
+    trends = pd.merge(trends, expense_all, on="month", how="left")
+else:
+    trends["projected"] = 0.0
+    trends["actual"] = 0.0
+
+trends = trends.fillna(0)
 
 # Merge in bank transaction actuals — use txn total when available, fall back to expense actual
 if not txn_all.empty:
     trends = pd.merge(trends, txn_all, on="month", how="left")
-    # Where we have real transaction data, use it as the actual; otherwise keep expense actual
     trends["actual"] = trends.apply(
         lambda r: r["txn_actual"] if pd.notna(r.get("txn_actual")) and r["txn_actual"] > 0 else r["actual"],
         axis=1
