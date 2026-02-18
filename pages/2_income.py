@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-from utils.db import get_conn, seed_income, init_db
+from utils.db import get_conn, seed_income, init_db, read_sql, execute
 
 st.set_page_config(page_title="Income", page_icon="💵", layout="wide")
 init_db()
@@ -31,7 +31,7 @@ st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights",       ico
 st.title(f"💵 Income — {datetime.strptime(selected_month, '%Y-%m').strftime('%B %Y')}")
 
 conn = get_conn()
-income_df = pd.read_sql("SELECT * FROM income WHERE month = ?", conn, params=(selected_month,))
+income_df = read_sql("SELECT * FROM income WHERE month = ?", conn, params=(selected_month,))
 conn.close()
 
 st.subheader("Income Sources")
@@ -50,10 +50,9 @@ edited = st.data_editor(
 
 if st.button("💾 Save Changes", type="primary"):
     conn = get_conn()
-    c = conn.cursor()
     for _, row in edited.iterrows():
-        c.execute("UPDATE income SET source = ?, amount = ?, notes = ? WHERE id = ?",
-                  (row['source'], row['amount'], row['notes'], row['id']))
+        execute(conn, "UPDATE income SET source = ?, amount = ?, notes = ? WHERE id = ?",
+                (row['source'], row['amount'], row['notes'], row['id']))
     conn.commit()
     conn.close()
     st.success("Saved!")
@@ -67,8 +66,8 @@ with st.expander("➕ Add Income Source"):
     if st.button("Add"):
         if src:
             conn = get_conn()
-            conn.execute("INSERT INTO income (month, source, amount, notes) VALUES (?, ?, ?, ?)",
-                         (selected_month, src, amt, notes))
+            execute(conn, "INSERT INTO income (month, source, amount, notes) VALUES (?, ?, ?, ?)",
+                    (selected_month, src, amt, notes))
             conn.commit()
             conn.close()
             st.success("Added!")
@@ -76,6 +75,4 @@ with st.expander("➕ Add Income Source"):
 
 st.markdown("---")
 st.metric("Total Income This Month", f"${income_df['amount'].sum():,.2f}")
-
-# RSU / ESPP reminder
 st.info("💡 Tip: Got an RSU vest or ESPP payout this month? Add it as a separate income source above so your monthly averages stay accurate.")

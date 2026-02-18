@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-from utils.db import get_conn, init_db
+from utils.db import get_conn, init_db, read_sql, execute
 
 st.set_page_config(page_title="404 Sole Archive", page_icon="👟", layout="wide")
 init_db()
@@ -20,14 +20,12 @@ st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights",       ico
 st.title("👟 404 Sole Archive — Resale Tracker")
 
 conn = get_conn()
-inv_df = pd.read_sql("SELECT * FROM sole_archive ORDER BY date DESC", conn)
+inv_df = read_sql("SELECT * FROM sole_archive ORDER BY date DESC", conn)
 conn.close()
 
-# ── KPI row ──────────────────────────────────────────────────────────────────
 sold = inv_df[inv_df['status'] == 'sold']
 inventory = inv_df[inv_df['status'] == 'inventory']
 
-total_invested = inv_df['buy_price'].sum()
 total_revenue = sold['sell_price'].sum()
 total_fees = sold['fees'].sum() + sold['shipping'].sum()
 total_profit = total_revenue - sold['buy_price'].sum() - total_fees
@@ -41,7 +39,6 @@ col4.metric("✅ Units Sold", len(sold))
 
 st.markdown("---")
 
-# ── Add new pair ──────────────────────────────────────────────────────────────
 with st.expander("➕ Add New Pair to Inventory"):
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -61,7 +58,7 @@ with st.expander("➕ Add New Pair to Inventory"):
     if st.button("Add Pair", type="primary"):
         if item:
             conn = get_conn()
-            conn.execute(
+            execute(conn,
                 "INSERT INTO sole_archive (date, item, size, buy_price, sell_price, platform, fees, shipping, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (str(date), item, size, buy_price, sell_price, platform if platform != "—" else None, fees, shipping, status, notes)
             )
@@ -72,7 +69,6 @@ with st.expander("➕ Add New Pair to Inventory"):
         else:
             st.error("Sneaker name is required.")
 
-# ── Inventory table ──────────────────────────────────────────────────────────
 tab1, tab2 = st.tabs(["📦 Inventory", "✅ Sold"])
 
 with tab1:
@@ -99,10 +95,8 @@ with tab2:
             "Cost": "${:.2f}", "Sale Price": "${:.2f}",
             "Fees": "${:.2f}", "Shipping": "${:.2f}", "Net Profit": "${:.2f}"
         }).map(color_profit, subset=["Net Profit"])
-
         st.dataframe(styled, use_container_width=True, hide_index=True)
 
-# ── Mark item as sold ────────────────────────────────────────────────────────
 if not inventory.empty:
     st.markdown("---")
     st.subheader("Mark Pair as Sold")
@@ -120,7 +114,7 @@ if not inventory.empty:
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("✅ Mark Sold", type="primary"):
             conn = get_conn()
-            conn.execute(
+            execute(conn,
                 "UPDATE sole_archive SET status = 'sold', sell_price = ?, platform = ?, fees = ?, shipping = ? WHERE id = ?",
                 (sp, plat, f, sh, sell_id)
             )

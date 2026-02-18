@@ -3,9 +3,8 @@ import streamlit as st
 import pandas as pd
 import anthropic
 from datetime import datetime
-from utils.db import get_conn, init_db
+from utils.db import get_conn, init_db, read_sql, load_investment_context, save_investment_context, get_setting, set_setting
 
-# Auto-load API key from .env if present
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -16,7 +15,30 @@ _env_key = os.environ.get("ANTHROPIC_API_KEY", "")
 st.set_page_config(page_title="AI Insights", page_icon="🤖", layout="wide")
 init_db()
 
-# ── Sidebar ──────────────────────────────────────────────────────────────────
+# ── Load API key: env var → DB fallback → session state ──────────────────────
+if "api_key" not in st.session_state:
+    if _env_key:
+        st.session_state["api_key"] = _env_key
+    else:
+        # Try loading from database (persisted from a previous manual entry)
+        _db_key = get_setting("anthropic_api_key", "")
+        if _db_key:
+            st.session_state["api_key"] = _db_key
+
+# ── Load saved investment context from DB into session state (once per session) ──
+if "inv_loaded_from_db" not in st.session_state:
+    _saved = load_investment_context()
+    st.session_state["inv_401k"]               = float(_saved.get("bal_401k", 0) or 0)
+    st.session_state["inv_401k_contrib_ytd"]   = float(_saved.get("contrib_401k_ytd", 0) or 0)
+    st.session_state["inv_401k_employer_match"] = float(_saved.get("match_401k_ytd", 0) or 0)
+    st.session_state["inv_roth"]               = float(_saved.get("bal_roth", 0) or 0)
+    st.session_state["inv_roth_contrib_ytd"]   = float(_saved.get("contrib_roth_ytd", 0) or 0)
+    st.session_state["inv_hsa"]                = float(_saved.get("bal_hsa", 0) or 0)
+    st.session_state["inv_hsa_contrib_ytd"]    = float(_saved.get("contrib_hsa_ytd", 0) or 0)
+    st.session_state["inv_brokerage"]          = float(_saved.get("bal_brokerage", 0) or 0)
+    st.session_state["inv_notes"]              = _saved.get("notes", "") or ""
+    st.session_state["inv_loaded_from_db"]     = True
+
 st.sidebar.title("💰 Budget Dashboard")
 st.sidebar.markdown("---")
 months = []
@@ -41,42 +63,157 @@ st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights",       ico
 st.title("🤖 AI Insights")
 st.caption("Claude analyzes your spending, flags patterns, and gives personalized budget recommendations.")
 
-# ── API Key setup ─────────────────────────────────────────────────────────────
-st.markdown("---")
-# Auto-populate from .env key if session doesn't have one yet
-if "api_key" not in st.session_state and _env_key:
-    st.session_state["api_key"] = _env_key
-
-with st.expander("🔑 API Key Settings", expanded="api_key" not in st.session_state):
-    if st.session_state.get("api_key"):
-        st.success("✅ API key loaded automatically from your .env file.")
-    st.markdown("To update your key, paste a new one below:")
-    api_key_input = st.text_input(
-        "Anthropic API Key",
-        type="password",
-        placeholder="sk-ant-api03-...",
-        value=st.session_state.get("api_key", "")
+# ── Investment Accounts Context Panel ─────────────────────────────────────────
+with st.expander("📈 Investment Accounts Context (Fidelity 401k, Roth IRA, HSA, etc.)", expanded=False):
+    st.markdown(
+        "**Claude can't automatically connect to Fidelity** — their API is enterprise-only and "
+        "Plaid's Fidelity investment integration requires a business account. "
+        "Enter your balances manually below and Claude will include them in every analysis."
     )
-    if st.button("Save Key", type="primary"):
+    st.caption("ℹ️ Values are saved to the database and will persist across page refreshes and app restarts.")
+
+    col_left, col_right = st.columns(2)
+
+    with col_left:
+        st.markdown("##### 🏦 Fidelity Accounts")
+        inv_401k = st.number_input(
+            "401(k) Balance ($)",
+            min_value=0.0, step=100.0, format="%.2f",
+            value=st.session_state.get("inv_401k", 0.0),
+            key="inv_401k_input",
+            help="Your current Fidelity 401(k) total balance"
+        )
+        inv_401k_contrib_ytd = st.number_input(
+            "401(k) YTD Contributions ($)",
+            min_value=0.0, step=100.0, format="%.2f",
+            value=st.session_state.get("inv_401k_contrib_ytd", 0.0),
+            key="inv_401k_contrib_ytd_input",
+            help="How much you've contributed to your 401(k) this year"
+        )
+        inv_401k_employer_match = st.number_input(
+            "401(k) Employer Match YTD ($)",
+            min_value=0.0, step=100.0, format="%.2f",
+            value=st.session_state.get("inv_401k_employer_match", 0.0),
+            key="inv_401k_employer_match_input",
+            help="Employer contributions received this year"
+        )
+        inv_roth = st.number_input(
+            "Roth IRA Balance ($)",
+            min_value=0.0, step=100.0, format="%.2f",
+            value=st.session_state.get("inv_roth", 0.0),
+            key="inv_roth_input",
+            help="Your current Fidelity Roth IRA total balance"
+        )
+        inv_roth_contrib_ytd = st.number_input(
+            "Roth IRA YTD Contributions ($)",
+            min_value=0.0, step=100.0, format="%.2f",
+            value=st.session_state.get("inv_roth_contrib_ytd", 0.0),
+            key="inv_roth_contrib_ytd_input",
+            help="How much you've contributed to your Roth IRA this year (2025 limit: $7,000)"
+        )
+
+    with col_right:
+        st.markdown("##### 🏥 HSA & Other")
+        inv_hsa = st.number_input(
+            "HSA Balance ($)",
+            min_value=0.0, step=100.0, format="%.2f",
+            value=st.session_state.get("inv_hsa", 0.0),
+            key="inv_hsa_input",
+            help="Your current HSA total balance"
+        )
+        inv_hsa_contrib_ytd = st.number_input(
+            "HSA YTD Contributions ($)",
+            min_value=0.0, step=100.0, format="%.2f",
+            value=st.session_state.get("inv_hsa_contrib_ytd", 0.0),
+            key="inv_hsa_contrib_ytd_input",
+            help="How much you've contributed to your HSA this year (2025 individual limit: $4,300)"
+        )
+        inv_brokerage = st.number_input(
+            "Cash Management / High Yield Balance ($)",
+            min_value=0.0, step=100.0, format="%.2f",
+            value=st.session_state.get("inv_brokerage", 0.0),
+            key="inv_brokerage_input",
+            help="Fidelity Cash Management Individual or other high-yield / spend-save accounts"
+        )
+        inv_notes = st.text_area(
+            "Additional Investment Notes",
+            value=st.session_state.get("inv_notes", ""),
+            key="inv_notes_input",
+            placeholder="e.g. 'Employer matches 4% of salary', 'Invested in target-date 2055 fund', 'HSA invested in index funds'",
+            height=120,
+            help="Any extra context about your investments you want Claude to know"
+        )
+
+    if st.button("💾 Save Investment Context", type="primary", key="btn_save_investments"):
+        st.session_state["inv_401k"]               = inv_401k
+        st.session_state["inv_401k_contrib_ytd"]   = inv_401k_contrib_ytd
+        st.session_state["inv_401k_employer_match"] = inv_401k_employer_match
+        st.session_state["inv_roth"]               = inv_roth
+        st.session_state["inv_roth_contrib_ytd"]   = inv_roth_contrib_ytd
+        st.session_state["inv_hsa"]                = inv_hsa
+        st.session_state["inv_hsa_contrib_ytd"]    = inv_hsa_contrib_ytd
+        st.session_state["inv_brokerage"]          = inv_brokerage
+        st.session_state["inv_notes"]              = inv_notes
+        # Persist to database so values survive page refreshes & restarts
+        save_investment_context({
+            "bal_401k":         inv_401k,
+            "contrib_401k_ytd": inv_401k_contrib_ytd,
+            "match_401k_ytd":   inv_401k_employer_match,
+            "bal_roth":         inv_roth,
+            "contrib_roth_ytd": inv_roth_contrib_ytd,
+            "bal_hsa":          inv_hsa,
+            "contrib_hsa_ytd":  inv_hsa_contrib_ytd,
+            "bal_brokerage":    inv_brokerage,
+            "notes":            inv_notes,
+        })
+        st.success("✅ Investment context saved to database! Claude will now include this in all analyses.")
+        st.rerun()
+
+    # Show current saved state summary
+    _any_inv = any([
+        st.session_state.get("inv_401k", 0),
+        st.session_state.get("inv_roth", 0),
+        st.session_state.get("inv_hsa", 0),
+        st.session_state.get("inv_brokerage", 0),
+    ])
+    if _any_inv:
+        total_inv = (
+            st.session_state.get("inv_401k", 0) +
+            st.session_state.get("inv_roth", 0) +
+            st.session_state.get("inv_hsa", 0) +
+            st.session_state.get("inv_brokerage", 0)
+        )
+        st.info(f"✅ **Investment context active** — Total tracked: **${total_inv:,.2f}** across all accounts. Claude will use this data.")
+    else:
+        st.warning("⚠️ No investment data entered yet. Fill in your balances above and click Save.")
+
+st.markdown("---")
+_key_loaded = bool(st.session_state.get("api_key"))
+with st.expander("🔑 API Key Settings", expanded=not _key_loaded):
+    if _key_loaded:
+        st.success("✅ API key loaded — you're all set.")
+    st.markdown("Paste your Anthropic key below to save it permanently to the database:")
+    api_key_input = st.text_input("Anthropic API Key", type="password", placeholder="sk-ant-api03-...",
+                                   value=st.session_state.get("api_key", ""))
+    if st.button("💾 Save Key to Database", type="primary"):
         if api_key_input.startswith("sk-ant-"):
             st.session_state["api_key"] = api_key_input
-            st.success("API key saved!")
+            set_setting("anthropic_api_key", api_key_input)
+            st.success("✅ API key saved to database! It will auto-load on every future visit.")
             st.rerun()
         else:
-            st.error("That doesn't look like a valid Anthropic key. It should start with 'sk-ant-'")
+            st.error("That doesn't look like a valid Anthropic key.")
 
 api_key = st.session_state.get("api_key", "")
-
 if not api_key:
     st.info("👆 Enter your Anthropic API key above to unlock AI features.")
     st.stop()
 
-# ── Load data ─────────────────────────────────────────────────────────────────
 conn = get_conn()
-expense_df  = pd.read_sql("SELECT * FROM expenses  WHERE month = ?", conn, params=(selected_month,))
-income_df   = pd.read_sql("SELECT * FROM income    WHERE month = ?", conn, params=(selected_month,))
-txn_df      = pd.read_sql("SELECT * FROM bank_transactions WHERE month = ?", conn, params=(selected_month,))
-all_expenses = pd.read_sql("SELECT * FROM expenses ORDER BY month", conn)
+expense_df   = read_sql("SELECT * FROM expenses WHERE month = ?", conn, params=(selected_month,))
+income_df    = read_sql("SELECT * FROM income WHERE month = ?", conn, params=(selected_month,))
+txn_df       = read_sql("SELECT * FROM bank_transactions WHERE month = ?", conn, params=(selected_month,))
+all_expenses = read_sql("SELECT * FROM expenses ORDER BY month", conn)
 conn.close()
 
 total_income    = income_df['amount'].sum()
@@ -84,10 +221,54 @@ total_projected = expense_df['projected'].sum()
 total_actual    = expense_df['actual'].sum()
 savings         = total_income - total_actual
 
-# ── Build context string for Claude ──────────────────────────────────────────
+
+def build_investment_context() -> str:
+    """Build investment account context from session state."""
+    inv_401k               = st.session_state.get("inv_401k", 0)
+    inv_401k_contrib_ytd   = st.session_state.get("inv_401k_contrib_ytd", 0)
+    inv_401k_employer_match = st.session_state.get("inv_401k_employer_match", 0)
+    inv_roth               = st.session_state.get("inv_roth", 0)
+    inv_roth_contrib_ytd   = st.session_state.get("inv_roth_contrib_ytd", 0)
+    inv_hsa                = st.session_state.get("inv_hsa", 0)
+    inv_hsa_contrib_ytd    = st.session_state.get("inv_hsa_contrib_ytd", 0)
+    inv_brokerage          = st.session_state.get("inv_brokerage", 0)
+    inv_notes              = st.session_state.get("inv_notes", "")
+
+    any_data = any([inv_401k, inv_roth, inv_hsa, inv_brokerage])
+    if not any_data:
+        return ""
+
+    total_inv = inv_401k + inv_roth + inv_hsa + inv_brokerage
+    lines = [
+        "",
+        "Investment & Retirement Accounts (Fidelity / external — not in transaction data):",
+        f"  Total Investment Portfolio Value: ${total_inv:,.2f}",
+    ]
+    if inv_401k > 0:
+        lines.append(f"  401(k) Balance: ${inv_401k:,.2f}")
+        if inv_401k_contrib_ytd > 0:
+            lines.append(f"    → YTD Employee Contributions: ${inv_401k_contrib_ytd:,.2f} (2025 limit: $23,500)")
+        if inv_401k_employer_match > 0:
+            lines.append(f"    → YTD Employer Match Received: ${inv_401k_employer_match:,.2f}")
+    if inv_roth > 0:
+        lines.append(f"  Roth IRA Balance: ${inv_roth:,.2f}")
+        if inv_roth_contrib_ytd > 0:
+            remaining_roth = max(0, 7000 - inv_roth_contrib_ytd)
+            lines.append(f"    → YTD Contributions: ${inv_roth_contrib_ytd:,.2f} (2025 limit: $7,000 — ${remaining_roth:,.2f} remaining)")
+    if inv_hsa > 0:
+        lines.append(f"  HSA Balance: ${inv_hsa:,.2f}")
+        if inv_hsa_contrib_ytd > 0:
+            remaining_hsa = max(0, 4300 - inv_hsa_contrib_ytd)
+            lines.append(f"    → YTD Contributions: ${inv_hsa_contrib_ytd:,.2f} (2025 individual limit: $4,300 — ${remaining_hsa:,.2f} remaining)")
+    if inv_brokerage > 0:
+        lines.append(f"  Cash Management / High Yield Account: ${inv_brokerage:,.2f}")
+    if inv_notes.strip():
+        lines.append(f"  Additional context: {inv_notes.strip()}")
+    return "\n".join(lines)
+
+
 def build_budget_context(month: str) -> str:
     month_label = datetime.strptime(month, "%Y-%m").strftime("%B %Y")
-
     lines = [
         f"Budget data for {month_label}:",
         f"  Total Income: ${total_income:,.2f}",
@@ -100,18 +281,11 @@ def build_budget_context(month: str) -> str:
     ]
     for _, row in expense_df.iterrows():
         diff = row['actual'] - row['projected']
-        lines.append(
-            f"  {row['category']} | {row['subcategory']} | "
-            f"${row['projected']:,.2f} | ${row['actual']:,.2f} | "
-            f"{'OVER' if diff > 0 else 'under'} by ${abs(diff):,.2f}"
-        )
-
+        lines.append(f"  {row['category']} | {row['subcategory']} | ${row['projected']:,.2f} | ${row['actual']:,.2f} | {'OVER' if diff > 0 else 'under'} by ${abs(diff):,.2f}")
     if not txn_df.empty:
         lines += ["", "Individual transactions this month (description | amount):"]
         for _, row in txn_df.iterrows():
             lines.append(f"  {row['description']} | ${row['amount']:,.2f}")
-
-    # Multi-month trend
     if len(all_expenses['month'].unique()) > 1:
         lines += ["", "Multi-month spending trends (actual totals by category):"]
         trend = all_expenses.groupby(['month', 'category'])['actual'].sum().reset_index()
@@ -120,223 +294,173 @@ def build_budget_context(month: str) -> str:
             vals = ", ".join(f"{r['month']}: ${r['actual']:,.2f}" for _, r in cat_data.iterrows())
             lines.append(f"  {cat}: {vals}")
 
+    # Append investment account context if available
+    inv_context = build_investment_context()
+    if inv_context:
+        lines.append(inv_context)
+
     return "\n".join(lines)
 
 
-def ask_claude(prompt: str, context: str) -> str:
+# claude-opus-4-5 pricing (per million tokens)
+INPUT_COST_PER_M  = 3.00   # $3.00 per 1M input tokens
+OUTPUT_COST_PER_M = 15.00  # $15.00 per 1M output tokens
+
+def ask_claude(prompt: str, context: str) -> tuple[str, dict]:
+    """Returns (response_text, usage_info)"""
     client = anthropic.Anthropic(api_key=api_key)
     try:
         message = client.messages.create(
             model="claude-opus-4-5",
             max_tokens=1024,
-            messages=[
-                {
-                    "role": "user",
-                    "content": (
-                        "You are a friendly, practical personal finance advisor. "
-                        "You have access to the following budget data:\n\n"
-                        f"{context}\n\n"
-                        f"{prompt}\n\n"
-                        "Be specific, use the actual numbers from the data, and keep your response concise and actionable. "
-                        "Use bullet points where helpful. Don't be preachy."
-                    )
-                }
-            ]
+            messages=[{"role": "user", "content": (
+                "You are a friendly, practical personal finance advisor. "
+                f"You have access to the following budget data:\n\n{context}\n\n{prompt}\n\n"
+                "Be specific, use the actual numbers from the data, and keep your response concise and actionable. "
+                "Use bullet points where helpful. Don't be preachy."
+            )}]
         )
-        return message.content[0].text
+        usage = message.usage
+        input_tokens  = usage.input_tokens
+        output_tokens = usage.output_tokens
+        cost = (input_tokens / 1_000_000 * INPUT_COST_PER_M) + (output_tokens / 1_000_000 * OUTPUT_COST_PER_M)
+        usage_info = {
+            "input_tokens":  input_tokens,
+            "output_tokens": output_tokens,
+            "total_tokens":  input_tokens + output_tokens,
+            "cost_usd":      cost,
+        }
+        return message.content[0].text, usage_info
     except anthropic.AuthenticationError:
-        return "❌ Invalid API key. Please check your key in the settings above."
+        return "❌ Invalid API key. Please check your key in the settings above.", {}
     except anthropic.RateLimitError:
-        return "❌ Rate limit hit. Wait a moment and try again."
+        return "❌ Rate limit hit. Wait a moment and try again.", {}
     except Exception as e:
-        return f"❌ Error: {e}"
+        return f"❌ Error: {e}", {}
 
 
-# ── AI Feature Tabs ───────────────────────────────────────────────────────────
-tab1, tab2, tab3, tab4 = st.tabs([
-    "📊 Monthly Summary", "💡 Budget Tips", "🏷️ Auto-Categorize", "💬 Ask Anything"
-])
+def render_response(text: str):
+    """Render Claude's response with dollar signs escaped so Streamlit doesn't treat them as LaTeX."""
+    # Escape $ so Streamlit markdown doesn't interpret them as math delimiters
+    escaped = text.replace("$", r"\$")
+    st.markdown(escaped)
 
+
+def show_usage(usage_info: dict):
+    """Render a small token/cost badge below a response."""
+    if not usage_info:
+        return
+    with st.expander(f"📊 Token usage — ${usage_info['cost_usd']:.4f} this prompt", expanded=False):
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Input tokens",  f"{usage_info['input_tokens']:,}")
+        c2.metric("Output tokens", f"{usage_info['output_tokens']:,}")
+        c3.metric("Cost",          f"${usage_info['cost_usd']:.4f}")
+        st.caption("Pricing: claude-opus-4-5 — $3/M input · $15/M output")
+
+
+tab1, tab2, tab3, tab4 = st.tabs(["📊 Monthly Summary", "💡 Budget Tips", "🏷️ Auto-Categorize", "💬 Ask Anything"])
 context = build_budget_context(selected_month)
 month_label = datetime.strptime(selected_month, "%Y-%m").strftime("%B %Y")
 
-# ════════════════════════════════════════════════════════════════════════════
-# TAB 1 — Monthly Summary
-# ════════════════════════════════════════════════════════════════════════════
 with tab1:
     st.subheader(f"📊 AI Summary — {month_label}")
     st.caption("Claude reads your full budget and writes a plain-English summary of how your month went.")
-
     if st.button("Generate Monthly Summary", type="primary", key="btn_summary"):
         with st.spinner("Claude is analyzing your budget..."):
-            response = ask_claude(
-                f"Write a concise monthly budget summary for {month_label}. "
-                "Cover: how income compared to spending, which categories were over/under budget, "
-                "biggest individual transactions, and one or two things that stand out. "
-                "Keep it under 200 words, conversational tone.",
-                context
-            )
-        st.markdown(response)
+            response, usage = ask_claude(
+                f"Write a concise monthly budget summary for {month_label}. Cover: how income compared to spending, "
+                "which categories were over/under budget, biggest individual transactions, and one or two things that stand out. "
+                "Keep it under 200 words, conversational tone.", context)
+        render_response(response)
+        show_usage(usage)
 
-# ════════════════════════════════════════════════════════════════════════════
-# TAB 2 — Budget Tips
-# ════════════════════════════════════════════════════════════════════════════
 with tab2:
     st.subheader("💡 Personalized Budget Recommendations")
-    st.caption("Based on your actual spending patterns, Claude suggests specific adjustments.")
-
     col1, col2 = st.columns(2)
     with col1:
         if st.button("🎯 Suggest Budget Adjustments", type="primary", key="btn_adjust"):
             with st.spinner("Analyzing spending patterns..."):
-                response = ask_claude(
-                    "Look at my projected vs actual spending. "
-                    "Which projected amounts are consistently wrong (too high or too low)? "
-                    "Give me 3-5 specific recommendations to adjust my projected budget amounts "
-                    "to better match my real spending. Be specific with dollar amounts.",
-                    context
-                )
-            st.markdown(response)
-
+                response, usage = ask_claude("Look at my projected vs actual spending. Which projected amounts are consistently wrong? "
+                    "Give me 3-5 specific recommendations to adjust my projected budget amounts. Be specific with dollar amounts.", context)
+            render_response(response)
+            show_usage(usage)
     with col2:
         if st.button("✂️ Where Can I Cut Back?", type="secondary", key="btn_cut"):
             with st.spinner("Finding savings opportunities..."):
-                response = ask_claude(
-                    "Looking at my spending, identify 3-5 specific areas where I could realistically "
-                    "cut back without drastically changing my lifestyle. "
-                    "For each one, suggest a specific dollar amount I could save and how. "
-                    "Focus on the highest-impact changes first.",
-                    context
-                )
-            st.markdown(response)
-
+                response, usage = ask_claude("Identify 3-5 specific areas where I could realistically cut back without drastically changing my lifestyle. "
+                    "For each one, suggest a specific dollar amount I could save and how.", context)
+            render_response(response)
+            show_usage(usage)
     st.markdown("---")
     if st.button("📈 Savings Goal Analysis", key="btn_savings"):
         savings_goal = st.session_state.get("savings_goal", 10000)
         with st.spinner("Running savings projection..."):
-            response = ask_claude(
-                f"Based on my current income and spending patterns, project my savings over the next 6 months. "
-                f"If I have a savings goal of ${savings_goal:,}, when will I reach it at my current rate? "
-                f"What would I need to change to reach it 2 months sooner?",
-                context
-            )
-        st.markdown(response)
-
-    savings_goal_input = st.number_input(
-        "Set your savings goal ($)", min_value=0, value=st.session_state.get("savings_goal", 10000), step=500
-    )
+            response, usage = ask_claude(f"Project my savings over the next 6 months. If I have a savings goal of ${savings_goal:,}, "
+                "when will I reach it? What would I need to change to reach it 2 months sooner?", context)
+        render_response(response)
+        show_usage(usage)
+    savings_goal_input = st.number_input("Set your savings goal ($)", min_value=0, value=st.session_state.get("savings_goal", 10000), step=500)
     if savings_goal_input != st.session_state.get("savings_goal"):
         st.session_state["savings_goal"] = savings_goal_input
 
-# ════════════════════════════════════════════════════════════════════════════
-# TAB 3 — Auto-Categorize Transactions
-# ════════════════════════════════════════════════════════════════════════════
 with tab3:
     st.subheader("🏷️ Auto-Categorize Bank Transactions")
-    st.caption("Claude reads your uncategorized transactions and suggests which budget line each one belongs to.")
-
     conn = get_conn()
-    uncategorized = pd.read_sql(
-        "SELECT * FROM bank_transactions WHERE month=? AND (category IS NULL OR category='')",
-        conn, params=(selected_month,)
-    )
-    expense_cats = pd.read_sql(
-        "SELECT DISTINCT category, subcategory FROM expenses WHERE month=?",
-        conn, params=(selected_month,)
-    )
+    uncategorized = read_sql("SELECT * FROM bank_transactions WHERE month=? AND (category IS NULL OR category='')", conn, params=(selected_month,))
+    expense_cats  = read_sql("SELECT DISTINCT category, subcategory FROM expenses WHERE month=?", conn, params=(selected_month,))
     conn.close()
-
     if uncategorized.empty:
         st.success("✅ All transactions for this month are already categorized!")
     else:
         st.info(f"Found **{len(uncategorized)} uncategorized** transactions.")
-        st.dataframe(
-            uncategorized[['date', 'description', 'amount']].rename(columns={
-                'date': 'Date', 'description': 'Description', 'amount': 'Amount ($)'
-            }),
-            use_container_width=True, hide_index=True
-        )
-
+        st.dataframe(uncategorized[['date', 'description', 'amount']].rename(
+            columns={'date': 'Date', 'description': 'Description', 'amount': 'Amount ($)'}),
+            use_container_width=True, hide_index=True)
         if st.button("🤖 Auto-Categorize All", type="primary", key="btn_autocat"):
-            # Build category list for Claude
-            cat_list = "\n".join(
-                f"  - {r['category']} › {r['subcategory']}"
-                for _, r in expense_cats.iterrows()
-            )
-            txn_list = "\n".join(
-                f"  ID {r['id']}: {r['description']} (${r['amount']:.2f})"
-                for _, r in uncategorized.iterrows()
-            )
-
-            prompt = (
-                f"I have these budget categories:\n{cat_list}\n\n"
-                f"And these uncategorized transactions:\n{txn_list}\n\n"
-                "For each transaction ID, suggest the best matching category in the format:\n"
-                "ID <number>: <Category> › <Subcategory>\n"
-                "If none fit, write: ID <number>: Uncategorized\n"
-                "Only output the ID lines, nothing else."
-            )
-
+            cat_list = "\n".join(f"  - {r['category']} › {r['subcategory']}" for _, r in expense_cats.iterrows())
+            txn_list = "\n".join(f"  ID {r['id']}: {r['description']} (${r['amount']:.2f})" for _, r in uncategorized.iterrows())
+            prompt = (f"I have these budget categories:\n{cat_list}\n\nAnd these uncategorized transactions:\n{txn_list}\n\n"
+                      "For each transaction ID, suggest the best matching category in the format:\n"
+                      "ID <number>: <Category> › <Subcategory>\nIf none fit, write: ID <number>: Uncategorized\nOnly output the ID lines.")
             with st.spinner("Claude is categorizing your transactions..."):
-                raw_response = ask_claude(prompt, "")
-
+                raw_response, usage = ask_claude(prompt, "")
             st.markdown("**Claude's suggestions:**")
+            show_usage(usage)
             st.code(raw_response)
-
-            # Parse Claude's response and apply
             suggestions = {}
             for line in raw_response.strip().split('\n'):
                 m = __import__('re').match(r'ID\s+(\d+):\s+(.+?)\s*›\s*(.+)', line.strip())
                 if m:
-                    txn_id = int(m.group(1))
-                    cat    = m.group(2).strip()
-                    sub    = m.group(3).strip()
-                    suggestions[txn_id] = (cat, sub)
-
+                    suggestions[int(m.group(1))] = (m.group(2).strip(), m.group(3).strip())
             if suggestions:
                 if st.button(f"✅ Apply {len(suggestions)} suggestions", type="primary", key="btn_apply_cats"):
                     conn = get_conn()
+                    from utils.db import execute as db_execute
                     for txn_id, (cat, sub) in suggestions.items():
-                        conn.execute(
-                            "UPDATE bank_transactions SET category=?, subcategory=? WHERE id=?",
-                            (cat, sub, txn_id)
-                        )
+                        db_execute(conn, "UPDATE bank_transactions SET category=?, subcategory=? WHERE id=?", (cat, sub, txn_id))
                     conn.commit()
                     conn.close()
-                    st.success(f"Applied {len(suggestions)} categories! Go to Bank Import → Review & Apply to push them to your budget.")
+                    st.success(f"Applied {len(suggestions)} categories!")
                     st.rerun()
 
-# ════════════════════════════════════════════════════════════════════════════
-# TAB 4 — Ask Anything
-# ════════════════════════════════════════════════════════════════════════════
 with tab4:
     st.subheader("💬 Ask Claude About Your Budget")
-    st.caption("Ask anything about your finances — Claude has full context of your budget data.")
-
-    # Quick question buttons
     st.markdown("**Quick questions:**")
-    qcol1, qcol2, qcol3 = st.columns(3)
     quick_q = None
-    with qcol1:
-        if st.button("How much did I spend on food?"):
-            quick_q = "How much did I spend on food and dining this month? Break it down by subcategory."
-    with qcol2:
-        if st.button("What's my biggest expense?"):
-            quick_q = "What was my single biggest expense category this month and how does it compare to my budget?"
-    with qcol3:
-        if st.button("Am I on track to save?"):
-            quick_q = "Based on my income and spending, am I on track to save money this month? What's my savings rate?"
-
+    if st.button("🍔 How much did I spend on food?", use_container_width=True):
+        quick_q = "How much did I spend on food and dining this month? Break it down by subcategory."
+    if st.button("💸 What's my biggest expense?", use_container_width=True):
+        quick_q = "What was my single biggest expense category this month and how does it compare to my budget?"
+    if st.button("🏦 Am I on track to save?", use_container_width=True):
+        quick_q = "Based on my income and spending, am I on track to save money this month? What's my savings rate?"
+    if st.button("📈 How are my investments doing?", use_container_width=True):
+        quick_q = "Based on my investment account balances (401k, Roth IRA, HSA, Cash Management) and my monthly savings rate, give me a snapshot of my overall financial health."
     st.markdown("---")
-    user_question = st.text_area(
-        "Or ask your own question:",
-        value=quick_q or "",
-        placeholder="e.g. 'How much did I spend at Chevron this month?' or 'What would happen to my savings if I cut dining out by $100?'",
-        height=80
-    )
-
+    user_question = st.text_area("Or ask your own question:", value=quick_q or "",
+        placeholder="e.g. 'How much did I spend at Chevron?' or 'What would happen if I cut dining out by $100?'", height=80)
     if st.button("Ask Claude", type="primary", key="btn_ask") and user_question:
         with st.spinner("Thinking..."):
-            response = ask_claude(user_question, context)
+            response, usage = ask_claude(user_question, context)
         st.markdown("### Claude's Answer")
-        st.markdown(response)
+        render_response(response)
+        show_usage(usage)

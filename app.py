@@ -1,8 +1,7 @@
 import streamlit as st
-import sqlite3
 import pandas as pd
 from datetime import datetime
-from utils.db import init_db, seed_budget, seed_income, get_conn
+from utils.db import init_db, seed_budget, seed_income, get_conn, read_sql
 
 # ── App config ──────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -48,30 +47,31 @@ st.title(f"📊 Overview — {datetime.strptime(selected_month, '%Y-%m').strftim
 conn = get_conn()
 
 # Income summary
-income_df = pd.read_sql("SELECT * FROM income WHERE month = ?", conn, params=(selected_month,))
+income_df = read_sql("SELECT * FROM income WHERE month = ?", conn, params=(selected_month,))
 total_income = income_df['amount'].sum()
 
 # Expense summary
-expense_df = pd.read_sql("SELECT * FROM expenses WHERE month = ?", conn, params=(selected_month,))
+expense_df = read_sql("SELECT * FROM expenses WHERE month = ?", conn, params=(selected_month,))
 total_projected = expense_df['projected'].sum()
 total_actual = expense_df['actual'].sum()
 
 conn.close()
 
 # ── KPI Cards ───────────────────────────────────────────────────────────────
-col1, col2, col3, col4 = st.columns(4)
+# Use 2x2 grid so it's readable on mobile
+row1_col1, row1_col2 = st.columns(2)
+row2_col1, row2_col2 = st.columns(2)
 
-with col1:
+with row1_col1:
     st.metric("💵 Total Income", f"${total_income:,.2f}")
 
-with col2:
-    st.metric("📋 Projected Expenses", f"${total_projected:,.2f}")
+with row1_col2:
+    st.metric("📋 Projected", f"${total_projected:,.2f}")
 
-with col3:
-    actual_color = "normal"
-    st.metric("💳 Actual Expenses", f"${total_actual:,.2f}", delta=f"${total_actual - total_projected:,.2f} vs projected", delta_color="inverse")
+with row2_col1:
+    st.metric("💳 Actual Spent", f"${total_actual:,.2f}", delta=f"${total_actual - total_projected:,.2f} vs projected", delta_color="inverse")
 
-with col4:
+with row2_col2:
     balance = total_income - total_actual
     st.metric("🏦 Remaining", f"${balance:,.2f}", delta_color="normal")
 

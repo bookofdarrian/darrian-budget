@@ -1,13 +1,11 @@
 import streamlit as st
 import pandas as pd
-import io
-from datetime import datetime, date
-from utils.db import get_conn, seed_budget, init_db
+from datetime import datetime
+from utils.db import get_conn, seed_budget, init_db, read_sql, execute
 
 st.set_page_config(page_title="Expenses", page_icon="📋", layout="wide")
 init_db()
 
-# ── Sidebar ──────────────────────────────────────────────────────────────────
 st.sidebar.title("💰 Budget Dashboard")
 st.sidebar.markdown("---")
 months = []
@@ -34,23 +32,19 @@ st.title(f"📋 Expenses — {datetime.strptime(selected_month, '%Y-%m').strftim
 
 # ── Auto-fill recurring expenses ─────────────────────────────────────────────
 conn = get_conn()
-templates_df = pd.read_sql(
-    "SELECT * FROM recurring_templates WHERE active = 1", conn
-)
+templates_df = read_sql("SELECT * FROM recurring_templates WHERE active = 1", conn)
 conn.close()
 
 if not templates_df.empty:
     conn = get_conn()
-    existing = pd.read_sql(
-        "SELECT subcategory FROM expenses WHERE month = ?", conn, params=(selected_month,)
-    )
+    existing = read_sql("SELECT subcategory FROM expenses WHERE month = ?", conn, params=(selected_month,))
     conn.close()
     existing_subs = existing['subcategory'].tolist()
     new_recurring = templates_df[~templates_df['subcategory'].isin(existing_subs)]
     if not new_recurring.empty:
         conn = get_conn()
         for _, row in new_recurring.iterrows():
-            conn.execute(
+            execute(conn,
                 "INSERT INTO expenses (month, category, subcategory, projected, actual) VALUES (?, ?, ?, ?, 0)",
                 (selected_month, row['category'], row['subcategory'], row['projected'])
             )
@@ -60,7 +54,7 @@ if not templates_df.empty:
 
 # ── Load expenses ─────────────────────────────────────────────────────────────
 conn = get_conn()
-expense_df = pd.read_sql(
+expense_df = read_sql(
     "SELECT * FROM expenses WHERE month = ? ORDER BY category, subcategory",
     conn, params=(selected_month,)
 )
@@ -69,12 +63,9 @@ conn.close()
 categories = expense_df['category'].unique().tolist()
 selected_cat = st.selectbox("Filter by Category", ["All"] + categories)
 
-if selected_cat != "All":
-    filtered = expense_df[expense_df['category'] == selected_cat]
-else:
-    filtered = expense_df
+filtered = expense_df[expense_df['category'] == selected_cat] if selected_cat != "All" else expense_df
 
-# ── Editable table (projected + actual both editable) ────────────────────────
+# ── Editable table ────────────────────────────────────────────────────────────
 st.markdown("---")
 st.subheader("Budget Table")
 st.caption("Edit **Projected** to update your budget plan, or **Actual** to log spending. Hit Save when done.")
@@ -99,9 +90,8 @@ edited = st.data_editor(
 
 if st.button("💾 Save Changes", type="primary"):
     conn = get_conn()
-    c = conn.cursor()
     for _, row in edited.iterrows():
-        c.execute(
+        execute(conn,
             "UPDATE expenses SET projected = ?, actual = ?, notes = ? WHERE id = ?",
             (row['projected'], row['actual'], row['notes'], row['id'])
         )
@@ -122,24 +112,19 @@ with st.expander("➕ Add Custom Expense"):
         new_proj   = st.number_input("Projected ($)", min_value=0.0, step=10.0)
         new_actual = st.number_input("Actual ($)",    min_value=0.0, step=10.0)
     new_notes = st.text_input("Notes")
-
     save_as_recurring = st.checkbox("💾 Also save as a recurring template (auto-fills future months)")
 
     if st.button("Add Row"):
         if new_cat and new_sub:
             conn = get_conn()
-            conn.execute(
+            execute(conn,
                 "INSERT INTO expenses (month, category, subcategory, projected, actual, notes) VALUES (?, ?, ?, ?, ?, ?)",
                 (selected_month, new_cat, new_sub, new_proj, new_actual, new_notes)
             )
             if save_as_recurring:
-                # Only add template if not already there
-                existing_t = pd.read_sql(
-                    "SELECT id FROM recurring_templates WHERE subcategory = ?",
-                    conn, params=(new_sub,)
-                )
+                existing_t = read_sql("SELECT id FROM recurring_templates WHERE subcategory = ?", conn, params=(new_sub,))
                 if existing_t.empty:
-                    conn.execute(
+                    execute(conn,
                         "INSERT INTO recurring_templates (category, subcategory, projected) VALUES (?, ?, ?)",
                         (new_cat, new_sub, new_proj)
                     )
@@ -154,7 +139,7 @@ with st.expander("➕ Add Custom Expense"):
 with st.expander("🔁 Manage Recurring Expenses"):
     st.caption("These auto-fill into every new month. Toggle active/inactive or delete rows.")
     conn = get_conn()
-    tmpl_df = pd.read_sql("SELECT * FROM recurring_templates ORDER BY category, subcategory", conn)
+    tmpl_df = read_sql("SELECT * FROM recurring_templates ORDER BY category, subcategory", conn)
     conn.close()
 
     if tmpl_df.empty:
@@ -175,9 +160,8 @@ with st.expander("🔁 Manage Recurring Expenses"):
         )
         if st.button("💾 Save Recurring Templates"):
             conn = get_conn()
-            c = conn.cursor()
             for _, row in tmpl_edit.iterrows():
-                c.execute(
+                execute(conn,
                     "UPDATE recurring_templates SET category=?, subcategory=?, projected=?, active=? WHERE id=?",
                     (row['category'], row['subcategory'], row['projected'], int(row['active']), row['id'])
                 )
