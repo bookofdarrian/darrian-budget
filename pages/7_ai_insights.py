@@ -316,8 +316,11 @@ def ask_claude(prompt: str, context: str) -> tuple[str, dict]:
             messages=[{"role": "user", "content": (
                 "You are a friendly, practical personal finance advisor. "
                 f"You have access to the following budget data:\n\n{context}\n\n{prompt}\n\n"
-                "Be specific, use the actual numbers from the data, and keep your response concise and actionable. "
-                "Use bullet points where helpful. Don't be preachy."
+                "IMPORTANT FORMATTING RULES: "
+                "1. Write dollar amounts as 'USD X.XX' or 'X dollars' — never use the dollar sign symbol. "
+                "2. Do NOT use any markdown formatting — no asterisks for bold, no underscores for italic, no pound signs for headers. "
+                "3. Use plain dashes (-) for bullet points. "
+                "4. Be specific with numbers, concise, and actionable. Don't be preachy."
             )}]
         )
         usage = message.usage
@@ -340,10 +343,11 @@ def ask_claude(prompt: str, context: str) -> tuple[str, dict]:
 
 
 def render_response(text: str):
-    """Render Claude's response with dollar signs escaped so Streamlit doesn't treat them as LaTeX."""
-    # Escape $ so Streamlit markdown doesn't interpret them as math delimiters
-    escaped = text.replace("$", r"\$")
-    st.markdown(escaped)
+    """Render Claude's response as clean plain text — no markdown, no LaTeX."""
+    # Replace any stray dollar signs with fullwidth equivalent just in case
+    cleaned = text.replace("$", "＄")
+    # Use st.text() for completely plain rendering — no markdown interpretation at all
+    st.text(cleaned)
 
 
 def show_usage(usage_info: dict):
