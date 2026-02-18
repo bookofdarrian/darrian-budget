@@ -121,6 +121,7 @@ def init_db():
             date TEXT NOT NULL,
             description TEXT NOT NULL,
             amount REAL NOT NULL,
+            is_debit INTEGER DEFAULT 1,
             category TEXT,
             subcategory TEXT,
             matched_expense_id INTEGER,
@@ -202,6 +203,7 @@ def init_db():
             date TEXT NOT NULL,
             description TEXT NOT NULL,
             amount REAL NOT NULL,
+            is_debit INTEGER DEFAULT 1,
             category TEXT,
             subcategory TEXT,
             matched_expense_id INTEGER,
@@ -236,6 +238,22 @@ def init_db():
             notes TEXT DEFAULT '',
             updated_at TEXT DEFAULT (datetime('now'))
         )''')
+
+    # ── Migrations: add columns to existing tables if missing ────────────────
+    if USE_POSTGRES:
+        # Check if is_debit column exists in bank_transactions
+        c.execute("""
+            SELECT column_name FROM information_schema.columns
+            WHERE table_name='bank_transactions' AND column_name='is_debit'
+        """)
+        if not c.fetchone():
+            c.execute("ALTER TABLE bank_transactions ADD COLUMN is_debit INTEGER DEFAULT 1")
+    else:
+        # SQLite: check PRAGMA table_info
+        c.execute("PRAGMA table_info(bank_transactions)")
+        cols = [row[1] for row in c.fetchall()]
+        if 'is_debit' not in cols:
+            c.execute("ALTER TABLE bank_transactions ADD COLUMN is_debit INTEGER DEFAULT 1")
 
     conn.commit()
     conn.close()

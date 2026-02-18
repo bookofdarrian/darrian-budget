@@ -86,11 +86,13 @@ with tab_nfcu:
                             continue
                         if not t['is_debit'] and not import_credits:
                             continue
-                        exists = fetchone(conn, "SELECT id FROM bank_transactions WHERE month=? AND date=? AND description=? AND amount=?",
-                                          (selected_month, t['date'], t['description'], t['amount']))
+                        # Derive month from the transaction's actual date, not the sidebar selection
+                        txn_month = t['date'][:7]  # "YYYY-MM-DD" → "YYYY-MM"
+                        exists = fetchone(conn, "SELECT id FROM bank_transactions WHERE date=? AND description=? AND amount=?",
+                                          (t['date'], t['description'], t['amount']))
                         if not exists:
-                            execute(conn, "INSERT INTO bank_transactions (month, date, description, amount, source) VALUES (?, ?, ?, ?, ?)",
-                                    (selected_month, t['date'], t['description'], t['amount'], 'nfcu_pdf'))
+                            execute(conn, "INSERT INTO bank_transactions (month, date, description, amount, is_debit, source) VALUES (?, ?, ?, ?, ?, ?)",
+                                    (txn_month, t['date'], t['description'], t['amount'], 1 if t['is_debit'] else 0, 'nfcu_pdf'))
                             count += 1
                     conn.commit()
                     conn.close()

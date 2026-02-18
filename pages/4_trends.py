@@ -45,16 +45,45 @@ st.caption("Track your income, spending, and savings across every month — powe
 
 # ── Pull all data ─────────────────────────────────────────────────────────────
 conn = get_conn()
-income_all  = read_sql("SELECT month, SUM(amount) AS income FROM income GROUP BY month", conn)
-txn_all     = read_sql("SELECT month, SUM(amount) AS spent FROM bank_transactions GROUP BY month", conn)
-txn_raw     = read_sql(
-    "SELECT month, date, description, amount, category FROM bank_transactions ORDER BY date DESC", conn
+income_all = read_sql("SELECT month, SUM(amount) AS income FROM income GROUP BY month", conn)
+
+# Debits only (expenses) — is_debit=1 or NULL (legacy rows before the column existed default to debit)
+txn_all = read_sql(
+    "SELECT month, SUM(amount) AS spent FROM bank_transactions WHERE is_debit = 1 OR is_debit IS NULL GROUP BY month",
+    conn
 )
+
+# Credits (deposits) — is_debit=0
+txn_credits_all = read_sql(
+    "SELECT month, SUM(amount) AS deposited FROM bank_transactions WHERE is_debit = 0 GROUP BY month",
+    conn
+)
+
+# Raw debit transactions for merchant analysis
+txn_raw = read_sql(
+    """SELECT month, date, description, amount, category, is_debit
+       FROM bank_transactions
+       WHERE is_debit = 1 OR is_debit IS NULL
+       ORDER BY date DESC""",
+    conn
+)
+
+# Category breakdown — debits only
 txn_cat_all = read_sql(
     """SELECT month, category, SUM(amount) AS spent
        FROM bank_transactions
-       WHERE category IS NOT NULL AND category != ''
-       GROUP BY month, category""", conn
+       WHERE (is_debit = 1 OR is_debit IS NULL)
+         AND category IS NOT NULL AND category != ''
+       GROUP BY month, category""",
+    conn
+)
+
+# All transactions (debits + credits) for the AI context
+txn_all_raw = read_sql(
+    """SELECT month, date, description, amount, category, is_debit
+       FROM bank_transactions
+       ORDER BY date DESC""",
+    conn
 )
 conn.close()
 
@@ -82,6 +111,12 @@ if not txn_all.empty:
 else:
     trends["spent"] = 0.0
 
+# Merge in bank deposits (credits) if any exist
+if not txn_credits_all.empty:
+    trends = pd.merge(trends, txn_credits_all, on="month", how="left")
+else:
+    trends["deposited"] = 0.0
+
 trends = trends.fillna(0)
 trends["savings"]      = trends["income"] - trends["spent"]
 trends["savings_rate"] = (trends["savings"] / trends["income"].replace(0, float("nan"))) * 100
@@ -96,6 +131,11 @@ k2.metric("Total Spent",       f"${trends['spent'].sum():,.2f}")
 k3.metric("Total Saved",       f"${trends['savings'].sum():,.2f}")
 avg_sr = trends["savings_rate"].replace([float("inf"), float("-inf")], float("nan")).mean()
 k4.metric("Avg Savings Rate",  f"{avg_sr:.1f}%" if not pd.isna(avg_sr) else "—")
+
+# Show bank deposits row if any credits were imported
+total_deposited = trends["deposited"].sum()
+if total_deposited > 0:
+    st.caption(f"💰 Bank deposits/credits imported: **${total_deposited:,.2f}** (shown separately — not counted as income or spending)")
 
 st.markdown("---")
 
@@ -156,6 +196,29 @@ if not txn_raw.empty:
     merchant_totals["Total Spent ($)"] = merchant_totals["Total Spent ($)"].map("${:,.2f}".format)
     st.dataframe(merchant_totals, use_container_width=True, hide_index=True)
 
+# ── Bank Deposits / Credits ───────────────────────────────────────────────────
+if not txn_credits_all.empty or (not txn_all_raw.empty and "is_debit" in txn_all_raw.columns and (txn_all_raw["is_debit"] == 0).any()):
+    st.markdown("---")
+    st.subheader("💰 Bank Deposits & Credits")
+    st.caption("Deposits and credits imported from your NFCU statement — not counted as income or spending in the charts above.")
+
+    credits_raw = txn_all_raw[txn_all_raw["is_debit"] == 0].copy() if not txn_all_raw.empty else pd.DataFrame()
+    if not credits_raw.empty:
+        credits_display = credits_raw[["date", "description", "amount", "month"]].copy()
+        credits_display = credits_display.sort_values("date", ascending=False)
+        credits_display.columns = ["Date", "Description", "Amount ($)", "Month"]
+        credits_display["Amount ($)"] = credits_display["Amount ($)"].map("${:,.2f}".format)
+        st.dataframe(credits_display, use_container_width=True, hide_index=True)
+
+        credit_by_month = credits_raw.groupby("month")["amount"].sum().reset_index()
+        credit_by_month.columns = ["Month", "Total Deposited ($)"]
+        credit_by_month["Month"] = credit_by_month["Month"].apply(
+            lambda m: datetime.strptime(m, "%Y-%m").strftime("%b %Y")
+        )
+        credit_by_month["Total Deposited ($)"] = credit_by_month["Total Deposited ($)"].map("${:,.2f}".format)
+        st.markdown("**Deposits by Month:**")
+        st.dataframe(credit_by_month, use_container_width=True, hide_index=True)
+
 # ── Month-by-Month Detail Table ───────────────────────────────────────────────
 st.markdown("---")
 with st.expander("🗂️ View Month-by-Month Detail"):
@@ -169,9 +232,9 @@ with st.expander("🗂️ View Month-by-Month Detail"):
 
     styled = display.style \
         .format({
-            "Income":          "${:,.2f}",
-            "Spent":           "${:,.2f}",
-            "Savings":         "${:,.2f}",
+            "Income":           "${:,.2f}",
+            "Spent":            "${:,.2f}",
+            "Savings":          "${:,.2f}",
             "Savings Rate (%)": "{:.1f}%",
         }) \
         .map(color_savings, subset=["Savings", "Savings Rate (%)"])
@@ -193,20 +256,23 @@ else:
         lines.append("=== OVERALL FINANCIAL SUMMARY ===")
         lines.append(f"Months of data: {len(trends)}")
         lines.append(f"Total income across all months: ${trends['income'].sum():,.2f}")
-        lines.append(f"Total spending across all months: ${trends['spent'].sum():,.2f}")
+        lines.append(f"Total spending (debits) across all months: ${trends['spent'].sum():,.2f}")
         lines.append(f"Total saved: ${trends['savings'].sum():,.2f}")
         if not pd.isna(avg_sr):
             lines.append(f"Average monthly savings rate: {avg_sr:.1f}%")
+        if total_deposited > 0:
+            lines.append(f"Total bank deposits/credits imported (not counted as income): ${total_deposited:,.2f}")
         lines.append("")
 
         # Month-by-month breakdown
         lines.append("=== MONTH-BY-MONTH BREAKDOWN ===")
         for _, row in trends.iterrows():
             sr = f"{row['savings_rate']:.1f}%" if not pd.isna(row['savings_rate']) else "N/A"
+            dep_note = f", Bank Deposits=${row['deposited']:,.2f}" if row.get('deposited', 0) > 0 else ""
             lines.append(
                 f"{row['month_label']}: Income=${row['income']:,.2f}, "
                 f"Spent=${row['spent']:,.2f}, Saved=${row['savings']:,.2f}, "
-                f"Savings Rate={sr}"
+                f"Savings Rate={sr}{dep_note}"
             )
         lines.append("")
 
@@ -228,7 +294,7 @@ else:
                     lines.append(f"  {row['category']}: ${row['spent']:,.2f}")
             lines.append("")
 
-        # Top merchants
+        # Top merchants (debits only)
         if not txn_raw.empty:
             lines.append("=== TOP 15 MERCHANTS BY TOTAL SPEND ===")
             top_merchants = (
@@ -241,16 +307,25 @@ else:
                 lines.append(f"  {merchant}: ${row['sum']:,.2f} ({int(row['count'])} transactions)")
             lines.append("")
 
-            # Recent transactions (last 30)
-            lines.append("=== RECENT TRANSACTIONS (LAST 30) ===")
+            # Recent debit transactions (last 30)
+            lines.append("=== RECENT EXPENSES (LAST 30) ===")
             recent = txn_raw.head(30)
             for _, row in recent.iterrows():
                 cat_label = f" [{row['category']}]" if pd.notna(row.get('category')) and row.get('category') else ""
                 lines.append(f"  {row['date']} | {row['description']}{cat_label} | ${row['amount']:,.2f}")
 
+        # Bank deposits/credits context
+        if not txn_all_raw.empty and "is_debit" in txn_all_raw.columns:
+            credits_ctx = txn_all_raw[txn_all_raw["is_debit"] == 0]
+            if not credits_ctx.empty:
+                lines.append("")
+                lines.append("=== BANK DEPOSITS / CREDITS (not counted as income) ===")
+                for _, row in credits_ctx.iterrows():
+                    lines.append(f"  {row['date']} | {row['description']} | ${row['amount']:,.2f}")
+
         return "\n".join(lines)
 
-    # claude pricing
+    # Claude pricing (claude-opus-4-5)
     INPUT_COST_PER_M  = 3.00
     OUTPUT_COST_PER_M = 15.00
 
