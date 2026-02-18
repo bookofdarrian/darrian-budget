@@ -22,6 +22,15 @@ st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights",       ico
 st.title("📈 Monthly Trends")
 st.caption("Track your income, spending, and savings rate across every month you've recorded data.")
 
+# ── DEBUG: show raw DB at top so it's always visible ─────────────────────────
+with st.expander("🔍 Debug: Raw database contents", expanded=True):
+    _conn = get_conn()
+    _txn = read_sql("SELECT month, COUNT(*) as txns, SUM(amount) as total FROM bank_transactions GROUP BY month ORDER BY month", _conn)
+    _inc = read_sql("SELECT month, SUM(amount) as income FROM income GROUP BY month ORDER BY month", _conn)
+    _conn.close()
+    st.write("**bank_transactions by month:**", _txn if not _txn.empty else "EMPTY")
+    st.write("**income by month:**", _inc if not _inc.empty else "EMPTY")
+
 conn = get_conn()
 income_all  = read_sql("SELECT month, SUM(amount) AS income FROM income GROUP BY month", conn)
 expense_all = read_sql("SELECT month, SUM(projected) AS projected, SUM(actual) AS actual FROM expenses GROUP BY month", conn)
