@@ -18,6 +18,7 @@ st.sidebar.page_link("pages/4_trends.py",         label="Monthly Trends",    ico
 st.sidebar.page_link("pages/5_bank_import.py",    label="Bank Import",       icon="🏦")
 st.sidebar.page_link("pages/6_receipts.py",       label="Receipts & HSA",    icon="🧾")
 st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights",       icon="🤖")
+st.sidebar.page_link("pages/8_goals.py",          label="Financial Goals",   icon="🎯")
 
 st.title("👟 404 Sole Archive — Resale Tracker")
 

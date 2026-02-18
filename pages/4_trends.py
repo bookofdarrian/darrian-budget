@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 import anthropic
 from datetime import datetime
-from utils.db import get_conn, init_db, read_sql, get_setting
+from utils.db import get_conn, init_db, read_sql, get_setting, load_investment_context
 from utils.auth import require_password
 
 try:
@@ -28,6 +28,20 @@ if "api_key" not in st.session_state:
 
 api_key = st.session_state.get("api_key", "")
 
+# ── Load investment context (same as AI Insights page) ───────────────────────
+if "inv_loaded_from_db" not in st.session_state:
+    _saved = load_investment_context()
+    st.session_state["inv_401k"]                = float(_saved.get("bal_401k", 0) or 0)
+    st.session_state["inv_401k_contrib_ytd"]    = float(_saved.get("contrib_401k_ytd", 0) or 0)
+    st.session_state["inv_401k_employer_match"] = float(_saved.get("match_401k_ytd", 0) or 0)
+    st.session_state["inv_roth"]                = float(_saved.get("bal_roth", 0) or 0)
+    st.session_state["inv_roth_contrib_ytd"]    = float(_saved.get("contrib_roth_ytd", 0) or 0)
+    st.session_state["inv_hsa"]                 = float(_saved.get("bal_hsa", 0) or 0)
+    st.session_state["inv_hsa_contrib_ytd"]     = float(_saved.get("contrib_hsa_ytd", 0) or 0)
+    st.session_state["inv_brokerage"]           = float(_saved.get("bal_brokerage", 0) or 0)
+    st.session_state["inv_notes"]               = _saved.get("notes", "") or ""
+    st.session_state["inv_loaded_from_db"]      = True
+
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 st.sidebar.title("💰 Budget Dashboard")
 st.sidebar.markdown("---")
@@ -39,6 +53,7 @@ st.sidebar.page_link("pages/4_trends.py",         label="Monthly Trends",    ico
 st.sidebar.page_link("pages/5_bank_import.py",    label="Bank Import",       icon="🏦")
 st.sidebar.page_link("pages/6_receipts.py",       label="Receipts & HSA",    icon="🧾")
 st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights",       icon="🤖")
+st.sidebar.page_link("pages/8_goals.py",          label="Financial Goals",   icon="🎯")
 
 st.title("📈 Monthly Trends")
 st.caption("Track your income, spending, and savings across every month — powered by your Navy Federal data.")
@@ -47,9 +62,12 @@ st.caption("Track your income, spending, and savings across every month — powe
 conn = get_conn()
 income_all = read_sql("SELECT month, SUM(amount) AS income FROM income GROUP BY month", conn)
 
-# Debits only (expenses) — is_debit=1 or NULL (legacy rows before the column existed default to debit)
+# Debits only, excluding transfers — is_debit=1 or NULL, category != 'Transfer'
 txn_all = read_sql(
-    "SELECT month, SUM(amount) AS spent FROM bank_transactions WHERE is_debit = 1 OR is_debit IS NULL GROUP BY month",
+    """SELECT month, SUM(amount) AS spent FROM bank_transactions
+       WHERE (is_debit = 1 OR is_debit IS NULL)
+         AND (category IS NULL OR category != 'Transfer')
+       GROUP BY month""",
     conn
 )
 
@@ -59,30 +77,38 @@ txn_credits_all = read_sql(
     conn
 )
 
-# Raw debit transactions for merchant analysis
+# Transfers — for separate display
+txn_transfers_all = read_sql(
+    """SELECT month, SUM(amount) AS transferred FROM bank_transactions
+       WHERE category = 'Transfer'
+       GROUP BY month""",
+    conn
+)
+
+# Raw debit transactions (non-transfer) for merchant analysis
 txn_raw = read_sql(
     """SELECT month, date, description, amount, category, is_debit
        FROM bank_transactions
-       WHERE is_debit = 1 OR is_debit IS NULL
+       WHERE (is_debit = 1 OR is_debit IS NULL)
+         AND (category IS NULL OR category != 'Transfer')
        ORDER BY date DESC""",
     conn
 )
 
-# Category breakdown — debits only
+# Category breakdown — debits only, no transfers
 txn_cat_all = read_sql(
     """SELECT month, category, SUM(amount) AS spent
        FROM bank_transactions
        WHERE (is_debit = 1 OR is_debit IS NULL)
          AND category IS NOT NULL AND category != ''
+         AND category != 'Transfer'
        GROUP BY month, category""",
     conn
 )
 
-# All transactions (debits + credits) for the AI context
+# All transactions for AI context
 txn_all_raw = read_sql(
-    """SELECT month, date, description, amount, category, is_debit
-       FROM bank_transactions
-       ORDER BY date DESC""",
+    "SELECT month, date, description, amount, category, is_debit FROM bank_transactions ORDER BY date DESC",
     conn
 )
 conn.close()
@@ -111,11 +137,15 @@ if not txn_all.empty:
 else:
     trends["spent"] = 0.0
 
-# Merge in bank deposits (credits) if any exist
 if not txn_credits_all.empty:
     trends = pd.merge(trends, txn_credits_all, on="month", how="left")
 else:
     trends["deposited"] = 0.0
+
+if not txn_transfers_all.empty:
+    trends = pd.merge(trends, txn_transfers_all, on="month", how="left")
+else:
+    trends["transferred"] = 0.0
 
 trends = trends.fillna(0)
 trends["savings"]      = trends["income"] - trends["spent"]
@@ -123,19 +153,25 @@ trends["savings_rate"] = (trends["savings"] / trends["income"].replace(0, float(
 trends["month_label"]  = trends["month"].apply(lambda m: datetime.strptime(m, "%Y-%m").strftime("%b %Y"))
 trends = trends.sort_values("month").reset_index(drop=True)
 
+total_deposited   = trends["deposited"].sum()
+total_transferred = trends["transferred"].sum()
+
 # ── All-Time KPIs ─────────────────────────────────────────────────────────────
 st.subheader("📊 All-Time Summary")
 k1, k2, k3, k4 = st.columns(4)
-k1.metric("Total Income",      f"${trends['income'].sum():,.2f}")
-k2.metric("Total Spent",       f"${trends['spent'].sum():,.2f}")
-k3.metric("Total Saved",       f"${trends['savings'].sum():,.2f}")
+k1.metric("Total Income",    f"${trends['income'].sum():,.2f}")
+k2.metric("Total Spent",     f"${trends['spent'].sum():,.2f}")
+k3.metric("Total Saved",     f"${trends['savings'].sum():,.2f}")
 avg_sr = trends["savings_rate"].replace([float("inf"), float("-inf")], float("nan")).mean()
-k4.metric("Avg Savings Rate",  f"{avg_sr:.1f}%" if not pd.isna(avg_sr) else "—")
+k4.metric("Avg Savings Rate", f"{avg_sr:.1f}%" if not pd.isna(avg_sr) else "—")
 
-# Show bank deposits row if any credits were imported
-total_deposited = trends["deposited"].sum()
+notes = []
 if total_deposited > 0:
-    st.caption(f"💰 Bank deposits/credits imported: **${total_deposited:,.2f}** (shown separately — not counted as income or spending)")
+    notes.append(f"💰 Bank deposits: **${total_deposited:,.2f}** (not counted as income)")
+if total_transferred > 0:
+    notes.append(f"🔄 Transfers (credit cards, Fidelity, etc.): **${total_transferred:,.2f}** (excluded from spending)")
+if notes:
+    st.caption("  ·  ".join(notes))
 
 st.markdown("---")
 
@@ -147,33 +183,25 @@ st.bar_chart(chart_df, use_container_width=True)
 
 st.markdown("---")
 st.subheader("💰 Monthly Savings")
-savings_chart = trends.set_index("month_label")[["savings"]].copy()
-savings_chart.columns = ["Savings"]
-st.line_chart(savings_chart, use_container_width=True)
+st.line_chart(trends.set_index("month_label")[["savings"]].rename(columns={"savings": "Savings"}), use_container_width=True)
 
 st.markdown("---")
 st.subheader("📉 Savings Rate % by Month")
-sr_chart = trends.set_index("month_label")[["savings_rate"]].copy()
-sr_chart.columns = ["Savings Rate (%)"]
-st.line_chart(sr_chart, use_container_width=True)
+st.line_chart(trends.set_index("month_label")[["savings_rate"]].rename(columns={"savings_rate": "Savings Rate (%)"}), use_container_width=True)
 
 # ── Category Breakdown ────────────────────────────────────────────────────────
 st.markdown("---")
 st.subheader("🏷️ Spending by Category")
 
 if not txn_cat_all.empty:
-    cat_pivot = txn_cat_all.pivot_table(
-        index="month", columns="category", values="spent", aggfunc="sum"
-    ).fillna(0)
+    cat_pivot = txn_cat_all.pivot_table(index="month", columns="category", values="spent", aggfunc="sum").fillna(0)
     cat_pivot.index = cat_pivot.index.map(lambda m: datetime.strptime(m, "%Y-%m").strftime("%b %Y"))
     st.bar_chart(cat_pivot, use_container_width=True)
 
-    # Category totals across all time
     cat_totals = txn_cat_all.groupby("category")["spent"].sum().sort_values(ascending=False).reset_index()
     cat_totals.columns = ["Category", "Total Spent ($)"]
     cat_totals["Total Spent ($)"] = cat_totals["Total Spent ($)"].map("${:,.2f}".format)
-
-    col_a, col_b = st.columns([1, 1])
+    col_a, _ = st.columns([1, 1])
     with col_a:
         st.markdown("**All-Time Category Totals**")
         st.dataframe(cat_totals, use_container_width=True, hide_index=True)
@@ -183,41 +211,25 @@ else:
 # ── Top Merchants ─────────────────────────────────────────────────────────────
 st.markdown("---")
 st.subheader("🏪 Top Merchants (All Time)")
-
 if not txn_raw.empty:
     merchant_totals = (
-        txn_raw.groupby("description")["amount"]
-        .agg(["sum", "count"])
-        .reset_index()
+        txn_raw.groupby("description")["amount"].agg(["sum", "count"]).reset_index()
         .rename(columns={"description": "Merchant", "sum": "Total Spent ($)", "count": "# Transactions"})
-        .sort_values("Total Spent ($)", ascending=False)
-        .head(20)
+        .sort_values("Total Spent ($)", ascending=False).head(20)
     )
     merchant_totals["Total Spent ($)"] = merchant_totals["Total Spent ($)"].map("${:,.2f}".format)
     st.dataframe(merchant_totals, use_container_width=True, hide_index=True)
 
 # ── Bank Deposits / Credits ───────────────────────────────────────────────────
-if not txn_credits_all.empty or (not txn_all_raw.empty and "is_debit" in txn_all_raw.columns and (txn_all_raw["is_debit"] == 0).any()):
+if not txn_all_raw.empty and "is_debit" in txn_all_raw.columns and (txn_all_raw["is_debit"] == 0).any():
     st.markdown("---")
     st.subheader("💰 Bank Deposits & Credits")
-    st.caption("Deposits and credits imported from your NFCU statement — not counted as income or spending in the charts above.")
-
-    credits_raw = txn_all_raw[txn_all_raw["is_debit"] == 0].copy() if not txn_all_raw.empty else pd.DataFrame()
-    if not credits_raw.empty:
-        credits_display = credits_raw[["date", "description", "amount", "month"]].copy()
-        credits_display = credits_display.sort_values("date", ascending=False)
-        credits_display.columns = ["Date", "Description", "Amount ($)", "Month"]
-        credits_display["Amount ($)"] = credits_display["Amount ($)"].map("${:,.2f}".format)
-        st.dataframe(credits_display, use_container_width=True, hide_index=True)
-
-        credit_by_month = credits_raw.groupby("month")["amount"].sum().reset_index()
-        credit_by_month.columns = ["Month", "Total Deposited ($)"]
-        credit_by_month["Month"] = credit_by_month["Month"].apply(
-            lambda m: datetime.strptime(m, "%Y-%m").strftime("%b %Y")
-        )
-        credit_by_month["Total Deposited ($)"] = credit_by_month["Total Deposited ($)"].map("${:,.2f}".format)
-        st.markdown("**Deposits by Month:**")
-        st.dataframe(credit_by_month, use_container_width=True, hide_index=True)
+    st.caption("Payroll deposits and other credits from your NFCU statement — not counted as income or spending.")
+    credits_raw = txn_all_raw[txn_all_raw["is_debit"] == 0].copy()
+    credits_display = credits_raw[["date", "description", "amount", "month"]].sort_values("date", ascending=False).copy()
+    credits_display.columns = ["Date", "Description", "Amount ($)", "Month"]
+    credits_display["Amount ($)"] = credits_display["Amount ($)"].map("${:,.2f}".format)
+    st.dataframe(credits_display, use_container_width=True, hide_index=True)
 
 # ── Month-by-Month Detail Table ───────────────────────────────────────────────
 st.markdown("---")
@@ -230,14 +242,10 @@ with st.expander("🗂️ View Month-by-Month Detail"):
             return "color: #21c354" if val >= 0 else "color: #ff4b4b"
         return ""
 
-    styled = display.style \
-        .format({
-            "Income":           "${:,.2f}",
-            "Spent":            "${:,.2f}",
-            "Savings":          "${:,.2f}",
-            "Savings Rate (%)": "{:.1f}%",
-        }) \
-        .map(color_savings, subset=["Savings", "Savings Rate (%)"])
+    styled = display.style.format({
+        "Income": "${:,.2f}", "Spent": "${:,.2f}",
+        "Savings": "${:,.2f}", "Savings Rate (%)": "{:.1f}%",
+    }).map(color_savings, subset=["Savings", "Savings Rate (%)"])
     st.dataframe(styled, use_container_width=True, hide_index=True)
 
 # ── AI Spending Insights ──────────────────────────────────────────────────────
@@ -248,84 +256,112 @@ st.caption("Claude analyzes your Navy Federal transaction history and gives you 
 if not api_key:
     st.warning("🔑 No API key found. Add your Anthropic key on the **AI Insights** page to unlock this feature.")
 else:
-    # Build rich context from all available data
+    def build_investment_context_str() -> str:
+        inv_401k               = st.session_state.get("inv_401k", 0)
+        inv_401k_contrib_ytd   = st.session_state.get("inv_401k_contrib_ytd", 0)
+        inv_401k_employer_match = st.session_state.get("inv_401k_employer_match", 0)
+        inv_roth               = st.session_state.get("inv_roth", 0)
+        inv_roth_contrib_ytd   = st.session_state.get("inv_roth_contrib_ytd", 0)
+        inv_hsa                = st.session_state.get("inv_hsa", 0)
+        inv_hsa_contrib_ytd    = st.session_state.get("inv_hsa_contrib_ytd", 0)
+        inv_brokerage          = st.session_state.get("inv_brokerage", 0)
+        inv_notes              = st.session_state.get("inv_notes", "")
+        if not any([inv_401k, inv_roth, inv_hsa, inv_brokerage]):
+            return ""
+        total_inv = inv_401k + inv_roth + inv_hsa + inv_brokerage
+        lines = [
+            "",
+            "=== INVESTMENT & RETIREMENT ACCOUNTS (Fidelity / external) ===",
+            f"Total Investment Portfolio: ${total_inv:,.2f}",
+        ]
+        if inv_401k > 0:
+            lines.append(f"  401(k) Balance: ${inv_401k:,.2f}")
+            if inv_401k_contrib_ytd > 0:
+                lines.append(f"    YTD Employee Contributions: ${inv_401k_contrib_ytd:,.2f} (2025 limit: $23,500)")
+            if inv_401k_employer_match > 0:
+                lines.append(f"    YTD Employer Match: ${inv_401k_employer_match:,.2f}")
+        if inv_roth > 0:
+            lines.append(f"  Roth IRA Balance: ${inv_roth:,.2f}")
+            if inv_roth_contrib_ytd > 0:
+                remaining = max(0, 7000 - inv_roth_contrib_ytd)
+                lines.append(f"    YTD Contributions: ${inv_roth_contrib_ytd:,.2f} (limit $7,000 — ${remaining:,.2f} remaining)")
+        if inv_hsa > 0:
+            lines.append(f"  HSA Balance: ${inv_hsa:,.2f}")
+            if inv_hsa_contrib_ytd > 0:
+                remaining = max(0, 4300 - inv_hsa_contrib_ytd)
+                lines.append(f"    YTD Contributions: ${inv_hsa_contrib_ytd:,.2f} (limit $4,300 — ${remaining:,.2f} remaining)")
+        if inv_brokerage > 0:
+            lines.append(f"  Cash Management / High Yield: ${inv_brokerage:,.2f}")
+        if inv_notes.strip():
+            lines.append(f"  Notes: {inv_notes.strip()}")
+        return "\n".join(lines)
+
     def build_trends_context() -> str:
         lines = []
+        lines.append("=== IMPORTANT CONTEXT ===")
+        lines.append("- 'Visa Technology Payroll' deposits ARE the user's primary income (bi-weekly paycheck)")
+        lines.append("- 'ACH Paid To Darrian Belcher' = transfers to user's own Fidelity/savings accounts, NOT payments to another person")
+        lines.append("- 'Transfer To Credit Card' = credit card payments, NOT discretionary spending")
+        lines.append("- Transfers have been excluded from the spending totals below")
+        lines.append("- Zelle transactions are categorized as 'Gardening' (side income/expense)")
+        lines.append("")
 
-        # Overall summary
         lines.append("=== OVERALL FINANCIAL SUMMARY ===")
         lines.append(f"Months of data: {len(trends)}")
-        lines.append(f"Total income across all months: ${trends['income'].sum():,.2f}")
-        lines.append(f"Total spending (debits) across all months: ${trends['spent'].sum():,.2f}")
+        lines.append(f"Total income (manual entries): ${trends['income'].sum():,.2f}")
+        lines.append(f"Total spending (debits, transfers excluded): ${trends['spent'].sum():,.2f}")
         lines.append(f"Total saved: ${trends['savings'].sum():,.2f}")
         if not pd.isna(avg_sr):
             lines.append(f"Average monthly savings rate: {avg_sr:.1f}%")
         if total_deposited > 0:
-            lines.append(f"Total bank deposits/credits imported (not counted as income): ${total_deposited:,.2f}")
+            lines.append(f"Total payroll/bank deposits (NFCU credits, not in income table): ${total_deposited:,.2f}")
+        if total_transferred > 0:
+            lines.append(f"Total transfers (credit card payments, account transfers): ${total_transferred:,.2f}")
         lines.append("")
 
-        # Month-by-month breakdown
         lines.append("=== MONTH-BY-MONTH BREAKDOWN ===")
         for _, row in trends.iterrows():
             sr = f"{row['savings_rate']:.1f}%" if not pd.isna(row['savings_rate']) else "N/A"
-            dep_note = f", Bank Deposits=${row['deposited']:,.2f}" if row.get('deposited', 0) > 0 else ""
-            lines.append(
-                f"{row['month_label']}: Income=${row['income']:,.2f}, "
-                f"Spent=${row['spent']:,.2f}, Saved=${row['savings']:,.2f}, "
-                f"Savings Rate={sr}{dep_note}"
-            )
+            dep = f", Payroll Deposits=${row['deposited']:,.2f}" if row.get('deposited', 0) > 0 else ""
+            xfr = f", Transfers=${row['transferred']:,.2f}" if row.get('transferred', 0) > 0 else ""
+            lines.append(f"{row['month_label']}: Income=${row['income']:,.2f}, Spent=${row['spent']:,.2f}, Saved=${row['savings']:,.2f}, Rate={sr}{dep}{xfr}")
         lines.append("")
 
-        # Category breakdown
         if not txn_cat_all.empty:
-            lines.append("=== SPENDING BY CATEGORY (ALL TIME) ===")
+            lines.append("=== SPENDING BY CATEGORY (ALL TIME, TRANSFERS EXCLUDED) ===")
             cat_summary = txn_cat_all.groupby("category")["spent"].sum().sort_values(ascending=False)
             for cat, total in cat_summary.items():
                 lines.append(f"  {cat}: ${total:,.2f}")
             lines.append("")
 
-            # Category by month
-            lines.append("=== CATEGORY SPENDING BY MONTH ===")
-            for month_val in sorted(txn_cat_all["month"].unique()):
-                month_data = txn_cat_all[txn_cat_all["month"] == month_val]
-                label = datetime.strptime(month_val, "%Y-%m").strftime("%b %Y")
-                lines.append(f"{label}:")
-                for _, row in month_data.sort_values("spent", ascending=False).iterrows():
-                    lines.append(f"  {row['category']}: ${row['spent']:,.2f}")
-            lines.append("")
-
-        # Top merchants (debits only)
         if not txn_raw.empty:
             lines.append("=== TOP 15 MERCHANTS BY TOTAL SPEND ===")
-            top_merchants = (
-                txn_raw.groupby("description")["amount"]
-                .agg(["sum", "count"])
-                .sort_values("sum", ascending=False)
-                .head(15)
-            )
+            top_merchants = txn_raw.groupby("description")["amount"].agg(["sum", "count"]).sort_values("sum", ascending=False).head(15)
             for merchant, row in top_merchants.iterrows():
                 lines.append(f"  {merchant}: ${row['sum']:,.2f} ({int(row['count'])} transactions)")
             lines.append("")
 
-            # Recent debit transactions (last 30)
-            lines.append("=== RECENT EXPENSES (LAST 30) ===")
-            recent = txn_raw.head(30)
-            for _, row in recent.iterrows():
+            lines.append("=== RECENT EXPENSES (LAST 30, TRANSFERS EXCLUDED) ===")
+            for _, row in txn_raw.head(30).iterrows():
                 cat_label = f" [{row['category']}]" if pd.notna(row.get('category')) and row.get('category') else ""
                 lines.append(f"  {row['date']} | {row['description']}{cat_label} | ${row['amount']:,.2f}")
 
-        # Bank deposits/credits context
+        # Payroll deposits
         if not txn_all_raw.empty and "is_debit" in txn_all_raw.columns:
             credits_ctx = txn_all_raw[txn_all_raw["is_debit"] == 0]
             if not credits_ctx.empty:
                 lines.append("")
-                lines.append("=== BANK DEPOSITS / CREDITS (not counted as income) ===")
+                lines.append("=== PAYROLL / BANK DEPOSITS (NFCU credits) ===")
                 for _, row in credits_ctx.iterrows():
                     lines.append(f"  {row['date']} | {row['description']} | ${row['amount']:,.2f}")
 
+        # Investment context
+        inv_str = build_investment_context_str()
+        if inv_str:
+            lines.append(inv_str)
+
         return "\n".join(lines)
 
-    # Claude pricing (claude-opus-4-5)
     INPUT_COST_PER_M  = 3.00
     OUTPUT_COST_PER_M = 15.00
 
@@ -342,7 +378,7 @@ else:
                     f"Here is the complete financial data:\n\n{context}\n\n"
                     f"User request: {prompt}\n\n"
                     "FORMATTING RULES:\n"
-                    "- Write dollar amounts as 'USD X.XX' or '$X.XX' — avoid the raw dollar sign where possible\n"
+                    "- Write dollar amounts as 'USD X.XX' or '$X.XX'\n"
                     "- Use plain dashes (-) for bullet points\n"
                     "- No markdown headers (no # or **bold**)\n"
                     "- Be specific with numbers from the actual data\n"
@@ -350,13 +386,8 @@ else:
                 )}]
             )
             usage = message.usage
-            cost = (usage.input_tokens / 1_000_000 * INPUT_COST_PER_M) + \
-                   (usage.output_tokens / 1_000_000 * OUTPUT_COST_PER_M)
-            return message.content[0].text, {
-                "input_tokens":  usage.input_tokens,
-                "output_tokens": usage.output_tokens,
-                "cost_usd":      cost,
-            }
+            cost = (usage.input_tokens / 1_000_000 * INPUT_COST_PER_M) + (usage.output_tokens / 1_000_000 * OUTPUT_COST_PER_M)
+            return message.content[0].text, {"input_tokens": usage.input_tokens, "output_tokens": usage.output_tokens, "cost_usd": cost}
         except anthropic.AuthenticationError:
             return "❌ Invalid API key. Check your key on the AI Insights page.", {}
         except anthropic.RateLimitError:
@@ -365,8 +396,7 @@ else:
             return f"❌ Error: {e}", {}
 
     def render_ai_response(text: str):
-        cleaned = text.replace("$", "＄")
-        st.text(cleaned)
+        st.text(text.replace("$", "＄"))
 
     def show_usage(usage_info: dict):
         if not usage_info:
@@ -377,23 +407,27 @@ else:
             c2.metric("Output tokens", f"{usage_info['output_tokens']:,}")
             c3.metric("Cost",          f"${usage_info['cost_usd']:.4f}")
 
+    # Show investment context status
+    _any_inv = any([st.session_state.get("inv_401k", 0), st.session_state.get("inv_roth", 0),
+                    st.session_state.get("inv_hsa", 0), st.session_state.get("inv_brokerage", 0)])
+    if _any_inv:
+        total_inv = sum([st.session_state.get(k, 0) for k in ["inv_401k", "inv_roth", "inv_hsa", "inv_brokerage"]])
+        st.info(f"📈 Investment context active — **${total_inv:,.2f}** tracked across 401k/Roth/HSA/Cash. Claude will include this in all analyses. Update balances on the **AI Insights** page.")
+    else:
+        st.caption("💡 Add your 401k/Roth IRA/HSA balances on the **AI Insights** page to include them in Claude's analysis.")
+
     context = build_trends_context()
 
-    # ── Insight Buttons ───────────────────────────────────────────────────────
     st.markdown("**Quick Insights — click any to generate:**")
-
     col1, col2 = st.columns(2)
 
     with col1:
         if st.button("🔍 Analyze My Spending Habits", type="primary", use_container_width=True, key="btn_habits"):
             with st.spinner("Claude is analyzing your spending patterns..."):
                 response, usage = ask_claude_trends(
-                    "Analyze my overall spending habits across all months. "
-                    "What are my biggest spending categories? Where am I spending the most money? "
-                    "Are there any concerning patterns or trends month-over-month? "
-                    "What does my spending say about my financial priorities?",
-                    context
-                )
+                    "Analyze my overall spending habits across all months. What are my biggest spending categories? "
+                    "Where am I spending the most money? Are there any concerning patterns or trends month-over-month? "
+                    "What does my spending say about my financial priorities?", context)
             st.markdown("#### 🔍 Spending Habits Analysis")
             render_ai_response(response)
             show_usage(usage)
@@ -401,11 +435,9 @@ else:
         if st.button("📉 Where Am I Overspending?", type="secondary", use_container_width=True, key="btn_over"):
             with st.spinner("Finding overspending patterns..."):
                 response, usage = ask_claude_trends(
-                    "Look at my spending data and identify where I'm likely overspending or where my money is "
-                    "going that might surprise me. Call out specific merchants or categories that stand out. "
-                    "Give me 3-5 specific, actionable things I could cut back on with estimated savings.",
-                    context
-                )
+                    "Look at my spending data and identify where I'm likely overspending. "
+                    "Call out specific merchants or categories that stand out. "
+                    "Give me 3-5 specific, actionable things I could cut back on with estimated savings.", context)
             st.markdown("#### 📉 Overspending Analysis")
             render_ai_response(response)
             show_usage(usage)
@@ -414,10 +446,7 @@ else:
             with st.spinner("Analyzing merchant spending..."):
                 response, usage = ask_claude_trends(
                     "Break down my top merchants by spending. Which merchants am I visiting most frequently "
-                    "and spending the most at? Are there any subscriptions or recurring charges I should review? "
-                    "Any merchants that seem excessive given the frequency or amount?",
-                    context
-                )
+                    "and spending the most at? Any subscriptions or recurring charges I should review?", context)
             st.markdown("#### 🏪 Merchant Analysis")
             render_ai_response(response)
             show_usage(usage)
@@ -427,10 +456,7 @@ else:
             with st.spinner("Analyzing monthly trends..."):
                 response, usage = ask_claude_trends(
                     "Compare my spending month-over-month. Which months were my best and worst financially? "
-                    "Is my spending trending up or down over time? What's driving the changes between months? "
-                    "What's my savings trajectory looking like?",
-                    context
-                )
+                    "Is my spending trending up or down? What's driving the changes? What's my savings trajectory?", context)
             st.markdown("#### 📈 Month-Over-Month Analysis")
             render_ai_response(response)
             show_usage(usage)
@@ -439,10 +465,8 @@ else:
             with st.spinner("Generating personalized tips..."):
                 response, usage = ask_claude_trends(
                     "Based on my actual spending data, give me 5 specific, personalized tips to improve my savings rate. "
-                    "Reference real merchants and categories from my data — not generic advice. "
-                    "For each tip, estimate how much I could save per month if I followed it.",
-                    context
-                )
+                    "Reference real merchants and categories — not generic advice. "
+                    "For each tip, estimate how much I could save per month.", context)
             st.markdown("#### 💡 Personalized Savings Tips")
             render_ai_response(response)
             show_usage(usage)
@@ -450,24 +474,20 @@ else:
         if st.button("🎯 Financial Health Score", type="secondary", use_container_width=True, key="btn_score"):
             with st.spinner("Calculating your financial health..."):
                 response, usage = ask_claude_trends(
-                    "Give me an honest financial health assessment based on my spending data. "
-                    "Score me on: savings rate, spending discipline, category balance, and overall trajectory. "
+                    "Give me an honest financial health assessment. Score me on: savings rate, spending discipline, "
+                    "category balance, investment progress, and overall trajectory. "
                     "Be direct — what am I doing well and what needs immediate attention? "
-                    "End with one concrete action I should take this week.",
-                    context
-                )
+                    "End with one concrete action I should take this week.", context)
             st.markdown("#### 🎯 Financial Health Assessment")
             render_ai_response(response)
             show_usage(usage)
 
-    # ── Custom Question ───────────────────────────────────────────────────────
     st.markdown("---")
     st.markdown("**Ask a custom question about your spending trends:**")
     custom_q = st.text_area(
         "Your question",
-        placeholder="e.g. 'How much did I spend on food across all months?' or 'Which month was my worst for discretionary spending?'",
-        height=80,
-        label_visibility="collapsed"
+        placeholder="e.g. 'How much did I spend on food across all months?' or 'Am I on track with my Roth IRA contributions?'",
+        height=80, label_visibility="collapsed"
     )
     if st.button("Ask Claude", type="primary", key="btn_custom_ask") and custom_q.strip():
         with st.spinner("Thinking..."):

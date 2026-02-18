@@ -156,6 +156,29 @@ def init_db():
             notes TEXT DEFAULT \'\',
             updated_at TEXT DEFAULT (to_char(now(), \'YYYY-MM-DD HH24:MI:SS\'))
         )''')
+
+        c.execute('''CREATE TABLE IF NOT EXISTS financial_goals (
+            id SERIAL PRIMARY KEY,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT \'\',
+            goal_type TEXT DEFAULT \'savings\',
+            target_amount REAL DEFAULT 0,
+            current_amount REAL DEFAULT 0,
+            target_date TEXT,
+            period TEXT DEFAULT \'yearly\',
+            category TEXT DEFAULT \'\',
+            status TEXT DEFAULT \'active\',
+            sort_order INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (to_char(now(), \'YYYY-MM-DD HH24:MI:SS\'))
+        )''')
+
+        c.execute('''CREATE TABLE IF NOT EXISTS goal_checklist (
+            id SERIAL PRIMARY KEY,
+            goal_id INTEGER REFERENCES financial_goals(id) ON DELETE CASCADE,
+            item TEXT NOT NULL,
+            completed INTEGER DEFAULT 0,
+            sort_order INTEGER DEFAULT 0
+        )''')
     else:
         c.execute('''CREATE TABLE IF NOT EXISTS income (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -237,6 +260,29 @@ def init_db():
             bal_brokerage REAL DEFAULT 0,
             notes TEXT DEFAULT '',
             updated_at TEXT DEFAULT (datetime('now'))
+        )''')
+
+        c.execute('''CREATE TABLE IF NOT EXISTS financial_goals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            goal_type TEXT DEFAULT 'savings',
+            target_amount REAL DEFAULT 0,
+            current_amount REAL DEFAULT 0,
+            target_date TEXT,
+            period TEXT DEFAULT 'yearly',
+            category TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            sort_order INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now'))
+        )''')
+
+        c.execute('''CREATE TABLE IF NOT EXISTS goal_checklist (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            goal_id INTEGER REFERENCES financial_goals(id),
+            item TEXT NOT NULL,
+            completed INTEGER DEFAULT 0,
+            sort_order INTEGER DEFAULT 0
         )''')
 
     # ── Migrations: add columns to existing tables if missing ────────────────

@@ -6,6 +6,24 @@ from utils.db import get_conn, init_db, read_sql, execute, fetchone
 from utils.nfcu_parser import parse_nfcu_pdf
 from utils.auth import require_password
 
+
+# ── Auto-categorization rules ─────────────────────────────────────────────────
+# Transfers — money moving between accounts, not true expenses
+_TRANSFER_KEYWORDS = [
+    'transfer to', 'transfer from', 'fidelity', 'cashapp', 'cash app',
+    'ach paid to darrian', 'zelle db darrian', 'venmo',
+]
+
+def _auto_category(description: str) -> tuple[str | None, str | None]:
+    """Return (category, subcategory) based on description keywords, or (None, None)."""
+    desc_lower = description.lower()
+    if 'zelle' in desc_lower:
+        return ('Gardening', 'Gardening')
+    if any(k in desc_lower for k in _TRANSFER_KEYWORDS):
+        return ('Transfer', 'Transfer')
+    return (None, None)
+
+
 st.set_page_config(page_title="Bank Import", page_icon="🏦", layout="wide")
 init_db()
 require_password()
@@ -30,6 +48,7 @@ st.sidebar.page_link("pages/4_trends.py",         label="Monthly Trends",    ico
 st.sidebar.page_link("pages/5_bank_import.py",    label="Bank Import",       icon="🏦")
 st.sidebar.page_link("pages/6_receipts.py",       label="Receipts & HSA",    icon="🧾")
 st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights",       icon="🤖")
+st.sidebar.page_link("pages/8_goals.py",          label="Financial Goals",   icon="🎯")
 
 st.title("🏦 Bank Import")
 st.caption("Upload your Navy Federal PDF statement or any bank CSV to pull in transactions. Then map each one to a budget category and apply to your actuals.")
@@ -86,13 +105,15 @@ with tab_nfcu:
                             continue
                         if not t['is_debit'] and not import_credits:
                             continue
-                        # Derive month from the transaction's actual date, not the sidebar selection
-                        txn_month = t['date'][:7]  # "YYYY-MM-DD" → "YYYY-MM"
+                        txn_month = t['date'][:7]
                         exists = fetchone(conn, "SELECT id FROM bank_transactions WHERE date=? AND description=? AND amount=?",
                                           (t['date'], t['description'], t['amount']))
                         if not exists:
-                            execute(conn, "INSERT INTO bank_transactions (month, date, description, amount, is_debit, source) VALUES (?, ?, ?, ?, ?, ?)",
-                                    (txn_month, t['date'], t['description'], t['amount'], 1 if t['is_debit'] else 0, 'nfcu_pdf'))
+                            # Auto-categorize Zelle transactions as Gardening
+                            auto_cat, auto_sub = _auto_category(t['description'])
+                            execute(conn,
+                                "INSERT INTO bank_transactions (month, date, description, amount, is_debit, category, subcategory, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                                (txn_month, t['date'], t['description'], t['amount'], 1 if t['is_debit'] else 0, auto_cat, auto_sub, 'nfcu_pdf'))
                             count += 1
                     conn.commit()
                     conn.close()
