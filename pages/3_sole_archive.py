@@ -64,6 +64,48 @@ def ebay_search_sold(query: str, client_id: str, client_secret: str, limit: int 
             "currency":  price_info.get("currency", "USD"),
             "condition": item.get("condition", ""),
             "url":       item.get("itemWebUrl", ""),
+            "source":    "eBay",
+        })
+    return results
+
+
+# ── RapidAPI Sneaker Price helpers ────────────────────────────────────────────
+def rapidapi_search_sneakers(query: str, rapidapi_key: str, limit: int = 10) -> list[dict]:
+    """
+    Search for sneaker prices using RapidAPI 'Real Time Sneaker Prices' API.
+    Returns list of {title, retail_price, stockx_price, goat_price, style_id, image_url, url}.
+    Free tier: 100 requests/month.
+    """
+    resp = requests.get(
+        "https://real-time-sneaker-prices.p.rapidapi.com/search/",
+        headers={
+            "X-RapidAPI-Key":  rapidapi_key,
+            "X-RapidAPI-Host": "real-time-sneaker-prices.p.rapidapi.com",
+        },
+        params={"query": query, "limit": str(limit)},
+        timeout=15,
+    )
+    if resp.status_code != 200:
+        return []
+
+    data = resp.json()
+    # API returns list directly or under a key
+    items = data if isinstance(data, list) else data.get("results", data.get("products", []))
+    results = []
+    for item in items:
+        # Normalize field names across API versions
+        retail  = item.get("retailPrice") or item.get("retail_price") or 0
+        stockx  = item.get("lowestResellPrice", {}).get("stockX") or item.get("stockx_price") or 0
+        goat    = item.get("lowestResellPrice", {}).get("goat")   or item.get("goat_price")   or 0
+        results.append({
+            "title":        item.get("shoeName") or item.get("name") or item.get("title") or "",
+            "style_id":     item.get("styleID")  or item.get("style_id") or "",
+            "retail_price": float(retail  or 0),
+            "stockx_price": float(stockx  or 0),
+            "goat_price":   float(goat    or 0),
+            "image_url":    item.get("thumbnail") or item.get("image") or "",
+            "url":          item.get("urlKey")    or item.get("url")   or "",
+            "source":       "RapidAPI",
         })
     return results
 
@@ -268,4 +310,84 @@ if _ebay_id and _ebay_sec:
                 }
             )
 else:
-    st.info("🔑 Add your eBay API credentials above to enable market value lookups.")
+    st.info("🔑 eBay account pending approval (1 business day). Use the RapidAPI lookup below in the meantime.")
+
+# ── RapidAPI Sneaker Price Lookup ─────────────────────────────────────────────
+st.markdown("---")
+st.subheader("📊 StockX & GOAT Price Lookup (RapidAPI)")
+st.caption("Get retail price, StockX resell price, and GOAT resell price — free tier: 100 requests/month. Works right now, no approval needed.")
+
+_rapid_key = get_setting("rapidapi_key", "")
+
+with st.expander("⚙️ RapidAPI Key Setup", expanded=not bool(_rapid_key)):
+    st.markdown("""
+**How to get your free RapidAPI key (takes 2 minutes):**
+1. Go to [rapidapi.com](https://rapidapi.com) and create a free account
+2. Search for **"Real Time Sneaker Prices"** and click **Subscribe to Test** (free tier)
+3. Copy your **X-RapidAPI-Key** from the API playground header
+4. Paste it below
+    """)
+    new_rapid = st.text_input("RapidAPI Key", value=_rapid_key, type="password", key="rapid_key_input")
+    if st.button("💾 Save RapidAPI Key", key="save_rapid"):
+        set_setting("rapidapi_key", new_rapid.strip())
+        _rapid_key = new_rapid.strip()
+        st.success("RapidAPI key saved!")
+        st.rerun()
+
+if _rapid_key:
+    col_r1, col_r2 = st.columns([3, 1])
+    with col_r1:
+        default_q2 = ""
+        if not inventory.empty:
+            default_q2 = str(inventory.iloc[0]["item"])
+        rapid_query = st.text_input(
+            "Search StockX/GOAT for sneaker",
+            value=default_q2,
+            placeholder="e.g. Jordan 1 Chicago, Yeezy 350 Zebra, Nike Dunk Low Panda",
+            key="rapid_search_q"
+        )
+    with col_r2:
+        rapid_limit = st.selectbox("Results", [5, 10], index=1, key="rapid_limit")
+
+    if st.button("📊 Search StockX & GOAT Prices", type="primary", key="rapid_search_btn") and rapid_query.strip():
+        with st.spinner(f"Fetching market prices for '{rapid_query}'..."):
+            try:
+                rapid_results = rapidapi_search_sneakers(rapid_query.strip(), _rapid_key, limit=rapid_limit)
+            except Exception as e:
+                rapid_results = []
+                st.error(f"RapidAPI error: {e}")
+
+        if not rapid_results:
+            st.warning("No results found. Try a more specific search (e.g. 'Jordan 1 Retro High OG Chicago 2015').")
+        else:
+            # Summary metrics
+            stockx_prices = [r["stockx_price"] for r in rapid_results if r["stockx_price"] > 0]
+            goat_prices   = [r["goat_price"]   for r in rapid_results if r["goat_price"]   > 0]
+            retail_prices = [r["retail_price"]  for r in rapid_results if r["retail_price"] > 0]
+
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("Results Found", len(rapid_results))
+            m2.metric("Avg Retail",  f"${sum(retail_prices)/len(retail_prices):,.2f}"  if retail_prices  else "—")
+            m3.metric("Avg StockX",  f"${sum(stockx_prices)/len(stockx_prices):,.2f}"  if stockx_prices  else "—")
+            m4.metric("Avg GOAT",    f"${sum(goat_prices)/len(goat_prices):,.2f}"       if goat_prices    else "—")
+
+            # Results table
+            rapid_df = pd.DataFrame(rapid_results)
+            display_cols = ["title", "style_id", "retail_price", "stockx_price", "goat_price"]
+            display_df = rapid_df[display_cols].copy()
+            display_df.columns = ["Sneaker", "Style ID", "Retail ($)", "StockX ($)", "GOAT ($)"]
+            display_df["Retail ($)"]  = display_df["Retail ($)"].apply(lambda x: f"${x:,.2f}" if x > 0 else "—")
+            display_df["StockX ($)"]  = display_df["StockX ($)"].apply(lambda x: f"${x:,.2f}" if x > 0 else "—")
+            display_df["GOAT ($)"]    = display_df["GOAT ($)"].apply(lambda x: f"${x:,.2f}" if x > 0 else "—")
+            st.dataframe(display_df, use_container_width=True, hide_index=True)
+
+            # Show images if available
+            imgs = [(r["title"], r["image_url"]) for r in rapid_results if r.get("image_url")]
+            if imgs:
+                st.markdown("**Sneaker Images:**")
+                img_cols = st.columns(min(len(imgs), 5))
+                for i, (name, url) in enumerate(imgs[:5]):
+                    with img_cols[i]:
+                        st.image(url, caption=name[:30], use_container_width=True)
+else:
+    st.info("🔑 Add your free RapidAPI key above to search StockX & GOAT prices instantly.")
