@@ -131,6 +131,23 @@ else:
     st.info("No category data yet.")
 
 st.markdown("---")
+with st.expander("🔍 Debug: What's in the database?", expanded=True):
+    conn = get_conn()
+    txn_months = read_sql("SELECT month, COUNT(*) as txn_count, SUM(amount) as total FROM bank_transactions GROUP BY month ORDER BY month", conn)
+    inc_months = read_sql("SELECT month, SUM(amount) as income FROM income GROUP BY month ORDER BY month", conn)
+    exp_months = read_sql("SELECT month, SUM(actual) as actual FROM expenses GROUP BY month ORDER BY month", conn)
+    conn.close()
+    st.markdown("**Bank Transactions by month:**")
+    if txn_months.empty:
+        st.warning("No bank transactions found at all!")
+    else:
+        st.dataframe(txn_months, use_container_width=True, hide_index=True)
+    st.markdown("**Income by month:**")
+    st.dataframe(inc_months, use_container_width=True, hide_index=True)
+    st.markdown("**Expenses actual by month:**")
+    st.dataframe(exp_months, use_container_width=True, hide_index=True)
+
+st.markdown("---")
 with st.expander("🗂️ View Raw Monthly Data"):
     display = trends[["month_label", "income", "projected", "actual", "savings", "savings_rate"]].copy()
     display.columns = ["Month", "Income", "Projected", "Actual Spent", "Savings", "Savings Rate (%)"]
