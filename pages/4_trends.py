@@ -96,23 +96,24 @@ txn_transfers_all = read_sql(
     conn
 )
 
-# Raw debit transactions (non-transfer) for merchant analysis
+# Raw debit transactions (non-transfer, non-gardening) for merchant/spending analysis
 txn_raw = read_sql(
     """SELECT month, date, description, amount, category, is_debit
        FROM bank_transactions
        WHERE (is_debit = 1 OR is_debit IS NULL)
-         AND (category IS NULL OR category != 'Transfer')
+         AND (category IS NULL OR (category != 'Transfer' AND category != 'Gardening'))
        ORDER BY date DESC""",
     conn
 )
 
-# Category breakdown — debits only, no transfers
+# Category breakdown — debits only, no transfers, no gardening income
 txn_cat_all = read_sql(
     """SELECT month, category, SUM(amount) AS spent
        FROM bank_transactions
        WHERE (is_debit = 1 OR is_debit IS NULL)
          AND category IS NOT NULL AND category != ''
          AND category != 'Transfer'
+         AND category != 'Gardening'
        GROUP BY month, category""",
     conn
 )
