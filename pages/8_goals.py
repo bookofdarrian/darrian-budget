@@ -91,7 +91,7 @@ def monthly_needed(current: float, target: float, target_date_str: str) -> str:
     except Exception:
         return ""
 
-def render_goal_card(goal):
+def render_goal_card(goal, tab_prefix: str = "all"):
     """Render a single goal card with progress, checklist, and edit form."""
     icon = GOAL_TYPE_ICONS.get(str(goal.get("goal_type", "other")), "🎯")
     pct = progress_pct(float(goal.get("current_amount") or 0), float(goal.get("target_amount") or 0))
@@ -139,7 +139,7 @@ def render_goal_card(goal):
                 checked = st.checkbox(
                     str(item["item"]),
                     value=bool(item["completed"]),
-                    key=f"chk_{item['id']}"
+                    key=f"chk_{tab_prefix}_{item['id']}"
                 )
                 if checked != bool(item["completed"]):
                     execute(conn, "UPDATE goal_checklist SET completed=? WHERE id=?",
@@ -147,17 +147,17 @@ def render_goal_card(goal):
                     conn.commit()
             conn.close()
 
-        # Edit / Update progress — stable key based on goal ID only
+        # Edit / Update progress — unique key per tab + goal ID
         with st.expander("✏️ Update Progress / Edit", expanded=False):
-            with st.form(key=f"edit_goal_{goal['id']}"):
+            with st.form(key=f"edit_goal_{tab_prefix}_{goal['id']}"):
                 new_current = st.number_input(
                     "Current Amount ($)",
                     value=current_amt,
                     min_value=0.0, step=50.0,
-                    key=f"cur_{goal['id']}"
+                    key=f"cur_{tab_prefix}_{goal['id']}"
                 )
-                new_desc = st.text_area("Description", value=str(goal.get("description") or ""), key=f"desc_{goal['id']}")
-                new_date = st.text_input("Target Date (YYYY-MM-DD)", value=str(goal.get("target_date") or ""), key=f"date_{goal['id']}")
+                new_desc = st.text_area("Description", value=str(goal.get("description") or ""), key=f"desc_{tab_prefix}_{goal['id']}")
+                new_date = st.text_input("Target Date (YYYY-MM-DD)", value=str(goal.get("target_date") or ""), key=f"date_{tab_prefix}_{goal['id']}")
                 col_save, col_complete, col_delete = st.columns(3)
                 save_btn     = col_save.form_submit_button("💾 Save", type="primary")
                 complete_btn = col_complete.form_submit_button("✅ Mark Complete")
@@ -263,24 +263,24 @@ with tab_all:
         st.info("No goals yet. Add your first goal in the **Add Goal** tab.")
     else:
         for _, goal in goals_df.iterrows():
-            render_goal_card(goal)
+            render_goal_card(goal, tab_prefix="all")
 
 for tab_widget, period_key in [
     (tab_yearly,    "yearly"),
     (tab_quarterly, "quarterly"),
     (tab_monthly,   "monthly"),
-    (tab_onetime,   "one-time"),
+    (tab_onetime,   "onetime"),
 ]:
     with tab_widget:
         if goals_df.empty:
             filtered = pd.DataFrame()
         else:
-            filtered = goals_df[goals_df["period"] == period_key]
+            filtered = goals_df[goals_df["period"] == period_key.replace("onetime", "one-time")]
         if filtered.empty:
             st.info(f"No {period_key} goals yet. Add one in the **Add Goal** tab.")
         else:
             for _, goal in filtered.iterrows():
-                render_goal_card(goal)
+                render_goal_card(goal, tab_prefix=period_key)
 
 # ── Add Goal Tab ──────────────────────────────────────────────────────────────
 with tab_add:
