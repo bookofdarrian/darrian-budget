@@ -115,6 +115,40 @@ if not expense_df.empty:
 else:
     st.info("No expense data yet for this month.")
 
+# ── All-Time Summary ─────────────────────────────────────────────────────────
+st.markdown("---")
+st.subheader("📊 All-Time Summary")
+
+conn = get_conn()
+all_income_df    = read_sql("SELECT SUM(amount) AS total FROM income", conn)
+all_deposits_df  = read_sql("SELECT SUM(amount) AS total FROM bank_transactions WHERE is_debit = 0", conn)
+all_spent_df     = read_sql(
+    "SELECT SUM(amount) AS total FROM bank_transactions WHERE (is_debit = 1 OR is_debit IS NULL) AND (category IS NULL OR category != 'Transfer')",
+    conn
+)
+conn.close()
+
+at_income_manual = float(all_income_df["total"].iloc[0] or 0)
+at_deposits      = float(all_deposits_df["total"].iloc[0] or 0)
+at_income_total  = at_income_manual + at_deposits
+at_spent         = float(all_spent_df["total"].iloc[0] or 0)
+at_saved         = at_income_total - at_spent
+
+at1, at2, at3 = st.columns(3)
+at1.metric("💵 All-Time Income",  f"${at_income_total:,.2f}",
+           help="Manual income entries + all bank payroll/deposit credits")
+at2.metric("💳 All-Time Spent",   f"${at_spent:,.2f}",
+           help="All bank debits, transfers excluded")
+at3.metric("🏦 All-Time Saved",   f"${at_saved:,.2f}")
+
+_notes = []
+if at_income_manual > 0:
+    _notes.append(f"📋 Manual entries: **${at_income_manual:,.2f}**")
+if at_deposits > 0:
+    _notes.append(f"💰 Bank payroll/deposits: **${at_deposits:,.2f}**")
+if _notes:
+    st.caption("  ·  ".join(_notes))
+
 # ── Budget health ────────────────────────────────────────────────────────────
 st.markdown("---")
 st.subheader("Budget Health")
