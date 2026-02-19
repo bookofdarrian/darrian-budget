@@ -173,6 +173,54 @@ if total_transferred > 0:
 if notes:
     st.caption("  ·  ".join(notes))
 
+# ── Investment Portfolio Snapshot ─────────────────────────────────────────────
+_inv_401k      = st.session_state.get("inv_401k", 0)
+_inv_roth      = st.session_state.get("inv_roth", 0)
+_inv_hsa       = st.session_state.get("inv_hsa", 0)
+_inv_brokerage = st.session_state.get("inv_brokerage", 0)
+_any_inv = any([_inv_401k, _inv_roth, _inv_hsa, _inv_brokerage])
+
+if _any_inv:
+    st.markdown("---")
+    st.subheader("📈 Investment Portfolio")
+    total_inv = _inv_401k + _inv_roth + _inv_hsa + _inv_brokerage
+    i1, i2, i3, i4, i5 = st.columns(5)
+    i1.metric("Total Portfolio",  f"${total_inv:,.2f}")
+    i2.metric("401(k)",           f"${_inv_401k:,.2f}"      if _inv_401k      > 0 else "—")
+    i3.metric("Roth IRA",         f"${_inv_roth:,.2f}"      if _inv_roth      > 0 else "—")
+    i4.metric("HSA",              f"${_inv_hsa:,.2f}"       if _inv_hsa       > 0 else "—")
+    i5.metric("Cash Mgmt / HY",   f"${_inv_brokerage:,.2f}" if _inv_brokerage > 0 else "—")
+
+    # YTD contribution progress bars
+    _roth_ytd = st.session_state.get("inv_roth_contrib_ytd", 0)
+    _hsa_ytd  = st.session_state.get("inv_hsa_contrib_ytd", 0)
+    _401k_ytd = st.session_state.get("inv_401k_contrib_ytd", 0)
+
+    contrib_cols = st.columns(3)
+    if _roth_ytd > 0 or _inv_roth > 0:
+        with contrib_cols[0]:
+            roth_pct = min(_roth_ytd / 7000, 1.0)
+            st.caption(f"Roth IRA: ${_roth_ytd:,.2f} / $7,000 limit")
+            st.progress(roth_pct, text=f"{roth_pct*100:.0f}% of annual limit")
+    if _hsa_ytd > 0 or _inv_hsa > 0:
+        with contrib_cols[1]:
+            hsa_pct = min(_hsa_ytd / 4300, 1.0)
+            st.caption(f"HSA: ${_hsa_ytd:,.2f} / $4,300 limit")
+            st.progress(hsa_pct, text=f"{hsa_pct*100:.0f}% of annual limit")
+    if _401k_ytd > 0 or _inv_401k > 0:
+        with contrib_cols[2]:
+            k401_pct = min(_401k_ytd / 23500, 1.0)
+            st.caption(f"401(k): ${_401k_ytd:,.2f} / $23,500 limit")
+            st.progress(k401_pct, text=f"{k401_pct*100:.0f}% of annual limit")
+
+    _inv_notes = st.session_state.get("inv_notes", "")
+    if _inv_notes.strip():
+        st.caption(f"📝 {_inv_notes.strip()}")
+    st.caption("💡 Update balances on the **AI Insights** page.")
+else:
+    st.markdown("---")
+    st.info("📈 **Investment portfolio not set up** — add your 401k/Roth IRA/HSA balances on the **AI Insights** page to see them here.")
+
 st.markdown("---")
 
 # ── Charts ────────────────────────────────────────────────────────────────────

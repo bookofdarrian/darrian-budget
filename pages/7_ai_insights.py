@@ -79,95 +79,79 @@ with st.expander("📈 Investment Accounts Context (Fidelity 401k, Roth IRA, HSA
 
     with col_left:
         st.markdown("##### 🏦 Fidelity Accounts")
-        inv_401k = st.number_input(
+        # Use session_state keys directly so values persist across reruns without
+        # the value= / key= mismatch that causes fields to reset to 0 after Save.
+        st.number_input(
             "401(k) Balance ($)",
             min_value=0.0, step=100.0, format="%.2f",
-            value=st.session_state.get("inv_401k", 0.0),
-            key="inv_401k_input",
+            key="inv_401k",
             help="Your current Fidelity 401(k) total balance"
         )
-        inv_401k_contrib_ytd = st.number_input(
+        st.number_input(
             "401(k) YTD Contributions ($)",
             min_value=0.0, step=100.0, format="%.2f",
-            value=st.session_state.get("inv_401k_contrib_ytd", 0.0),
-            key="inv_401k_contrib_ytd_input",
+            key="inv_401k_contrib_ytd",
             help="How much you've contributed to your 401(k) this year"
         )
-        inv_401k_employer_match = st.number_input(
+        st.number_input(
             "401(k) Employer Match YTD ($)",
             min_value=0.0, step=100.0, format="%.2f",
-            value=st.session_state.get("inv_401k_employer_match", 0.0),
-            key="inv_401k_employer_match_input",
+            key="inv_401k_employer_match",
             help="Employer contributions received this year"
         )
-        inv_roth = st.number_input(
+        st.number_input(
             "Roth IRA Balance ($)",
             min_value=0.0, step=100.0, format="%.2f",
-            value=st.session_state.get("inv_roth", 0.0),
-            key="inv_roth_input",
+            key="inv_roth",
             help="Your current Fidelity Roth IRA total balance"
         )
-        inv_roth_contrib_ytd = st.number_input(
+        st.number_input(
             "Roth IRA YTD Contributions ($)",
             min_value=0.0, step=100.0, format="%.2f",
-            value=st.session_state.get("inv_roth_contrib_ytd", 0.0),
-            key="inv_roth_contrib_ytd_input",
+            key="inv_roth_contrib_ytd",
             help="How much you've contributed to your Roth IRA this year (2025 limit: $7,000)"
         )
 
     with col_right:
         st.markdown("##### 🏥 HSA & Other")
-        inv_hsa = st.number_input(
+        st.number_input(
             "HSA Balance ($)",
             min_value=0.0, step=100.0, format="%.2f",
-            value=st.session_state.get("inv_hsa", 0.0),
-            key="inv_hsa_input",
+            key="inv_hsa",
             help="Your current HSA total balance"
         )
-        inv_hsa_contrib_ytd = st.number_input(
+        st.number_input(
             "HSA YTD Contributions ($)",
             min_value=0.0, step=100.0, format="%.2f",
-            value=st.session_state.get("inv_hsa_contrib_ytd", 0.0),
-            key="inv_hsa_contrib_ytd_input",
+            key="inv_hsa_contrib_ytd",
             help="How much you've contributed to your HSA this year (2025 individual limit: $4,300)"
         )
-        inv_brokerage = st.number_input(
+        st.number_input(
             "Cash Management / High Yield Balance ($)",
             min_value=0.0, step=100.0, format="%.2f",
-            value=st.session_state.get("inv_brokerage", 0.0),
-            key="inv_brokerage_input",
+            key="inv_brokerage",
             help="Fidelity Cash Management Individual or other high-yield / spend-save accounts"
         )
-        inv_notes = st.text_area(
+        st.text_area(
             "Additional Investment Notes",
-            value=st.session_state.get("inv_notes", ""),
-            key="inv_notes_input",
+            key="inv_notes",
             placeholder="e.g. 'Employer matches 4% of salary', 'Invested in target-date 2055 fund', 'HSA invested in index funds'",
             height=120,
             help="Any extra context about your investments you want Claude to know"
         )
 
     if st.button("💾 Save Investment Context", type="primary", key="btn_save_investments"):
-        st.session_state["inv_401k"]               = inv_401k
-        st.session_state["inv_401k_contrib_ytd"]   = inv_401k_contrib_ytd
-        st.session_state["inv_401k_employer_match"] = inv_401k_employer_match
-        st.session_state["inv_roth"]               = inv_roth
-        st.session_state["inv_roth_contrib_ytd"]   = inv_roth_contrib_ytd
-        st.session_state["inv_hsa"]                = inv_hsa
-        st.session_state["inv_hsa_contrib_ytd"]    = inv_hsa_contrib_ytd
-        st.session_state["inv_brokerage"]          = inv_brokerage
-        st.session_state["inv_notes"]              = inv_notes
-        # Persist to database so values survive page refreshes & restarts
+        # Values are already in session_state via the widget keys above
         save_investment_context({
-            "bal_401k":         inv_401k,
-            "contrib_401k_ytd": inv_401k_contrib_ytd,
-            "match_401k_ytd":   inv_401k_employer_match,
-            "bal_roth":         inv_roth,
-            "contrib_roth_ytd": inv_roth_contrib_ytd,
-            "bal_hsa":          inv_hsa,
-            "contrib_hsa_ytd":  inv_hsa_contrib_ytd,
-            "bal_brokerage":    inv_brokerage,
-            "notes":            inv_notes,
+            "bal_401k":         st.session_state.get("inv_401k", 0),
+            "contrib_401k_ytd": st.session_state.get("inv_401k_contrib_ytd", 0),
+            "match_401k_ytd":   st.session_state.get("inv_401k_employer_match", 0),
+            "bal_roth":         st.session_state.get("inv_roth", 0),
+            "contrib_roth_ytd": st.session_state.get("inv_roth_contrib_ytd", 0),
+            "bal_hsa":          st.session_state.get("inv_hsa", 0),
+            "contrib_hsa_ytd":  st.session_state.get("inv_hsa_contrib_ytd", 0),
+            "bal_brokerage":    st.session_state.get("inv_brokerage", 0),
+            "notes":            st.session_state.get("inv_notes", ""),
         })
         st.success("✅ Investment context saved to database! Claude will now include this in all analyses.")
         st.rerun()
