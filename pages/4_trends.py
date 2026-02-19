@@ -269,32 +269,46 @@ if not txn_raw.empty:
     # Groups similar merchants under one display name for cleaner reporting.
     _MERCHANT_GROUPS = [
         # (display_name, [keywords_to_match_in_description_lower])
-        ("Fuel (All Stations)",    ["chevron", "shell oil", "circle k", "exxon", "sunoco", "qt ", "kwik save"]),
-        ("Amazon",                 ["amazon"]),
-        ("DoorDash",               ["doordash", "dd *doordash"]),
-        ("Apple (iTunes/iCloud)",  ["apple.com/bill", "apple.com"]),
-        ("Uber / Lyft",            ["uber", "lyft"]),
-        ("Hulu",                   ["hulu"]),
-        ("Netflix",                ["netflix"]),
-        ("Crunchyroll",            ["crunchyroll"]),
-        ("PlayStation / Steam",    ["playstation", "steamgames"]),
-        ("AMC Theatres",           ["amc "]),
-        ("Regal Cinemas",          ["regal"]),
-        ("StubHub",                ["stubhub"]),
-        ("Ticketmaster",           ["ticketmaster", "tm *ticketmaster"]),
-        ("Allstate Insurance",     ["allstate"]),
-        ("Planet Fitness",         ["pf atlanta"]),
-        ("The Vivian (Rent)",      ["the vivian", "vivian 498", "vivian 4980"]),
-        ("Georgia Power",          ["gpc gpc"]),
-        ("TheCut (Barber)",        ["thecut"]),
-        ("eBay",                   ["ebay"]),
-        ("Walmart / Grocery",      ["walmart", "wal-mart", "wm super"]),
-        ("Chipotle",               ["chipotle"]),
-        ("Chick-fil-A",            ["chick-fil-a"]),
-        ("Zaxby's",                ["zaxby"]),
-        ("Cook Out",               ["cook out"]),
-        ("Walgreens",              ["walgreens"]),
-        ("Goodwill / Thrift",      ["goodwill", "2w thrift", "l train vintage"]),
+        # ── Housing & Fixed Bills ────────────────────────────────────────────
+        ("🏠 The Vivian (Rent)",        ["the vivian", "vivian 498"]),   # covers "4980" and "498 0"
+        ("⚡ Georgia Power",            ["gpc gpc"]),
+        ("🛡️ Allstate (Renters Ins.)", ["allstate"]),
+        ("🏋️ Planet Fitness",          ["pf atlanta"]),
+        # ── Transportation ───────────────────────────────────────────────────
+        ("⛽ Fuel (All Stations)",      ["chevron", "shell oil", "circle k", "exxon", "sunoco", "qt ", "kwik save"]),
+        ("🚗 Uber / Lyft",             ["uber", "lyft"]),
+        ("🔧 Mavis (Auto)",            ["mavis"]),
+        # ── Food & Dining ────────────────────────────────────────────────────
+        ("🛒 Walmart / Grocery",        ["walmart", "wal-mart", "wm super"]),
+        ("🌯 Chipotle",                 ["chipotle"]),
+        ("🍗 Chick-fil-A",              ["chick-fil-a"]),
+        ("🍗 Zaxby's",                  ["zaxby"]),
+        ("🍔 Cook Out",                 ["cook out"]),
+        ("🛵 DoorDash",                 ["doordash", "dd *doordash"]),
+        # ── Shopping ─────────────────────────────────────────────────────────
+        ("📦 Amazon",                   ["amazon"]),
+        ("🛍️ eBay",                    ["ebay"]),
+        ("👕 Goodwill / Thrift",        ["goodwill", "2w thrift", "l train vintage"]),
+        # ── Travel ───────────────────────────────────────────────────────────
+        ("✈️ Airbnb",                   ["airbnb"]),
+        ("✈️ Expedia",                  ["expedia"]),
+        # ── Subscriptions ────────────────────────────────────────────────────
+        ("🍎 Apple (iTunes/iCloud)",    ["apple.com/bill", "apple.com"]),
+        ("📺 Hulu",                     ["hulu"]),
+        ("📺 Netflix",                  ["netflix"]),
+        ("📺 Crunchyroll",              ["crunchyroll"]),
+        ("🎮 PlayStation / Steam",      ["playstation", "steamgames"]),
+        # ── Entertainment ────────────────────────────────────────────────────
+        ("🎬 AMC Theatres",             ["amc "]),
+        ("🎬 Regal Cinemas",            ["regal"]),
+        ("🎟️ StubHub",                 ["stubhub"]),
+        ("🎟️ Ticketmaster",            ["ticketmaster", "tm *ticketmaster"]),
+        # ── Personal Care ────────────────────────────────────────────────────
+        ("✂️ TheCut (Barber)",          ["thecut"]),
+        ("💊 Walgreens",                ["walgreens"]),
+        # ── Gardening (Zelle / Apple Cash income) ────────────────────────────
+        ("🌿 Gardening Income",         ["zelle*joshua", "zelle*xavier", "zelle db travares",
+                                         "apple cash sent mo", "apple cash sent to", "apple cash"]),
     ]
 
     def _consolidate_merchant(desc: str) -> str:

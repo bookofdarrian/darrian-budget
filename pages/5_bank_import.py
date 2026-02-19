@@ -127,9 +127,19 @@ _AUTO_CAT_RULES: list[tuple[str, str, str]] = [
     ('ebay',              'Entertainment', 'Subscriptions'),   # resale — remap if needed
     # ── Smoke / Vape ────────────────────────────────────────────────────────
     ('smoke shop',        'Personal Care', 'Medical'),
+    # ── Travel ──────────────────────────────────────────────────────────────
+    ('airbnb',            'Entertainment', 'Travel'),
+    ('expedia',           'Entertainment', 'Travel'),
+    ('hotels.com',        'Entertainment', 'Travel'),
+    ('booking.com',       'Entertainment', 'Travel'),
+    # ── Auto / Maintenance ───────────────────────────────────────────────────
+    ('mavis',             'Transportation', 'Maintenance'),   # Mavis tires/auto
+    ('jiffy lube',        'Transportation', 'Maintenance'),
+    ('autozone',          'Transportation', 'Maintenance'),
     # ── Gardening income (Zelle / Apple Cash payments received) ─────────────
     ('zelle*joshua',      'Gardening', 'Gardening'),
     ('zelle*xavier',      'Gardening', 'Gardening'),
+    ('apple cash sent mo','Gardening', 'Gardening'),   # "Apple Cash Sent MO 1Infiniteloop CA"
     ('apple cash sent to','Gardening', 'Gardening'),
     ('apple cash*',       'Gardening', 'Gardening'),
 ]
