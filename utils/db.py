@@ -190,6 +190,28 @@ def init_db():
             completed INTEGER DEFAULT 0,
             sort_order INTEGER DEFAULT 0
         )''')
+
+        c.execute('''CREATE TABLE IF NOT EXISTS net_worth_snapshots (
+            id SERIAL PRIMARY KEY,
+            snapshot_date TEXT NOT NULL,
+            label TEXT DEFAULT '',
+            checking REAL DEFAULT 0,
+            savings REAL DEFAULT 0,
+            cash_other REAL DEFAULT 0,
+            bal_401k REAL DEFAULT 0,
+            bal_roth REAL DEFAULT 0,
+            bal_hsa REAL DEFAULT 0,
+            bal_brokerage REAL DEFAULT 0,
+            home_value REAL DEFAULT 0,
+            vehicle_value REAL DEFAULT 0,
+            other_assets REAL DEFAULT 0,
+            credit_card_debt REAL DEFAULT 0,
+            student_loans REAL DEFAULT 0,
+            car_loan REAL DEFAULT 0,
+            other_liabilities REAL DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TEXT DEFAULT (to_char(now(), 'YYYY-MM-DD HH24:MI:SS'))
+        )''')
     else:
         c.execute('''CREATE TABLE IF NOT EXISTS income (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -294,6 +316,28 @@ def init_db():
             item TEXT NOT NULL,
             completed INTEGER DEFAULT 0,
             sort_order INTEGER DEFAULT 0
+        )''')
+
+        c.execute('''CREATE TABLE IF NOT EXISTS net_worth_snapshots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            snapshot_date TEXT NOT NULL,
+            label TEXT DEFAULT '',
+            checking REAL DEFAULT 0,
+            savings REAL DEFAULT 0,
+            cash_other REAL DEFAULT 0,
+            bal_401k REAL DEFAULT 0,
+            bal_roth REAL DEFAULT 0,
+            bal_hsa REAL DEFAULT 0,
+            bal_brokerage REAL DEFAULT 0,
+            home_value REAL DEFAULT 0,
+            vehicle_value REAL DEFAULT 0,
+            other_assets REAL DEFAULT 0,
+            credit_card_debt REAL DEFAULT 0,
+            student_loans REAL DEFAULT 0,
+            car_loan REAL DEFAULT 0,
+            other_liabilities REAL DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now'))
         )''')
 
     # ── Migrations: add columns to existing tables if missing ────────────────

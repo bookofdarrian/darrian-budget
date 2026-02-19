@@ -50,6 +50,7 @@ st.sidebar.page_link("pages/5_bank_import.py",    label="Bank Import",       ico
 st.sidebar.page_link("pages/6_receipts.py",       label="Receipts & HSA",    icon="🧾")
 st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights",       icon="🤖")
 st.sidebar.page_link("pages/8_goals.py",          label="Financial Goals",   icon="🎯")
+st.sidebar.page_link("pages/9_net_worth.py",      label="Net Worth",         icon="💎")
 
 # ── Main dashboard ──────────────────────────────────────────────────────────
 st.title(f"📊 Overview — {datetime.strptime(selected_month, '%Y-%m').strftime('%B %Y')}")

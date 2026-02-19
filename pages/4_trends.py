@@ -65,6 +65,7 @@ st.sidebar.page_link("pages/5_bank_import.py",    label="Bank Import",       ico
 st.sidebar.page_link("pages/6_receipts.py",       label="Receipts & HSA",    icon="🧾")
 st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights",       icon="🤖")
 st.sidebar.page_link("pages/8_goals.py",          label="Financial Goals",   icon="🎯")
+st.sidebar.page_link("pages/9_net_worth.py",      label="Net Worth",         icon="💎")
 
 st.title("📈 Monthly Trends")
 st.caption("Track your income, spending, and savings across every month — powered by your Navy Federal data.")
@@ -325,8 +326,8 @@ if not txn_raw.empty:
         # ── Personal Care ────────────────────────────────────────────────────
         ("✂️ TheCut (Barber)",          ["thecut"]),
         ("💊 Walgreens",                ["walgreens"]),
-        # ── Gardening (Zelle / Apple Cash income) ────────────────────────────
-        ("🌿 Gardening Income",         ["zelle*joshua", "zelle*xavier", "zelle db travares",
+        # ── Gardening (Zelle / Apple Pay sends to workers) ────────────────────────────
+        ("🌿 Gardening (Labor/Supplies)",         ["zelle*joshua", "zelle*xavier", "zelle db travares",
                                          "apple cash sent mo", "apple cash sent to", "apple cash"]),
     ]
 
@@ -435,7 +436,7 @@ else:
         lines.append("- 'ACH Paid To Darrian Belcher' = transfers to user's own Fidelity/savings accounts, NOT payments to another person")
         lines.append("- 'Transfer To Credit Card' = credit card payments, NOT discretionary spending")
         lines.append("- Transfers have been excluded from the spending totals below")
-        lines.append("- Zelle transactions are categorized as 'Gardening' (side income/expense)")
+        lines.append("- Zelle/Apple Pay sends to Joshua/Xavier are Gardening labor/supply expenses")
         lines.append("")
 
         lines.append("=== OVERALL FINANCIAL SUMMARY ===")

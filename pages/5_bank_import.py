@@ -136,12 +136,12 @@ _AUTO_CAT_RULES: list[tuple[str, str, str]] = [
     ('mavis',             'Transportation', 'Maintenance'),   # Mavis tires/auto
     ('jiffy lube',        'Transportation', 'Maintenance'),
     ('autozone',          'Transportation', 'Maintenance'),
-    # ── Gardening income (Zelle / Apple Cash payments received) ─────────────
-    ('zelle*joshua',      'Gardening', 'Gardening'),
-    ('zelle*xavier',      'Gardening', 'Gardening'),
-    ('apple cash sent mo','Gardening', 'Gardening'),   # "Apple Cash Sent MO 1Infiniteloop CA"
-    ('apple cash sent to','Gardening', 'Gardening'),
-    ('apple cash*',       'Gardening', 'Gardening'),
+    # ── Gardening expenses (Zelle / Apple Pay sends to workers) ─────────────
+    ('zelle*joshua',      'Gardening', 'Labor'),
+    ('zelle*xavier',      'Gardening', 'Labor'),
+    ('apple cash sent mo','Gardening', 'Supplies'),    # Apple Pay send — supplies/misc
+    ('apple cash sent to','Gardening', 'Labor'),       # Apple Pay send to worker
+    ('apple cash*',       'Gardening', 'Labor'),
 ]
 
 def _auto_category(description: str) -> tuple[str | None, str | None]:
@@ -192,6 +192,7 @@ st.sidebar.page_link("pages/5_bank_import.py",    label="Bank Import",       ico
 st.sidebar.page_link("pages/6_receipts.py",       label="Receipts & HSA",    icon="🧾")
 st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights",       icon="🤖")
 st.sidebar.page_link("pages/8_goals.py",          label="Financial Goals",   icon="🎯")
+st.sidebar.page_link("pages/9_net_worth.py",      label="Net Worth",         icon="💎")
 
 st.title("🏦 Bank Import")
 st.caption("Upload your Navy Federal PDF statement or any bank CSV to pull in transactions. Then map each one to a budget category and apply to your actuals.")
