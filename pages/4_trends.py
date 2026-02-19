@@ -28,19 +28,28 @@ if "api_key" not in st.session_state:
 
 api_key = st.session_state.get("api_key", "")
 
-# ── Load investment context (same as AI Insights page) ───────────────────────
-if "inv_loaded_from_db" not in st.session_state:
-    _saved = load_investment_context()
-    st.session_state["inv_401k"]                = float(_saved.get("bal_401k", 0) or 0)
-    st.session_state["inv_401k_contrib_ytd"]    = float(_saved.get("contrib_401k_ytd", 0) or 0)
-    st.session_state["inv_401k_employer_match"] = float(_saved.get("match_401k_ytd", 0) or 0)
-    st.session_state["inv_roth"]                = float(_saved.get("bal_roth", 0) or 0)
-    st.session_state["inv_roth_contrib_ytd"]    = float(_saved.get("contrib_roth_ytd", 0) or 0)
-    st.session_state["inv_hsa"]                 = float(_saved.get("bal_hsa", 0) or 0)
-    st.session_state["inv_hsa_contrib_ytd"]     = float(_saved.get("contrib_hsa_ytd", 0) or 0)
-    st.session_state["inv_brokerage"]           = float(_saved.get("bal_brokerage", 0) or 0)
-    st.session_state["inv_notes"]               = _saved.get("notes", "") or ""
-    st.session_state["inv_loaded_from_db"]      = True
+# ── Load investment context from DB (always fresh — no session cache here) ───
+_saved = load_investment_context()
+_inv_401k      = float(_saved.get("bal_401k", 0) or 0)
+_inv_401k_ytd  = float(_saved.get("contrib_401k_ytd", 0) or 0)
+_inv_401k_match= float(_saved.get("match_401k_ytd", 0) or 0)
+_inv_roth      = float(_saved.get("bal_roth", 0) or 0)
+_inv_roth_ytd  = float(_saved.get("contrib_roth_ytd", 0) or 0)
+_inv_hsa       = float(_saved.get("bal_hsa", 0) or 0)
+_inv_hsa_ytd   = float(_saved.get("contrib_hsa_ytd", 0) or 0)
+_inv_brokerage = float(_saved.get("bal_brokerage", 0) or 0)
+_inv_notes     = _saved.get("notes", "") or ""
+# Also keep session state in sync for AI context builder
+st.session_state["inv_401k"]                = _inv_401k
+st.session_state["inv_401k_contrib_ytd"]    = _inv_401k_ytd
+st.session_state["inv_401k_employer_match"] = _inv_401k_match
+st.session_state["inv_roth"]                = _inv_roth
+st.session_state["inv_roth_contrib_ytd"]    = _inv_roth_ytd
+st.session_state["inv_hsa"]                 = _inv_hsa
+st.session_state["inv_hsa_contrib_ytd"]     = _inv_hsa_ytd
+st.session_state["inv_brokerage"]           = _inv_brokerage
+st.session_state["inv_notes"]               = _inv_notes
+st.session_state["inv_loaded_from_db"]      = True
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 st.sidebar.title("💰 Budget Dashboard")
@@ -174,10 +183,8 @@ if notes:
     st.caption("  ·  ".join(notes))
 
 # ── Investment Portfolio Snapshot ─────────────────────────────────────────────
-_inv_401k      = st.session_state.get("inv_401k", 0)
-_inv_roth      = st.session_state.get("inv_roth", 0)
-_inv_hsa       = st.session_state.get("inv_hsa", 0)
-_inv_brokerage = st.session_state.get("inv_brokerage", 0)
+# Use local vars loaded directly from DB above (not session state) to avoid
+# cross-page session state timing issues.
 _any_inv = any([_inv_401k, _inv_roth, _inv_hsa, _inv_brokerage])
 
 if _any_inv:
@@ -192,28 +199,23 @@ if _any_inv:
     i5.metric("Cash Mgmt / HY",   f"${_inv_brokerage:,.2f}" if _inv_brokerage > 0 else "—")
 
     # YTD contribution progress bars
-    _roth_ytd = st.session_state.get("inv_roth_contrib_ytd", 0)
-    _hsa_ytd  = st.session_state.get("inv_hsa_contrib_ytd", 0)
-    _401k_ytd = st.session_state.get("inv_401k_contrib_ytd", 0)
-
     contrib_cols = st.columns(3)
-    if _roth_ytd > 0 or _inv_roth > 0:
+    if _inv_roth_ytd > 0 or _inv_roth > 0:
         with contrib_cols[0]:
-            roth_pct = min(_roth_ytd / 7000, 1.0)
-            st.caption(f"Roth IRA: ${_roth_ytd:,.2f} / $7,000 limit")
+            roth_pct = min(_inv_roth_ytd / 7000, 1.0)
+            st.caption(f"Roth IRA: ${_inv_roth_ytd:,.2f} / $7,000 limit")
             st.progress(roth_pct, text=f"{roth_pct*100:.0f}% of annual limit")
-    if _hsa_ytd > 0 or _inv_hsa > 0:
+    if _inv_hsa_ytd > 0 or _inv_hsa > 0:
         with contrib_cols[1]:
-            hsa_pct = min(_hsa_ytd / 4300, 1.0)
-            st.caption(f"HSA: ${_hsa_ytd:,.2f} / $4,300 limit")
+            hsa_pct = min(_inv_hsa_ytd / 4300, 1.0)
+            st.caption(f"HSA: ${_inv_hsa_ytd:,.2f} / $4,300 limit")
             st.progress(hsa_pct, text=f"{hsa_pct*100:.0f}% of annual limit")
-    if _401k_ytd > 0 or _inv_401k > 0:
+    if _inv_401k_ytd > 0 or _inv_401k > 0:
         with contrib_cols[2]:
-            k401_pct = min(_401k_ytd / 23500, 1.0)
-            st.caption(f"401(k): ${_401k_ytd:,.2f} / $23,500 limit")
+            k401_pct = min(_inv_401k_ytd / 23500, 1.0)
+            st.caption(f"401(k): ${_inv_401k_ytd:,.2f} / $23,500 limit")
             st.progress(k401_pct, text=f"{k401_pct*100:.0f}% of annual limit")
 
-    _inv_notes = st.session_state.get("inv_notes", "")
     if _inv_notes.strip():
         st.caption(f"📝 {_inv_notes.strip()}")
     st.caption("💡 Update balances on the **AI Insights** page.")
