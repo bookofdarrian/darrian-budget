@@ -164,11 +164,13 @@ trends["savings_rate"] = (trends["savings"] / trends["income"].replace(0, float(
 trends["month_label"]  = trends["month"].apply(lambda m: datetime.strptime(m, "%Y-%m").strftime("%b %Y"))
 trends = trends.sort_values("month").reset_index(drop=True)
 
-total_deposited   = trends["deposited"].sum()
-total_transferred = trends["transferred"].sum()
+# Compute totals directly from source dataframes (not from trends merge) to avoid
+# losing rows when months don't appear in both income and spending tables.
+total_deposited   = float(txn_credits_all["deposited"].sum()) if not txn_credits_all.empty else 0.0
+total_transferred = float(txn_transfers_all["transferred"].sum()) if not txn_transfers_all.empty else 0.0
 
 # All-time income = manual income entries + bank deposit credits (payroll)
-total_income_manual  = trends["income"].sum()
+total_income_manual  = float(income_all["income"].sum()) if not income_all.empty else 0.0
 total_income_all     = total_income_manual + total_deposited
 total_spent_all      = trends["spent"].sum()
 total_saved_all      = total_income_all - total_spent_all
