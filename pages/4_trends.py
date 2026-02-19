@@ -1,3 +1,5 @@
+
+
 import os
 import streamlit as st
 import pandas as pd
@@ -260,15 +262,87 @@ else:
 
 # ── Top Merchants ─────────────────────────────────────────────────────────────
 st.markdown("---")
-st.subheader("🏪 Top Merchants (All Time)")
+st.subheader("🏪 Top Merchants & Income (All Time)")
+
 if not txn_raw.empty:
+    # ── Merchant consolidation map ────────────────────────────────────────────
+    # Groups similar merchants under one display name for cleaner reporting.
+    _MERCHANT_GROUPS = [
+        # (display_name, [keywords_to_match_in_description_lower])
+        ("Fuel (All Stations)",    ["chevron", "shell oil", "circle k", "exxon", "sunoco", "qt ", "kwik save"]),
+        ("Amazon",                 ["amazon"]),
+        ("DoorDash",               ["doordash", "dd *doordash"]),
+        ("Apple (iTunes/iCloud)",  ["apple.com/bill", "apple.com"]),
+        ("Uber / Lyft",            ["uber", "lyft"]),
+        ("Hulu",                   ["hulu"]),
+        ("Netflix",                ["netflix"]),
+        ("Crunchyroll",            ["crunchyroll"]),
+        ("PlayStation / Steam",    ["playstation", "steamgames"]),
+        ("AMC Theatres",           ["amc "]),
+        ("Regal Cinemas",          ["regal"]),
+        ("StubHub",                ["stubhub"]),
+        ("Ticketmaster",           ["ticketmaster", "tm *ticketmaster"]),
+        ("Allstate Insurance",     ["allstate"]),
+        ("Planet Fitness",         ["pf atlanta"]),
+        ("The Vivian (Rent)",      ["the vivian", "vivian 498", "vivian 4980"]),
+        ("Georgia Power",          ["gpc gpc"]),
+        ("TheCut (Barber)",        ["thecut"]),
+        ("eBay",                   ["ebay"]),
+        ("Walmart / Grocery",      ["walmart", "wal-mart", "wm super"]),
+        ("Chipotle",               ["chipotle"]),
+        ("Chick-fil-A",            ["chick-fil-a"]),
+        ("Zaxby's",                ["zaxby"]),
+        ("Cook Out",               ["cook out"]),
+        ("Walgreens",              ["walgreens"]),
+        ("Goodwill / Thrift",      ["goodwill", "2w thrift", "l train vintage"]),
+    ]
+
+    def _consolidate_merchant(desc: str) -> str:
+        d = desc.lower()
+        for display, keywords in _MERCHANT_GROUPS:
+            if any(k in d for k in keywords):
+                return display
+        return desc  # keep original if no match
+
+    consolidated = txn_raw.copy()
+    consolidated["merchant_group"] = consolidated["description"].apply(_consolidate_merchant)
+
     merchant_totals = (
-        txn_raw.groupby("description")["amount"].agg(["sum", "count"]).reset_index()
-        .rename(columns={"description": "Merchant", "sum": "Total Spent ($)", "count": "# Transactions"})
-        .sort_values("Total Spent ($)", ascending=False).head(20)
+        consolidated.groupby("merchant_group")["amount"]
+        .agg(["sum", "count"]).reset_index()
+        .rename(columns={"merchant_group": "Merchant", "sum": "Total Spent ($)", "count": "# Txns"})
+        .sort_values("Total Spent ($)", ascending=False).head(25)
     )
-    merchant_totals["Total Spent ($)"] = merchant_totals["Total Spent ($)"].map("${:,.2f}".format)
-    st.dataframe(merchant_totals, use_container_width=True, hide_index=True)
+
+    col_merch, col_gard = st.columns([3, 2])
+
+    with col_merch:
+        st.markdown("**Top Spending Merchants**")
+        display_m = merchant_totals.copy()
+        display_m["Total Spent ($)"] = display_m["Total Spent ($)"].map("${:,.2f}".format)
+        st.dataframe(display_m, use_container_width=True, hide_index=True)
+
+    # ── Gardening income sidebar ──────────────────────────────────────────────
+    with col_gard:
+        st.markdown("**🌿 Gardening Income (All Time)**")
+        conn = get_conn()
+        gardening_raw = read_sql(
+            """SELECT date, description, amount FROM bank_transactions
+               WHERE category = 'Gardening'
+               ORDER BY date DESC""",
+            conn
+        )
+        conn.close()
+
+        if gardening_raw.empty:
+            st.info("No gardening income recorded yet.")
+        else:
+            total_gardening = gardening_raw["amount"].sum()
+            st.metric("Total Gardening Income", f"${total_gardening:,.2f}")
+            gard_display = gardening_raw.copy()
+            gard_display["amount"] = gard_display["amount"].map("${:,.2f}".format)
+            gard_display.columns = ["Date", "Description", "Amount"]
+            st.dataframe(gard_display, use_container_width=True, hide_index=True)
 
 # ── Bank Deposits / Credits ───────────────────────────────────────────────────
 if not txn_all_raw.empty and "is_debit" in txn_all_raw.columns and (txn_all_raw["is_debit"] == 0).any():
