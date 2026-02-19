@@ -119,19 +119,19 @@ else:
 st.markdown("---")
 st.subheader("📊 All-Time Summary")
 
+from utils.db import execute as db_execute
 conn = get_conn()
-all_income_df    = read_sql("SELECT SUM(amount) AS total FROM income", conn)
-all_deposits_df  = read_sql("SELECT SUM(amount) AS total FROM bank_transactions WHERE is_debit = 0", conn)
-all_spent_df     = read_sql(
-    "SELECT SUM(amount) AS total FROM bank_transactions WHERE (is_debit = 1 OR is_debit IS NULL) AND (category IS NULL OR category != 'Transfer')",
-    conn
-)
+_c = db_execute(conn, "SELECT SUM(amount) FROM income")
+at_income_manual = float(_c.fetchone()[0] or 0)
+
+_c = db_execute(conn, "SELECT SUM(amount) FROM bank_transactions WHERE is_debit = 0")
+at_deposits = float(_c.fetchone()[0] or 0)
+
+_c = db_execute(conn, "SELECT SUM(amount) FROM bank_transactions WHERE (is_debit = 1 OR is_debit IS NULL) AND (category IS NULL OR category != 'Transfer')")
+at_spent = float(_c.fetchone()[0] or 0)
 conn.close()
 
-at_income_manual = float(all_income_df["total"].iloc[0] or 0)
-at_deposits      = float(all_deposits_df["total"].iloc[0] or 0)
 at_income_total  = at_income_manual + at_deposits
-at_spent         = float(all_spent_df["total"].iloc[0] or 0)
 at_saved         = at_income_total - at_spent
 
 at1, at2, at3 = st.columns(3)
