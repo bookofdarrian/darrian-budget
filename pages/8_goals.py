@@ -1,4 +1,4 @@
- import streamlit as st
+import streamlit as st
 import pandas as pd
 from datetime import datetime, date
 from utils.db import get_conn, init_db, read_sql, execute, fetchone

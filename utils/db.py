@@ -1,8 +1,19 @@
 import os
 import sqlite3
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # ── Detect environment ────────────────────────────────────────────────────────
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
+
+# Railway (and some other hosts) emit postgres:// but psycopg2 requires postgresql://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 USE_POSTGRES = bool(DATABASE_URL)
 
 if USE_POSTGRES:

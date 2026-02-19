@@ -1,6 +1,13 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 from utils.db import init_db, seed_budget, seed_income, get_conn, read_sql
 from utils.auth import require_password
 
