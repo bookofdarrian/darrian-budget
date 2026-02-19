@@ -165,13 +165,20 @@ trends["savings_rate"] = (trends["savings"] / trends["income"].replace(0, float(
 trends["month_label"]  = trends["month"].apply(lambda m: datetime.strptime(m, "%Y-%m").strftime("%b %Y"))
 trends = trends.sort_values("month").reset_index(drop=True)
 
-# Compute totals directly from source dataframes (not from trends merge) to avoid
-# losing rows when months don't appear in both income and spending tables.
-total_deposited   = float(txn_credits_all["deposited"].sum()) if not txn_credits_all.empty else 0.0
-total_transferred = float(txn_transfers_all["transferred"].sum()) if not txn_transfers_all.empty else 0.0
+# Compute totals via direct cursor queries to avoid pandas/psycopg2 compatibility issues.
+from utils.db import execute as db_execute
+_conn2 = get_conn()
+_c = db_execute(_conn2, "SELECT SUM(amount) FROM income")
+total_income_manual = float(_c.fetchone()[0] or 0)
+
+_c = db_execute(_conn2, "SELECT SUM(amount) FROM bank_transactions WHERE is_debit = 0")
+total_deposited = float(_c.fetchone()[0] or 0)
+
+_c = db_execute(_conn2, "SELECT SUM(amount) FROM bank_transactions WHERE category = 'Transfer'")
+total_transferred = float(_c.fetchone()[0] or 0)
+_conn2.close()
 
 # All-time income = manual income entries + bank deposit credits (payroll)
-total_income_manual  = float(income_all["income"].sum()) if not income_all.empty else 0.0
 total_income_all     = total_income_manual + total_deposited
 total_spent_all      = trends["spent"].sum()
 total_saved_all      = total_income_all - total_spent_all
