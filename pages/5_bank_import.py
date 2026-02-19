@@ -266,9 +266,21 @@ with tab_manual:
 
 # ── TAB 4 — Review & Apply ────────────────────────────────────────────────────
 with tab_review:
-    st.subheader(f"Transactions for {datetime.strptime(selected_month, '%Y-%m').strftime('%B %Y')}")
+    st.subheader("Review & Apply Transactions")
+
+    # Let user choose to view a specific month or all months
+    review_filter = st.radio(
+        "Show transactions for:",
+        ["All months", f"Selected month ({datetime.strptime(selected_month, '%Y-%m').strftime('%B %Y')})"],
+        horizontal=True,
+        key="review_filter"
+    )
+
     conn = get_conn()
-    txn_df = read_sql("SELECT * FROM bank_transactions WHERE month = ? ORDER BY date DESC", conn, params=(selected_month,))
+    if review_filter.startswith("All"):
+        txn_df = read_sql("SELECT * FROM bank_transactions ORDER BY date DESC", conn)
+    else:
+        txn_df = read_sql("SELECT * FROM bank_transactions WHERE month = ? ORDER BY date DESC", conn, params=(selected_month,))
     conn.close()
 
     if txn_df.empty:
