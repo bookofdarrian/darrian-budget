@@ -8,19 +8,111 @@ from utils.auth import require_password
 
 
 # ── Auto-categorization rules ─────────────────────────────────────────────────
-# Transfers — money moving between accounts, not true expenses
+#
+# TRANSFERS — account-to-account moves, NOT real expenses.
+# NOTE: "Paid To -" lines (rent, utilities, gym) are real expenses — NOT listed here.
 _TRANSFER_KEYWORDS = [
-    'transfer to', 'transfer from', 'fidelity', 'cashapp', 'cash app',
-    'ach paid to darrian', 'zelle db darrian', 'venmo',
+    'transfer to',           # "Transfer To Credit Card", "Transfer To Checking"
+    'transfer from',         # "Transfer From Checking"
+    'fidelity',
+    'cashapp', 'cash app',
+    'ach paid to darrian',   # ACH self-transfer (savings → checking)
+    'zelle db darrian',
+    'venmo',
+    'nfo payment received',  # CC statement: payment received from checking
+]
+
+# MERCHANT RULES — checked in order, first match wins.
+# Format: (keyword_in_description_lower, category, subcategory)
+_AUTO_CAT_RULES: list[tuple[str, str, str]] = [
+    # ── Transportation ──────────────────────────────────────────────────────
+    ('chevron',           'Transportation', 'Fuel'),
+    ('shell oil',         'Transportation', 'Fuel'),
+    ('circle k',          'Transportation', 'Fuel'),
+    ('qt ',               'Transportation', 'Fuel'),
+    ('lyft',              'Transportation', 'Fuel'),
+    ('uber',              'Transportation', 'Fuel'),
+    ('mta*',              'Transportation', 'Fuel'),       # NYC subway/LIRR
+    ('mta*lirr',          'Transportation', 'Fuel'),
+    # ── Food / Dining ───────────────────────────────────────────────────────
+    ('chipotle',          'Food', 'Dining Out'),
+    ('chick-fil-a',       'Food', 'Dining Out'),
+    ('zaxby',             'Food', 'Dining Out'),
+    ('tst*',              'Food', 'Dining Out'),           # Toast POS restaurants
+    ('sq *',              'Food', 'Dining Out'),           # Square POS restaurants
+    ('nom ',              'Food', 'Dining Out'),
+    ('pho ',              'Food', 'Dining Out'),
+    ('deli',              'Food', 'Dining Out'),
+    ('pizza',             'Food', 'Dining Out'),
+    ('ramen',             'Food', 'Dining Out'),
+    ('jerk',              'Food', 'Dining Out'),
+    ('dunkin',            'Food', 'Dining Out'),
+    ('wendys',            'Food', 'Dining Out'),
+    ('american deli',     'Food', 'Dining Out'),
+    ('kpot',              'Food', 'Dining Out'),
+    ('peach cobbler',     'Food', 'Dining Out'),
+    ('juicy joint',       'Food', 'Dining Out'),
+    ('jamrock',           'Food', 'Dining Out'),
+    ('cava',              'Food', 'Dining Out'),
+    ('el super pan',      'Food', 'Dining Out'),
+    ('gooey',             'Food', 'Dining Out'),
+    ('jj fish',           'Food', 'Dining Out'),
+    ('walmart',           'Food', 'Groceries'),
+    ('wal-mart',          'Food', 'Groceries'),
+    ('wm super',          'Food', 'Groceries'),
+    ('walgreens',         'Personal Care', 'Medical'),
+    # ── Entertainment ───────────────────────────────────────────────────────
+    ('hulu',              'Entertainment', 'Subscriptions'),
+    ('netflix',           'Entertainment', 'Subscriptions'),
+    ('apple.com/bill',    'Entertainment', 'Subscriptions'),
+    ('playstation',       'Entertainment', 'Subscriptions'),
+    ('steamgames',        'Entertainment', 'Subscriptions'),
+    ('amc ',              'Entertainment', 'Movies'),
+    ('regal',             'Entertainment', 'Movies'),
+    ('truist park',       'Entertainment', 'Night Out'),
+    ('pf atlanta',        'Entertainment', 'Subscriptions'),  # Planet Fitness
+    ('visaatlanta',       'Entertainment', 'Night Out'),
+    ('redveil',           'Entertainment', 'Night Out'),      # concert ticket
+    ('big city tourism',  'Entertainment', 'Night Out'),
+    # ── Shopping / Amazon ───────────────────────────────────────────────────
+    ('amazon',            'Entertainment', 'Subscriptions'),  # broad; user can remap
+    ('bestbuy',           'Entertainment', 'Subscriptions'),
+    ('ray-ban',           'Personal Care', 'Hair / Nails'),
+    ('zenni optical',     'Personal Care', 'Medical'),
+    ('tj maxx',           'Personal Care', 'Hair / Nails'),
+    ('goodwill',          'Personal Care', 'Hair / Nails'),
+    ('44th & 3rd',        'Entertainment', 'Subscriptions'),  # bookstore
+    ('the darkroom',      'Entertainment', 'Subscriptions'),  # photography
+    ('l train vintage',   'Personal Care', 'Hair / Nails'),
+    ('luxer',             'Housing', 'Supplies'),             # package locker
+    # ── Pets ────────────────────────────────────────────────────────────────
+    ('fetch*',            'Pets', 'Medical'),
+    ('petco',             'Pets', 'Food'),
+    ('lifeline animal',   'Pets', 'Medical'),
+    # ── Insurance / Services ────────────────────────────────────────────────
+    ('allstate',          'Insurance', 'Renters'),
+    ('aga service',       'Insurance', 'Renters'),            # Allianz travel insurance
+    ('avalon home',       'Housing', 'Maintenance / Repairs'),# home inspection
+    ('ga driver svcs',    'Transportation', 'Maintenance'),   # GA DMV
+    ('aaa park',          'Transportation', 'Maintenance'),
+    # ── Housing / Bills paid via ACH "Paid To -" ────────────────────────────
+    ('the vivian',        'Housing', 'Mortgage / Rent'),
+    ('gpc gpc',           'Housing', 'Electricity'),          # Georgia Power
+    # ── Gardening income (Zelle payments received) ───────────────────────────
+    ('zelle*joshua',      'Gardening', 'Gardening'),
+    ('zelle*xavier',      'Gardening', 'Gardening'),
 ]
 
 def _auto_category(description: str) -> tuple[str | None, str | None]:
     """Return (category, subcategory) based on description keywords, or (None, None)."""
     desc_lower = description.lower()
-    if 'zelle' in desc_lower:
-        return ('Gardening', 'Gardening')
+    # Transfers first — these are not real expenses
     if any(k in desc_lower for k in _TRANSFER_KEYWORDS):
         return ('Transfer', 'Transfer')
+    # Merchant-specific rules
+    for keyword, cat, sub in _AUTO_CAT_RULES:
+        if keyword in desc_lower:
+            return (cat, sub)
     return (None, None)
 
 
