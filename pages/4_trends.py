@@ -96,24 +96,23 @@ txn_transfers_all = read_sql(
     conn
 )
 
-# Raw debit transactions (non-transfer, non-gardening) for merchant/spending analysis
+# Raw debit transactions (non-transfer) for merchant/spending analysis
 txn_raw = read_sql(
     """SELECT month, date, description, amount, category, is_debit
        FROM bank_transactions
        WHERE (is_debit = 1 OR is_debit IS NULL)
-         AND (category IS NULL OR (category != 'Transfer' AND category != 'Gardening'))
+         AND (category IS NULL OR category != 'Transfer')
        ORDER BY date DESC""",
     conn
 )
 
-# Category breakdown — debits only, no transfers, no gardening income
+# Category breakdown — debits only, no transfers
 txn_cat_all = read_sql(
     """SELECT month, category, SUM(amount) AS spent
        FROM bank_transactions
        WHERE (is_debit = 1 OR is_debit IS NULL)
          AND category IS NOT NULL AND category != ''
          AND category != 'Transfer'
-         AND category != 'Gardening'
        GROUP BY month, category""",
     conn
 )
@@ -329,35 +328,10 @@ if not txn_raw.empty:
         .sort_values("Total Spent ($)", ascending=False).head(25)
     )
 
-    col_merch, col_gard = st.columns([3, 2])
-
-    with col_merch:
-        st.markdown("**Top Spending Merchants**")
-        display_m = merchant_totals.copy()
-        display_m["Total Spent ($)"] = display_m["Total Spent ($)"].map("${:,.2f}".format)
-        st.dataframe(display_m, use_container_width=True, hide_index=True)
-
-    # ── Gardening income sidebar ──────────────────────────────────────────────
-    with col_gard:
-        st.markdown("**🌿 Gardening Income (All Time)**")
-        conn = get_conn()
-        gardening_raw = read_sql(
-            """SELECT date, description, amount FROM bank_transactions
-               WHERE category = 'Gardening'
-               ORDER BY date DESC""",
-            conn
-        )
-        conn.close()
-
-        if gardening_raw.empty:
-            st.info("No gardening income recorded yet.")
-        else:
-            total_gardening = gardening_raw["amount"].sum()
-            st.metric("Total Gardening Income", f"${total_gardening:,.2f}")
-            gard_display = gardening_raw.copy()
-            gard_display["amount"] = gard_display["amount"].map("${:,.2f}".format)
-            gard_display.columns = ["Date", "Description", "Amount"]
-            st.dataframe(gard_display, use_container_width=True, hide_index=True)
+    st.markdown("**Top Spending Merchants**")
+    display_m = merchant_totals.copy()
+    display_m["Total Spent ($)"] = display_m["Total Spent ($)"].map("${:,.2f}".format)
+    st.dataframe(display_m, use_container_width=True, hide_index=True)
 
 # ── Bank Deposits / Credits ───────────────────────────────────────────────────
 if not txn_all_raw.empty and "is_debit" in txn_all_raw.columns and (txn_all_raw["is_debit"] == 0).any():
