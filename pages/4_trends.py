@@ -68,6 +68,7 @@ st.sidebar.page_link("pages/8_goals.py",          label="Financial Goals",   ico
 
 st.title("📈 Monthly Trends")
 st.caption("Track your income, spending, and savings across every month — powered by your Navy Federal data.")
+# v2
 
 # ── Pull all data ─────────────────────────────────────────────────────────────
 conn = get_conn()
