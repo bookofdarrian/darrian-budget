@@ -506,7 +506,8 @@ def seed_income(month: str):
         return
 
     rows = [
-        (month, "Visa Salary (Post-Tax)", 2142, "Bi-weekly take-home"),
+        (month, "Visa Salary — Paycheck 1 (Post-Tax)", 2142, "Bi-weekly take-home"),
+        (month, "Visa Salary — Paycheck 2 (Post-Tax)", 2142, "Bi-weekly take-home"),
         (month, "404 Sole Archive", 0, "Update from resale tracker"),
     ]
 
