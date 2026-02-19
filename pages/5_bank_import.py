@@ -24,6 +24,16 @@ def _auto_category(description: str) -> tuple[str | None, str | None]:
     return (None, None)
 
 
+def _is_duplicate(conn, date: str, description: str, amount: float) -> bool:
+    """Check if a transaction already exists by date + description + amount (any month)."""
+    row = fetchone(
+        conn,
+        "SELECT id FROM bank_transactions WHERE date=? AND description=? AND amount=?",
+        (date, description, amount)
+    )
+    return row is not None
+
+
 st.set_page_config(page_title="Bank Import", page_icon="🏦", layout="wide")
 init_db()
 require_password()
@@ -89,15 +99,53 @@ with tab_nfcu:
                 debits  = [t for t in txns if t['is_debit']]
                 credits = [t for t in txns if not t['is_debit']]
                 st.success(f"Found **{len(debits)} expenses** and **{len(credits)} deposits/credits**.")
+
                 preview_df = pd.DataFrame(txns)
                 preview_df['type'] = preview_df['is_debit'].map({True: '💸 Expense', False: '💰 Deposit'})
-                st.dataframe(preview_df[['date', 'description', 'amount', 'type', 'account']].rename(
-                    columns={'date': 'Date', 'description': 'Description', 'amount': 'Amount ($)', 'type': 'Type', 'account': 'Account'}),
-                    use_container_width=True, hide_index=True)
+
+                # ── Duplicate detection ──────────────────────────────────────
+                conn = get_conn()
+                preview_df['duplicate'] = preview_df.apply(
+                    lambda r: _is_duplicate(conn, r['date'], r['description'], r['amount']),
+                    axis=1
+                )
+                conn.close()
+
+                new_count  = (~preview_df['duplicate']).sum()
+                dup_count  = preview_df['duplicate'].sum()
+
+                if dup_count > 0:
+                    st.warning(
+                        f"⚠️ **{dup_count} duplicate(s)** already in the database will be skipped. "
+                        f"**{new_count} new** transaction(s) ready to import."
+                    )
+                    with st.expander(f"🔍 Show {dup_count} duplicate(s)", expanded=False):
+                        dup_display = preview_df[preview_df['duplicate']][
+                            ['date', 'description', 'amount', 'type', 'account']
+                        ].rename(columns={
+                            'date': 'Date', 'description': 'Description',
+                            'amount': 'Amount ($)', 'type': 'Type', 'account': 'Account'
+                        })
+                        st.dataframe(dup_display, use_container_width=True, hide_index=True)
+                else:
+                    st.info(f"✅ No duplicates detected — all {new_count} transaction(s) are new.")
+
+                # Show full preview with duplicate flag
+                preview_display = preview_df[['date', 'description', 'amount', 'type', 'account', 'duplicate']].rename(
+                    columns={
+                        'date': 'Date', 'description': 'Description',
+                        'amount': 'Amount ($)', 'type': 'Type',
+                        'account': 'Account', 'duplicate': '⚠️ Duplicate'
+                    }
+                )
+                st.dataframe(preview_display, use_container_width=True, hide_index=True)
+
                 accounts = list(preview_df['account'].unique())
                 selected_accounts = st.multiselect("Import from which accounts?", accounts, default=accounts)
                 import_credits = st.checkbox("Also import deposits/credits", value=False)
-                if st.button("✅ Import to Bank Transactions", type="primary"):
+
+                btn_label = f"✅ Import {new_count} New Transaction(s)" if new_count > 0 else "✅ Import (nothing new)"
+                if st.button(btn_label, type="primary", disabled=(new_count == 0)):
                     conn = get_conn()
                     count = 0
                     for t in txns:
@@ -105,16 +153,19 @@ with tab_nfcu:
                             continue
                         if not t['is_debit'] and not import_credits:
                             continue
+                        # Skip duplicates
+                        if _is_duplicate(conn, t['date'], t['description'], t['amount']):
+                            continue
+                        # Month comes from the transaction date, not the sidebar selector
                         txn_month = t['date'][:7]
-                        exists = fetchone(conn, "SELECT id FROM bank_transactions WHERE date=? AND description=? AND amount=?",
-                                          (t['date'], t['description'], t['amount']))
-                        if not exists:
-                            # Auto-categorize Zelle transactions as Gardening
-                            auto_cat, auto_sub = _auto_category(t['description'])
-                            execute(conn,
-                                "INSERT INTO bank_transactions (month, date, description, amount, is_debit, category, subcategory, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                                (txn_month, t['date'], t['description'], t['amount'], 1 if t['is_debit'] else 0, auto_cat, auto_sub, 'nfcu_pdf'))
-                            count += 1
+                        auto_cat, auto_sub = _auto_category(t['description'])
+                        execute(conn,
+                            "INSERT INTO bank_transactions "
+                            "(month, date, description, amount, is_debit, category, subcategory, source) "
+                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                            (txn_month, t['date'], t['description'], t['amount'],
+                             1 if t['is_debit'] else 0, auto_cat, auto_sub, 'nfcu_pdf'))
+                        count += 1
                     conn.commit()
                     conn.close()
                     st.success(f"Imported {count} new transaction(s). Go to **Review & Apply** to categorize them.")
@@ -139,28 +190,47 @@ with tab_csv:
                 desc_col = st.selectbox("Description column", col_options, index=next((i+1 for i, c in enumerate(raw.columns) if any(k in c.lower() for k in ["desc", "merchant", "name", "memo"])), 0))
             with c3:
                 amt_col = st.selectbox("Amount column", col_options, index=next((i+1 for i, c in enumerate(raw.columns) if "amount" in c.lower()), 0))
+
             if st.button("✅ Import Transactions", type="primary"):
                 if "— skip —" in [date_col, desc_col, amt_col]:
                     st.error("Please map all three columns.")
                 else:
                     imported = raw[[date_col, desc_col, amt_col]].copy()
                     imported.columns = ["date", "description", "amount"]
-                    imported["amount"] = pd.to_numeric(imported["amount"].astype(str).str.replace(r"[,$]", "", regex=True), errors="coerce")
+                    imported["amount"] = pd.to_numeric(
+                        imported["amount"].astype(str).str.replace(r"[,$]", "", regex=True),
+                        errors="coerce"
+                    )
                     imported = imported.dropna(subset=["amount"])
                     expenses_only = imported[imported["amount"] < 0].copy()
                     expenses_only["amount"] = expenses_only["amount"].abs()
+
                     conn = get_conn()
-                    count = 0
+                    count = skipped = 0
                     for _, row in expenses_only.iterrows():
-                        exists = fetchone(conn, "SELECT id FROM bank_transactions WHERE month=? AND date=? AND description=? AND amount=?",
-                                          (selected_month, str(row["date"]), str(row["description"]), float(row["amount"])))
-                        if not exists:
-                            execute(conn, "INSERT INTO bank_transactions (month, date, description, amount, source) VALUES (?, ?, ?, ?, ?)",
-                                    (selected_month, str(row["date"]), str(row["description"]), float(row["amount"]), "csv"))
-                            count += 1
+                        date_str = str(row["date"])
+                        desc_str = str(row["description"])
+                        amt_val  = float(row["amount"])
+                        # Month comes from the transaction date, not the sidebar selector
+                        try:
+                            txn_month = pd.to_datetime(date_str).strftime("%Y-%m")
+                        except Exception:
+                            txn_month = selected_month  # fallback if date can't be parsed
+
+                        if _is_duplicate(conn, date_str, desc_str, amt_val):
+                            skipped += 1
+                            continue
+                        execute(conn,
+                            "INSERT INTO bank_transactions (month, date, description, amount, source) "
+                            "VALUES (?, ?, ?, ?, ?)",
+                            (txn_month, date_str, desc_str, amt_val, "csv"))
+                        count += 1
                     conn.commit()
                     conn.close()
-                    st.success(f"Imported {count} new transaction(s).")
+                    msg = f"Imported {count} new transaction(s)."
+                    if skipped:
+                        msg += f" Skipped {skipped} duplicate(s)."
+                    st.success(msg)
                     st.rerun()
         except Exception as e:
             st.error(f"Could not parse CSV: {e}")
@@ -180,9 +250,13 @@ with tab_manual:
         if t_desc:
             cat_val = None if t_cat == "— Uncategorized —" else t_cat.split(" › ")[0]
             sub_val = None if t_cat == "— Uncategorized —" else t_cat.split(" › ")[1]
+            # Month comes from the entered date
+            txn_month = str(t_date)[:7]
             conn = get_conn()
-            execute(conn, "INSERT INTO bank_transactions (month, date, description, amount, category, subcategory, source, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                    (selected_month, str(t_date), t_desc, t_amt, cat_val, sub_val, "manual", t_notes))
+            execute(conn,
+                "INSERT INTO bank_transactions (month, date, description, amount, category, subcategory, source, notes) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (txn_month, str(t_date), t_desc, t_amt, cat_val, sub_val, "manual", t_notes))
             conn.commit()
             conn.close()
             st.success("Transaction added!")

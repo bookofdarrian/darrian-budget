@@ -146,7 +146,7 @@ def render_goal_card(goal):
                     conn.commit()
             conn.close()
 
-        # Edit / Update progress
+        # Edit / Update progress — stable key based on goal ID only
         with st.expander("✏️ Update Progress / Edit", expanded=False):
             with st.form(key=f"edit_goal_{goal['id']}"):
                 new_current = st.number_input(
