@@ -328,7 +328,7 @@ if not txn_raw.empty:
         .sort_values("Total Spent ($)", ascending=False).head(25)
     )
 
-    st.markdown("**Top Spending Merchants**")
+    st.caption("Similar merchants are grouped together (e.g. all Amazon orders → one row, both Vivian rent payments → one row).")
     display_m = merchant_totals.copy()
     display_m["Total Spent ($)"] = display_m["Total Spent ($)"].map("${:,.2f}".format)
     st.dataframe(display_m, use_container_width=True, hide_index=True)
