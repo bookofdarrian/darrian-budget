@@ -69,43 +69,34 @@ def ebay_search_sold(query: str, client_id: str, client_secret: str, limit: int 
     return results
 
 
-# ── RapidAPI Sneaker Price helpers ────────────────────────────────────────────
-def rapidapi_search_sneakers(query: str, rapidapi_key: str, limit: int = 10) -> list[dict]:
+# ── KicksDB Sneaker Price helpers ─────────────────────────────────────────────
+def kicksdb_search_sneakers(query: str, api_key: str, source: str = "stockx", limit: int = 10) -> list[dict]:
     """
-    Search for sneaker prices using RapidAPI 'Real Time Sneaker Prices' API.
-    Returns list of {title, retail_price, stockx_price, goat_price, style_id, image_url, url}.
-    Free tier: 100 requests/month.
+    Search for sneaker prices using KicksDB API (kicks.dev).
+    Free tier: 1,000 requests/month — no credit card required.
+    source: 'stockx' or 'goat'
+    Returns list of {title, sku, min_price, max_price, avg_price, url}.
     """
     resp = requests.get(
-        "https://real-time-sneaker-prices.p.rapidapi.com/search/",
-        headers={
-            "X-RapidAPI-Key":  rapidapi_key,
-            "X-RapidAPI-Host": "real-time-sneaker-prices.p.rapidapi.com",
-        },
-        params={"query": query, "limit": str(limit)},
+        f"https://api.kicks.dev/v3/{source}/products",
+        headers={"Authorization": api_key},
+        params={"query": query, "limit": limit},
         timeout=15,
     )
     if resp.status_code != 200:
         return []
 
-    data = resp.json()
-    # API returns list directly or under a key
-    items = data if isinstance(data, list) else data.get("results", data.get("products", []))
+    items = resp.json().get("data", [])
     results = []
     for item in items:
-        # Normalize field names across API versions
-        retail  = item.get("retailPrice") or item.get("retail_price") or 0
-        stockx  = item.get("lowestResellPrice", {}).get("stockX") or item.get("stockx_price") or 0
-        goat    = item.get("lowestResellPrice", {}).get("goat")   or item.get("goat_price")   or 0
         results.append({
-            "title":        item.get("shoeName") or item.get("name") or item.get("title") or "",
-            "style_id":     item.get("styleID")  or item.get("style_id") or "",
-            "retail_price": float(retail  or 0),
-            "stockx_price": float(stockx  or 0),
-            "goat_price":   float(goat    or 0),
-            "image_url":    item.get("thumbnail") or item.get("image") or "",
-            "url":          item.get("urlKey")    or item.get("url")   or "",
-            "source":       "RapidAPI",
+            "title":     item.get("title", ""),
+            "sku":       item.get("sku", ""),
+            "brand":     item.get("brand", ""),
+            "min_price": float(item.get("min_price") or 0),
+            "max_price": float(item.get("max_price") or 0),
+            "avg_price": float(item.get("avg_price") or 0),
+            "source":    source.upper(),
         })
     return results
 
@@ -310,84 +301,77 @@ if _ebay_id and _ebay_sec:
                 }
             )
 else:
-    st.info("🔑 eBay account pending approval (1 business day). Use the RapidAPI lookup below in the meantime.")
+    st.info("🔑 eBay account pending approval (1 business day). Use the KicksDB lookup below in the meantime.")
 
-# ── RapidAPI Sneaker Price Lookup ─────────────────────────────────────────────
+# ── KicksDB Sneaker Price Lookup ──────────────────────────────────────────────
 st.markdown("---")
-st.subheader("📊 StockX & GOAT Price Lookup (RapidAPI)")
-st.caption("Get retail price, StockX resell price, and GOAT resell price — free tier: 100 requests/month. Works right now, no approval needed.")
+st.subheader("📊 StockX & GOAT Price Lookup (KicksDB)")
+st.caption("Real StockX + GOAT pricing data — **1,000 free requests/month, no credit card required.** Sign up at kicks.dev.")
 
-_rapid_key = get_setting("rapidapi_key", "")
+_kicks_key = get_setting("kicksdb_api_key", "")
 
-with st.expander("⚙️ RapidAPI Key Setup", expanded=not bool(_rapid_key)):
+with st.expander("⚙️ KicksDB API Key Setup", expanded=not bool(_kicks_key)):
     st.markdown("""
-**How to get your free RapidAPI key (takes 2 minutes):**
-1. Go to [rapidapi.com](https://rapidapi.com) and create a free account
-2. Search for **"Real Time Sneaker Prices"** and click **Subscribe to Test** (free tier)
-3. Copy your **X-RapidAPI-Key** from the API playground header
-4. Paste it below
+**How to get your free KicksDB API key (2 minutes, no credit card):**
+1. Go to [sneakersapi.dev](https://sneakersapi.dev) (KicksDB)
+2. Click **Get started for free**
+3. Create an account — free tier gives you **1,000 requests/month**
+4. Copy your API key from the dashboard
+5. Paste it below
     """)
-    new_rapid = st.text_input("RapidAPI Key", value=_rapid_key, type="password", key="rapid_key_input")
-    if st.button("💾 Save RapidAPI Key", key="save_rapid"):
-        set_setting("rapidapi_key", new_rapid.strip())
-        _rapid_key = new_rapid.strip()
-        st.success("RapidAPI key saved!")
+    new_kicks = st.text_input("KicksDB API Key", value=_kicks_key, type="password", key="kicks_key_input")
+    if st.button("💾 Save KicksDB Key", key="save_kicks"):
+        set_setting("kicksdb_api_key", new_kicks.strip())
+        _kicks_key = new_kicks.strip()
+        st.success("KicksDB key saved!")
         st.rerun()
 
-if _rapid_key:
-    col_r1, col_r2 = st.columns([3, 1])
-    with col_r1:
+if _kicks_key:
+    col_k1, col_k2, col_k3 = st.columns([3, 1, 1])
+    with col_k1:
         default_q2 = ""
         if not inventory.empty:
             default_q2 = str(inventory.iloc[0]["item"])
-        rapid_query = st.text_input(
-            "Search StockX/GOAT for sneaker",
+        kicks_query = st.text_input(
+            "Search sneaker name or SKU",
             value=default_q2,
-            placeholder="e.g. Jordan 1 Chicago, Yeezy 350 Zebra, Nike Dunk Low Panda",
-            key="rapid_search_q"
+            placeholder="e.g. Jordan 1 Chicago, Yeezy 350 Zebra, CT8527-100",
+            key="kicks_search_q"
         )
-    with col_r2:
-        rapid_limit = st.selectbox("Results", [5, 10], index=1, key="rapid_limit")
+    with col_k2:
+        kicks_source = st.selectbox("Platform", ["stockx", "goat"], key="kicks_source",
+                                     format_func=lambda x: "StockX" if x == "stockx" else "GOAT")
+    with col_k3:
+        kicks_limit = st.selectbox("Results", [5, 10], index=1, key="kicks_limit")
 
-    if st.button("📊 Search StockX & GOAT Prices", type="primary", key="rapid_search_btn") and rapid_query.strip():
-        with st.spinner(f"Fetching market prices for '{rapid_query}'..."):
+    if st.button("📊 Search Market Prices", type="primary", key="kicks_search_btn") and kicks_query.strip():
+        with st.spinner(f"Fetching {kicks_source.upper()} prices for '{kicks_query}'..."):
             try:
-                rapid_results = rapidapi_search_sneakers(rapid_query.strip(), _rapid_key, limit=rapid_limit)
+                kicks_results = kicksdb_search_sneakers(kicks_query.strip(), _kicks_key,
+                                                         source=kicks_source, limit=kicks_limit)
             except Exception as e:
-                rapid_results = []
-                st.error(f"RapidAPI error: {e}")
+                kicks_results = []
+                st.error(f"KicksDB error: {e}")
 
-        if not rapid_results:
-            st.warning("No results found. Try a more specific search (e.g. 'Jordan 1 Retro High OG Chicago 2015').")
+        if not kicks_results:
+            st.warning("No results found. Try a different name or SKU (e.g. 'Jordan 1 Retro High OG Chicago' or '555088-101').")
         else:
-            # Summary metrics
-            stockx_prices = [r["stockx_price"] for r in rapid_results if r["stockx_price"] > 0]
-            goat_prices   = [r["goat_price"]   for r in rapid_results if r["goat_price"]   > 0]
-            retail_prices = [r["retail_price"]  for r in rapid_results if r["retail_price"] > 0]
+            min_prices = [r["min_price"] for r in kicks_results if r["min_price"] > 0]
+            avg_prices = [r["avg_price"] for r in kicks_results if r["avg_price"] > 0]
+            max_prices = [r["max_price"] for r in kicks_results if r["max_price"] > 0]
 
             m1, m2, m3, m4 = st.columns(4)
-            m1.metric("Results Found", len(rapid_results))
-            m2.metric("Avg Retail",  f"${sum(retail_prices)/len(retail_prices):,.2f}"  if retail_prices  else "—")
-            m3.metric("Avg StockX",  f"${sum(stockx_prices)/len(stockx_prices):,.2f}"  if stockx_prices  else "—")
-            m4.metric("Avg GOAT",    f"${sum(goat_prices)/len(goat_prices):,.2f}"       if goat_prices    else "—")
+            m1.metric("Results Found", len(kicks_results))
+            m2.metric("Lowest Ask",  f"${min(min_prices):,.2f}" if min_prices else "—")
+            m3.metric("Avg Price",   f"${sum(avg_prices)/len(avg_prices):,.2f}" if avg_prices else "—")
+            m4.metric("Highest",     f"${max(max_prices):,.2f}" if max_prices else "—")
 
-            # Results table
-            rapid_df = pd.DataFrame(rapid_results)
-            display_cols = ["title", "style_id", "retail_price", "stockx_price", "goat_price"]
-            display_df = rapid_df[display_cols].copy()
-            display_df.columns = ["Sneaker", "Style ID", "Retail ($)", "StockX ($)", "GOAT ($)"]
-            display_df["Retail ($)"]  = display_df["Retail ($)"].apply(lambda x: f"${x:,.2f}" if x > 0 else "—")
-            display_df["StockX ($)"]  = display_df["StockX ($)"].apply(lambda x: f"${x:,.2f}" if x > 0 else "—")
-            display_df["GOAT ($)"]    = display_df["GOAT ($)"].apply(lambda x: f"${x:,.2f}" if x > 0 else "—")
+            kicks_df = pd.DataFrame(kicks_results)
+            display_df = kicks_df[["title", "sku", "brand", "min_price", "avg_price", "max_price", "source"]].copy()
+            display_df.columns = ["Sneaker", "SKU", "Brand", "Lowest Ask ($)", "Avg Price ($)", "Highest ($)", "Platform"]
+            display_df["Lowest Ask ($)"] = display_df["Lowest Ask ($)"].apply(lambda x: f"${x:,.2f}" if x > 0 else "—")
+            display_df["Avg Price ($)"]  = display_df["Avg Price ($)"].apply(lambda x: f"${x:,.2f}" if x > 0 else "—")
+            display_df["Highest ($)"]    = display_df["Highest ($)"].apply(lambda x: f"${x:,.2f}" if x > 0 else "—")
             st.dataframe(display_df, use_container_width=True, hide_index=True)
-
-            # Show images if available
-            imgs = [(r["title"], r["image_url"]) for r in rapid_results if r.get("image_url")]
-            if imgs:
-                st.markdown("**Sneaker Images:**")
-                img_cols = st.columns(min(len(imgs), 5))
-                for i, (name, url) in enumerate(imgs[:5]):
-                    with img_cols[i]:
-                        st.image(url, caption=name[:30], use_container_width=True)
 else:
-    st.info("🔑 Add your free RapidAPI key above to search StockX & GOAT prices instantly.")
+    st.info("🔑 Add your free KicksDB API key above to search StockX & GOAT prices (1,000 free requests/month, no credit card).")
