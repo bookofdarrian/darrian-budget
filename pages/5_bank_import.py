@@ -98,9 +98,11 @@ _AUTO_CAT_RULES: list[tuple[str, str, str]] = [
     # ── Housing / Bills paid via ACH "Paid To -" ────────────────────────────
     ('the vivian',        'Housing', 'Mortgage / Rent'),
     ('gpc gpc',           'Housing', 'Electricity'),          # Georgia Power
-    # ── Gardening income (Zelle payments received) ───────────────────────────
+    # ── Gardening income (Zelle / Apple Cash payments received) ─────────────
     ('zelle*joshua',      'Gardening', 'Gardening'),
     ('zelle*xavier',      'Gardening', 'Gardening'),
+    ('apple cash sent to','Gardening', 'Gardening'),
+    ('apple cash*',       'Gardening', 'Gardening'),
 ]
 
 def _auto_category(description: str) -> tuple[str | None, str | None]:
