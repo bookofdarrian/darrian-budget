@@ -167,20 +167,29 @@ trends = trends.sort_values("month").reset_index(drop=True)
 total_deposited   = trends["deposited"].sum()
 total_transferred = trends["transferred"].sum()
 
+# All-time income = manual income entries + bank deposit credits (payroll)
+total_income_manual  = trends["income"].sum()
+total_income_all     = total_income_manual + total_deposited
+total_spent_all      = trends["spent"].sum()
+total_saved_all      = total_income_all - total_spent_all
+avg_sr = trends["savings_rate"].replace([float("inf"), float("-inf")], float("nan")).mean()
+
 # ── All-Time KPIs ─────────────────────────────────────────────────────────────
 st.subheader("📊 All-Time Summary")
 k1, k2, k3, k4 = st.columns(4)
-k1.metric("Total Income",    f"${trends['income'].sum():,.2f}")
-k2.metric("Total Spent",     f"${trends['spent'].sum():,.2f}")
-k3.metric("Total Saved",     f"${trends['savings'].sum():,.2f}")
-avg_sr = trends["savings_rate"].replace([float("inf"), float("-inf")], float("nan")).mean()
+k1.metric("Total Income",     f"${total_income_all:,.2f}",
+          help="Manual income entries + all bank payroll/deposit credits")
+k2.metric("Total Spent",      f"${total_spent_all:,.2f}")
+k3.metric("Total Saved",      f"${total_saved_all:,.2f}")
 k4.metric("Avg Savings Rate", f"{avg_sr:.1f}%" if not pd.isna(avg_sr) else "—")
 
 notes = []
+if total_income_manual > 0:
+    notes.append(f"📋 Manual income entries: **${total_income_manual:,.2f}**")
 if total_deposited > 0:
-    notes.append(f"💰 Bank deposits: **${total_deposited:,.2f}** (not counted as income)")
+    notes.append(f"💰 Bank payroll/deposits: **${total_deposited:,.2f}**")
 if total_transferred > 0:
-    notes.append(f"🔄 Transfers (credit cards, Fidelity, etc.): **${total_transferred:,.2f}** (excluded from spending)")
+    notes.append(f"🔄 Transfers excluded from spending: **${total_transferred:,.2f}**")
 if notes:
     st.caption("  ·  ".join(notes))
 
