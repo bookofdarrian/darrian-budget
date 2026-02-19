@@ -282,7 +282,7 @@ if not txn_raw.empty:
     _MERCHANT_GROUPS = [
         # (display_name, [keywords_to_match_in_description_lower])
         # ── Housing & Fixed Bills ────────────────────────────────────────────
-        ("🏠 The Vivian (Rent)",        ["the vivian", "vivian 498"]),   # covers "4980" and "498 0"
+        ("🏠 The Vivian (Rent)",        ["the vivian", "vivian 498", "vivian 4980", "paid to - the vivian"]),
         ("⚡ Georgia Power",            ["gpc gpc"]),
         ("🛡️ Allstate (Renters Ins.)", ["allstate"]),
         ("🏋️ Planet Fitness",          ["pf atlanta"]),
