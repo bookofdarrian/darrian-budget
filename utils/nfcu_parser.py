@@ -57,10 +57,18 @@ def _clean_dep_description(desc: str) -> str:
     return desc
 
 
-def _parse_deposit_statement(full_text: str, year: str) -> list[dict]:
-    """Parse a checking/savings deposit account statement."""
+def _parse_deposit_statement(full_text: str, year: str, end_month: int = 0) -> list[dict]:
+    """Parse a checking/savings deposit account statement.
+
+    year      – the statement end year (e.g. "2025")
+    end_month – the statement end month as int (1-12). Used to detect
+                year-boundary transactions: if a transaction month is
+                greater than end_month, it belongs to year-1 (e.g. a
+                December transaction on a January statement).
+    """
     transactions = []
     current_account = None
+    year_int = int(year)
 
     for raw_line in full_text.split('\n'):
         line = raw_line.strip()
@@ -86,8 +94,19 @@ def _parse_deposit_statement(full_text: str, year: str) -> list[dict]:
         amount = float(amt_str.replace(',', ''))
         is_debit = dash == '-'
         desc = _clean_dep_description(raw_desc)
-        month, day = date_str.split('-')
-        full_date = f"{year}-{month}-{day}"
+        month_str, day = date_str.split('-')
+        txn_month = int(month_str)
+
+        # Year-boundary fix: if the statement ends in month M and this
+        # transaction is in month > M, it must be from the prior year.
+        # e.g. a January statement (end_month=1) with a txn in month 12
+        # → that's December of the previous year.
+        if end_month > 0 and txn_month > end_month:
+            txn_year = year_int - 1
+        else:
+            txn_year = year_int
+
+        full_date = f"{txn_year}-{month_str}-{day}"
 
         transactions.append({
             'date':        full_date,
@@ -232,15 +251,18 @@ def parse_nfcu_pdf(pdf_file) -> list[dict]:
     if _is_credit_card_statement(full_text):
         return _parse_credit_card_statement(full_text)
 
-    # Deposit account — detect statement year from period header
+    # Deposit account — detect statement period from header
+    # Format: "MM/DD/YY - MM/DD/YY"  (start - end)
     period_match = re.search(
-        r'\d{2}/\d{2}/(\d{2})\s*-\s*\d{2}/\d{2}/(\d{2})', full_text
+        r'(\d{2})/(\d{2})/(\d{2})\s*-\s*(\d{2})/(\d{2})/(\d{2})', full_text
     )
     if period_match:
-        year = "20" + period_match.group(2)
+        end_month = int(period_match.group(4))   # end MM
+        year      = "20" + period_match.group(6) # end YY → YYYY
     else:
         # Fallback: look for any 4-digit year
-        yr_match = re.search(r'\b(20\d{2})\b', full_text)
-        year = yr_match.group(1) if yr_match else "2025"
+        yr_match  = re.search(r'\b(20\d{2})\b', full_text)
+        year      = yr_match.group(1) if yr_match else "2025"
+        end_month = 0  # unknown — no year-boundary correction
 
-    return _parse_deposit_statement(full_text, year)
+    return _parse_deposit_statement(full_text, year, end_month)
