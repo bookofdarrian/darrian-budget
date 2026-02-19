@@ -98,6 +98,35 @@ _AUTO_CAT_RULES: list[tuple[str, str, str]] = [
     # ── Housing / Bills paid via ACH "Paid To -" ────────────────────────────
     ('the vivian',        'Housing', 'Mortgage / Rent'),
     ('gpc gpc',           'Housing', 'Electricity'),          # Georgia Power
+    # ── Barber / Personal Care ───────────────────────────────────────────────
+    ('thecut',            'Personal Care', 'Hair / Nails'),   # TheCut barber app
+    ('great clips',       'Personal Care', 'Hair / Nails'),
+    ('sport clips',       'Personal Care', 'Hair / Nails'),
+    # ── Clothing / Thrift ───────────────────────────────────────────────────
+    ('depop',             'Entertainment', 'Subscriptions'),  # resale — remap if needed
+    ('2w thrift',         'Personal Care', 'Hair / Nails'),   # thrift store
+    ('sp eezy gang',      'Entertainment', 'Night Out'),      # merch
+    # ── Food / Dining (additional) ──────────────────────────────────────────
+    ('doordash',          'Food', 'Dining Out'),
+    ('dd *doordash',      'Food', 'Dining Out'),
+    ('cook out',          'Food', 'Dining Out'),
+    ('kokee tea',         'Food', 'Dining Out'),
+    ('kwik save',         'Food', 'Groceries'),
+    ('crunchyroll',       'Entertainment', 'Subscriptions'),
+    # ── Entertainment (additional) ──────────────────────────────────────────
+    ('stubhub',           'Entertainment', 'Night Out'),
+    ('ticketmaster',      'Entertainment', 'Night Out'),
+    ('tm *ticketmaster',  'Entertainment', 'Night Out'),
+    ('sq *center stage',  'Entertainment', 'Night Out'),
+    ('bird app',          'Transportation', 'Fuel'),           # Bird scooter
+    # ── Fuel (additional) ───────────────────────────────────────────────────
+    ('exxon',             'Transportation', 'Fuel'),
+    ('sunoco',            'Transportation', 'Fuel'),
+    # ── Shopping ────────────────────────────────────────────────────────────
+    ('michaels',          'Housing', 'Supplies'),
+    ('ebay',              'Entertainment', 'Subscriptions'),   # resale — remap if needed
+    # ── Smoke / Vape ────────────────────────────────────────────────────────
+    ('smoke shop',        'Personal Care', 'Medical'),
     # ── Gardening income (Zelle / Apple Cash payments received) ─────────────
     ('zelle*joshua',      'Gardening', 'Gardening'),
     ('zelle*xavier',      'Gardening', 'Gardening'),
