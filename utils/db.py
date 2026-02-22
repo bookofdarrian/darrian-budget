@@ -729,16 +729,25 @@ def update_user_subscription(user_id: int, plan: str, stripe_customer_id: str,
     conn.close()
 
 
+# ── Owner / dev accounts — always Pro regardless of subscription ──────────────
+_OWNER_EMAILS = {
+    "darrianbelcher@gmail.com",   # primary dev account
+}
+
 def is_pro_user(user: dict) -> bool:
     """Return True if the user has an active Pro subscription."""
     if not user:
         return False
+    email = user.get("email", "").strip().lower()
+    # Owner accounts are always Pro
+    if email in _OWNER_EMAILS:
+        return True
+    # Admin override via ADMIN_EMAILS env var (comma-separated)
+    admin_emails = os.environ.get("ADMIN_EMAILS", "").split(",")
+    if email in [e.strip().lower() for e in admin_emails if e.strip()]:
+        return True
     plan = user.get("plan", "free")
     status = user.get("subscription_status", "none")
-    # Admin override via env var
-    admin_emails = os.environ.get("ADMIN_EMAILS", "").split(",")
-    if user.get("email", "") in [e.strip().lower() for e in admin_emails if e.strip()]:
-        return True
     return plan == "pro" and status in ("active", "trialing")
 
 
@@ -849,36 +858,38 @@ def seed_budget(month: str):
         conn.close()
         return
 
+    # Default projected amounts are 0 for all new users.
+    # (Owner's personal values are already seeded in their own DB.)
     categories = [
-        ("Housing", "Mortgage / Rent", 2645),
-        ("Housing", "Phone", 50),
-        ("Housing", "Electricity", 120),
-        ("Housing", "Gas", 60),
-        ("Housing", "Water and Sewer", 30),
-        ("Housing", "Cable / WiFi", 75),
-        ("Housing", "Waste Removal", 25),
-        ("Housing", "Maintenance / Repairs", 23),
+        ("Housing", "Mortgage / Rent", 0),
+        ("Housing", "Phone", 0),
+        ("Housing", "Electricity", 0),
+        ("Housing", "Gas", 0),
+        ("Housing", "Water and Sewer", 0),
+        ("Housing", "Cable / WiFi", 0),
+        ("Housing", "Waste Removal", 0),
+        ("Housing", "Maintenance / Repairs", 0),
         ("Housing", "Supplies", 0),
         ("Transportation", "Vehicle Payment", 0),
-        ("Transportation", "Insurance", 100),
-        ("Transportation", "Fuel", 80),
-        ("Transportation", "Maintenance", 75),
-        ("Insurance", "Renters", 100),
+        ("Transportation", "Insurance", 0),
+        ("Transportation", "Fuel", 0),
+        ("Transportation", "Maintenance", 0),
+        ("Insurance", "Renters", 0),
         ("Insurance", "Health", 0),
-        ("Insurance", "Pet", 25),
-        ("Food", "Groceries", 400),
-        ("Food", "Dining Out", 200),
-        ("Pets", "Food", 50),
-        ("Pets", "Medical", 50),
+        ("Insurance", "Pet", 0),
+        ("Food", "Groceries", 0),
+        ("Food", "Dining Out", 0),
+        ("Pets", "Food", 0),
+        ("Pets", "Medical", 0),
         ("Pets", "Grooming", 0),
-        ("Personal Care", "Medical", 50),
-        ("Personal Care", "Hair / Nails", 140),
-        ("Entertainment", "Night Out", 200),
+        ("Personal Care", "Medical", 0),
+        ("Personal Care", "Hair / Nails", 0),
+        ("Entertainment", "Night Out", 0),
         ("Entertainment", "Music Platforms", 0),
-        ("Entertainment", "Movies", 112),
-        ("Entertainment", "Subscriptions", 75),
-        ("Loans", "Credit Card", 100),
-        ("Savings / Investments", "Roth IRA", 300),
+        ("Entertainment", "Movies", 0),
+        ("Entertainment", "Subscriptions", 0),
+        ("Loans", "Credit Card", 0),
+        ("Savings / Investments", "Roth IRA", 0),
         ("Savings / Investments", "Retirement Account", 0),
     ]
 
@@ -912,9 +923,9 @@ def seed_income(month: str):
         return
 
     rows = [
-        (month, "Salary — Paycheck 1 (Post-Tax)", 2142, "Bi-weekly take-home"),
-        (month, "Salary — Paycheck 2 (Post-Tax)", 2142, "Bi-weekly take-home"),
-        (month, "404 Sole Archive", 0, "Update from resale tracker"),
+        (month, "Salary — Paycheck 1 (Post-Tax)", 0, "Bi-weekly take-home"),
+        (month, "Salary — Paycheck 2 (Post-Tax)", 0, "Bi-weekly take-home"),
+        (month, "Business Income", 0, "Side hustle / resale / freelance"),
     ]
 
     if USE_POSTGRES:

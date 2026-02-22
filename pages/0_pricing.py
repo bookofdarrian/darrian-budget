@@ -39,7 +39,7 @@ st.sidebar.markdown("---")
 st.sidebar.page_link("app.py",                    label="Overview",          icon="📊")
 st.sidebar.page_link("pages/1_expenses.py",       label="Expenses",          icon="📋")
 st.sidebar.page_link("pages/2_income.py",         label="Income",            icon="💵")
-st.sidebar.page_link("pages/3_sole_archive.py",   label="404 Sole Archive",  icon="👟")
+st.sidebar.page_link("pages/3_sole_archive.py",   label="Business Tracker 🔒", icon="💼")
 st.sidebar.page_link("pages/4_trends.py",         label="Monthly Trends",    icon="📈")
 st.sidebar.page_link("pages/5_bank_import.py",    label="Bank Import",       icon="🏦")
 st.sidebar.page_link("pages/6_receipts.py",       label="Receipts & HSA",    icon="🧾")
@@ -95,7 +95,6 @@ with col_free:
             <li>Monthly budget tracking</li>
             <li>Expense &amp; income management</li>
             <li>Bank statement import (PDF)</li>
-            <li>404 Sole Archive (resale tracker)</li>
             <li>Financial goals</li>
             <li>Receipts &amp; HSA tracker</li>
             <li class="locked">AI Insights (Claude)</li>
@@ -123,7 +122,7 @@ with col_pro:
                          padding:2px 8px; border-radius:20px; letter-spacing:0.05em;">MOST POPULAR</span>
         </div>
         <div style="display:flex; align-items:baseline; gap:4px; margin-bottom:4px;">
-            <span class="price-amount">$9</span>
+            <span class="price-amount">$7</span>
             <span class="price-period">/month</span>
         </div>
         <div class="price-period">Cancel anytime · Billed monthly</div>
@@ -156,7 +155,7 @@ with col_pro:
                     )
                     st.markdown(f"[Open billing portal]({portal_url})")
     elif user:
-        if st.button("🚀 Upgrade to Pro — $9/month", type="primary",
+        if st.button("🚀 Upgrade to Pro — $7/month", type="primary",
                      use_container_width=True, key="pro_cta"):
             if STRIPE_ENABLED:
                 url = create_checkout_session(user.get("email", ""), user.get("id", 0))
@@ -179,7 +178,7 @@ with col_pro:
             unsafe_allow_html=True
         )
     else:
-        if st.button("🚀 Get Pro — $9/month", type="primary",
+        if st.button("🚀 Get Pro — $7/month", type="primary",
                      use_container_width=True, key="pro_cta_anon"):
             st.switch_page("app.py")
         st.markdown(
@@ -197,9 +196,9 @@ features = [
     ("Expense management",                   "✅", "✅"),
     ("Income tracking",                      "✅", "✅"),
     ("Bank PDF import (NFCU)",               "✅", "✅"),
-    ("404 Sole Archive (resale tracker)",    "✅", "✅"),
     ("Financial goals",                      "✅", "✅"),
     ("Receipts & HSA tracker",               "✅", "✅"),
+    ("Business Income Tracker (resale/side hustle)", "—", "✅"),
     ("AI Monthly Summary (Claude)",          "—",  "✅"),
     ("AI Budget Recommendations",            "—",  "✅"),
     ("AI Auto-Categorize Transactions",      "—",  "✅"),

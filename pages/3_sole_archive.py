@@ -4,11 +4,13 @@ import requests
 import base64
 from datetime import datetime
 from utils.db import get_conn, init_db, read_sql, execute, get_setting, set_setting
-from utils.auth import require_password
+from utils.auth import require_login, require_pro, render_sidebar_brand, render_sidebar_user_widget, inject_css
 
-st.set_page_config(page_title="404 Sole Archive", page_icon="👟", layout="wide")
+st.set_page_config(page_title="Business Income Tracker — Peach State Savings", page_icon="💼", layout="wide")
 init_db()
-require_password()
+require_login()
+require_pro("Business Income Tracker")
+inject_css()
 
 
 # ── eBay API helpers ──────────────────────────────────────────────────────────
@@ -100,20 +102,23 @@ def kicksdb_search_sneakers(query: str, api_key: str, source: str = "stockx", li
         })
     return results
 
-st.sidebar.title("💰 Budget Dashboard")
+render_sidebar_brand()
 st.sidebar.markdown("---")
-st.sidebar.page_link("app.py",                    label="Overview",          icon="📊")
-st.sidebar.page_link("pages/1_expenses.py",       label="Expenses",          icon="📋")
-st.sidebar.page_link("pages/2_income.py",         label="Income",            icon="💵")
-st.sidebar.page_link("pages/3_sole_archive.py",   label="404 Sole Archive",  icon="👟")
-st.sidebar.page_link("pages/4_trends.py",         label="Monthly Trends",    icon="📈")
-st.sidebar.page_link("pages/5_bank_import.py",    label="Bank Import",       icon="🏦")
-st.sidebar.page_link("pages/6_receipts.py",       label="Receipts & HSA",    icon="🧾")
-st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights",       icon="🤖")
-st.sidebar.page_link("pages/8_goals.py",          label="Financial Goals",   icon="🎯")
-st.sidebar.page_link("pages/9_net_worth.py",      label="Net Worth",         icon="💎")
+st.sidebar.page_link("app.py",                    label="Overview",              icon="📊")
+st.sidebar.page_link("pages/1_expenses.py",       label="Expenses",              icon="📋")
+st.sidebar.page_link("pages/2_income.py",         label="Income",                icon="💵")
+st.sidebar.page_link("pages/3_sole_archive.py",   label="Business Tracker 🔒",   icon="💼")
+st.sidebar.page_link("pages/4_trends.py",         label="Monthly Trends",        icon="📈")
+st.sidebar.page_link("pages/5_bank_import.py",    label="Bank Import",           icon="🏦")
+st.sidebar.page_link("pages/6_receipts.py",       label="Receipts & HSA",        icon="🧾")
+st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights 🔒",        icon="🤖")
+st.sidebar.page_link("pages/8_goals.py",          label="Financial Goals",       icon="🎯")
+st.sidebar.page_link("pages/9_net_worth.py",      label="Net Worth 🔒",          icon="💎")
+st.sidebar.page_link("pages/0_pricing.py",        label="⭐ Upgrade to Pro",     icon="⭐")
+render_sidebar_user_widget()
 
-st.title("👟 404 Sole Archive — Resale Tracker")
+st.title("💼 Business Income Tracker — Resale & Side Hustle")
+st.caption("Track your sneaker resale, freelance, or any side business income. Includes eBay & StockX market lookups.")
 
 conn = get_conn()
 inv_df = read_sql("SELECT * FROM sole_archive ORDER BY date DESC", conn)
