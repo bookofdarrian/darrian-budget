@@ -23,8 +23,24 @@ st.set_page_config(
 )
 
 init_db()
-require_login()
 inject_css()
+
+# ── Handle Stripe checkout return BEFORE login gate ───────────────────────────
+_params = st.query_params
+if _params.get("checkout") == "success":
+    st.balloons()
+    st.success("🎉 Welcome to Peach Savings Pro! Your subscription is active.")
+    st.markdown("### You're all set!")
+    st.markdown(
+        "Your Pro plan is now active. Sign in below to access AI Insights, "
+        "Net Worth tracking, Monthly Trends, and all Pro features."
+    )
+    st.query_params.clear()
+elif _params.get("checkout") == "cancelled":
+    st.info("Checkout cancelled — no charge was made. You can upgrade anytime.")
+    st.query_params.clear()
+
+require_login()
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 render_sidebar_brand()
