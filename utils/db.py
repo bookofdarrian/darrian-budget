@@ -730,8 +730,11 @@ def update_user_subscription(user_id: int, plan: str, stripe_customer_id: str,
 
 
 # ── Owner / dev accounts — always Pro regardless of subscription ──────────────
+# All compared lowercase (is_pro_user lowercases before checking)
 _OWNER_EMAILS = {
-    "darrianbelcher@gmail.com",   # primary dev account
+    "darrianbelcher@gmail.com",    # primary
+    "darrianebelcher@gmail.com",   # registered account (lowercase)
+    "dbelcher003@gmail.com",       # dev test account — also always Pro
 }
 
 def is_pro_user(user: dict) -> bool:
