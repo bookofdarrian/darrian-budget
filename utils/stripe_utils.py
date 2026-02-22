@@ -37,7 +37,16 @@ _SANDBOX_EMAILS = {
     "dbelcher003@gmail.com",
 }
 
-STRIPE_ENABLED = bool(STRIPE_SECRET_KEY or STRIPE_TEST_SECRET_KEY)
+STRIPE_ENABLED      = bool(STRIPE_SECRET_KEY or STRIPE_TEST_SECRET_KEY)
+STRIPE_LIVE_ENABLED = bool(STRIPE_SECRET_KEY and STRIPE_PRICE_ID)
+STRIPE_TEST_ENABLED = bool(STRIPE_TEST_SECRET_KEY and STRIPE_TEST_PRICE_ID)
+
+
+def stripe_enabled_for(user_email: str) -> bool:
+    """Return True if Stripe is configured for this specific user."""
+    if _is_sandbox(user_email):
+        return STRIPE_TEST_ENABLED
+    return STRIPE_LIVE_ENABLED
 
 
 def _is_sandbox(user_email: str) -> bool:

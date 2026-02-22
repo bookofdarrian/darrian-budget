@@ -402,7 +402,7 @@ def require_pro(feature_name: str = "this feature"):
 
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        from utils.stripe_utils import create_checkout_session, STRIPE_ENABLED, is_sandbox_mode
+        from utils.stripe_utils import create_checkout_session, is_sandbox_mode, stripe_enabled_for
         sandbox = is_sandbox_mode(email)
         if sandbox:
             st.markdown(
@@ -415,7 +415,7 @@ def require_pro(feature_name: str = "this feature"):
         btn_label = "🧪 Test Checkout — $7/month" if sandbox else "🚀 Upgrade to Pro — $7/month"
         if st.button(btn_label, type="primary",
                      use_container_width=True, key="paywall_upgrade_btn"):
-            if STRIPE_ENABLED and user and user.get("id", 0) != 0:
+            if stripe_enabled_for(email) and user and user.get("id", 0) != 0:
                 url = create_checkout_session(email, user["id"])
                 if url:
                     st.markdown(

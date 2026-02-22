@@ -8,7 +8,7 @@ from utils.auth import (
     render_sidebar_brand, render_sidebar_user_widget,
     PEACH, PEACH_DARK, PEACH_GLOW, BG_CARD, BG_BORDER, TEXT_MUTED, TEXT_MAIN
 )
-from utils.stripe_utils import create_checkout_session, create_billing_portal_session, STRIPE_ENABLED, is_sandbox_mode
+from utils.stripe_utils import create_checkout_session, create_billing_portal_session, STRIPE_ENABLED, is_sandbox_mode, stripe_enabled_for
 
 try:
     from dotenv import load_dotenv
@@ -168,7 +168,7 @@ with col_pro:
             )
         btn_label = "🧪 Test Checkout — $7/month" if sandbox else "🚀 Upgrade to Pro — $7/month"
         if st.button(btn_label, type="primary", use_container_width=True, key="pro_cta"):
-            if STRIPE_ENABLED:
+            if stripe_enabled_for(user_email):
                 url = create_checkout_session(user_email, user.get("id", 0))
                 if url:
                     st.markdown(
@@ -179,10 +179,16 @@ with col_pro:
                 else:
                     st.error("Could not start checkout. Please try again.")
             else:
-                st.warning(
-                    "⚙️ Stripe not configured yet. Add `STRIPE_SECRET_KEY` and "
-                    "`STRIPE_PRICE_ID` to your Railway environment variables."
-                )
+                if sandbox:
+                    st.warning(
+                        "⚙️ Test keys not configured. Add `STRIPE_TEST_SECRET_KEY` and "
+                        "`STRIPE_TEST_PRICE_ID` to your Railway environment variables."
+                    )
+                else:
+                    st.warning(
+                        "⚙️ Stripe not configured yet. Add `STRIPE_SECRET_KEY` and "
+                        "`STRIPE_PRICE_ID` to your Railway environment variables."
+                    )
         footer = "🧪 Test mode — no real charge" if sandbox else "Secure payment via Stripe · Cancel anytime"
         st.markdown(
             f"<div style='text-align:center; color:{TEXT_MUTED}; font-size:0.78rem; margin-top:6px;'>"
