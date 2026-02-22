@@ -4,7 +4,7 @@ import pandas as pd
 import anthropic
 from datetime import datetime
 from utils.db import get_conn, init_db, read_sql, load_investment_context, save_investment_context, get_setting, set_setting
-from utils.auth import require_password
+from utils.auth import require_login, require_pro, render_sidebar_brand, render_sidebar_user_widget, inject_css
 
 try:
     from dotenv import load_dotenv
@@ -13,9 +13,11 @@ except ImportError:
     pass
 _env_key = os.environ.get("ANTHROPIC_API_KEY", "")
 
-st.set_page_config(page_title="AI Insights", page_icon="🤖", layout="wide")
+st.set_page_config(page_title="AI Insights — Peach State Savings", page_icon="🤖", layout="wide")
 init_db()
-require_password()
+require_login()
+require_pro("AI Insights (Claude AI analysis)")
+inject_css()
 
 # ── Load API key: env var → DB fallback → session state ──────────────────────
 if "api_key" not in st.session_state:

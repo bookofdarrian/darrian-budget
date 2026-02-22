@@ -9,22 +9,25 @@ except ImportError:
     pass
 
 from utils.db import init_db, seed_budget, seed_income, get_conn, read_sql, execute as db_execute
-from utils.auth import require_password
+from utils.auth import (
+    require_login, render_sidebar_brand, render_sidebar_user_widget,
+    inject_css, get_current_user
+)
 
-# ── App config ──────────────────────────────────────────────────────────────
+# ── App config ────────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Darrian's Budget",
-    page_icon="💰",
+    page_title="Peach State Savings",
+    page_icon="🍑",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 init_db()
-require_password()
+require_login()
+inject_css()
 
-# ── Sidebar: Month selector ─────────────────────────────────────────────────
-st.sidebar.title("💰 Budget Dashboard")
-st.sidebar.markdown("---")
+# ── Sidebar ───────────────────────────────────────────────────────────────────
+render_sidebar_brand()
 
 months = []
 for m in range(1, 13):
@@ -36,7 +39,6 @@ current_month = datetime.now().strftime("%Y-%m")
 default_idx = months.index(current_month) if current_month in months else 0
 selected_month = st.sidebar.selectbox("📅 Month", months, index=default_idx)
 
-# Seed the selected month if needed
 seed_budget(selected_month)
 seed_income(selected_month)
 
@@ -48,24 +50,25 @@ st.sidebar.page_link("pages/3_sole_archive.py",   label="404 Sole Archive",  ico
 st.sidebar.page_link("pages/4_trends.py",         label="Monthly Trends",    icon="📈")
 st.sidebar.page_link("pages/5_bank_import.py",    label="Bank Import",       icon="🏦")
 st.sidebar.page_link("pages/6_receipts.py",       label="Receipts & HSA",    icon="🧾")
-st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights",       icon="🤖")
+st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights 🔒",    icon="🤖")
 st.sidebar.page_link("pages/8_goals.py",          label="Financial Goals",   icon="🎯")
-st.sidebar.page_link("pages/9_net_worth.py",      label="Net Worth",         icon="💎")
+st.sidebar.page_link("pages/9_net_worth.py",      label="Net Worth 🔒",      icon="💎")
+st.sidebar.page_link("pages/0_pricing.py",        label="⭐ Upgrade to Pro", icon="⭐")
 
-# ── Main dashboard ──────────────────────────────────────────────────────────
+render_sidebar_user_widget()
+
+# ── Main dashboard ────────────────────────────────────────────────────────────
 st.title(f"📊 Overview — {datetime.strptime(selected_month, '%Y-%m').strftime('%B %Y')}")
 
 conn = get_conn()
 
-# Monthly data
-income_df = read_sql("SELECT * FROM income WHERE month = ?", conn, params=(selected_month,))
-total_income = income_df['amount'].sum()
+income_df      = read_sql("SELECT * FROM income WHERE month = ?", conn, params=(selected_month,))
+total_income   = income_df['amount'].sum()
 
-expense_df = read_sql("SELECT * FROM expenses WHERE month = ?", conn, params=(selected_month,))
+expense_df     = read_sql("SELECT * FROM expenses WHERE month = ?", conn, params=(selected_month,))
 total_projected = expense_df['projected'].sum()
-total_actual = expense_df['actual'].sum()
+total_actual    = expense_df['actual'].sum()
 
-# All-Time data
 _c = db_execute(conn, "SELECT SUM(amount) FROM income")
 at_income_manual = float(_c.fetchone()[0] or 0)
 
@@ -78,13 +81,12 @@ _c = db_execute(conn, """
     AND (category IS NULL OR category != 'Transfer')
 """)
 at_spent = float(_c.fetchone()[0] or 0)
-
 conn.close()
 
 at_income_total = at_income_manual + at_deposits
 at_saved        = at_income_total - at_spent
 
-# ── TWO-PANEL LAYOUT: Monthly | All-Time ────────────────────────────────────
+# ── Two-panel layout ──────────────────────────────────────────────────────────
 left_col, right_col = st.columns(2, gap="large")
 
 with left_col:
@@ -112,8 +114,7 @@ with right_col:
               help="All bank debits, transfers excluded")
 
     a3, a4 = st.columns(2)
-    a3.metric("🏦 Net Saved",    f"${at_saved:,.2f}")
-    # Savings rate all-time
+    a3.metric("🏦 Net Saved", f"${at_saved:,.2f}")
     if at_income_total > 0:
         at_savings_pct = (at_saved / at_income_total) * 100
         a4.metric("📈 Savings Rate", f"{at_savings_pct:.1f}%",
@@ -123,7 +124,6 @@ with right_col:
 
 st.markdown("---")
 
-# ── Budget Health Bar ────────────────────────────────────────────────────────
 if total_income > 0:
     pct_spent = (total_actual / total_income) * 100
     st.progress(min(pct_spent / 100, 1.0),
@@ -131,7 +131,6 @@ if total_income > 0:
 
 st.markdown("---")
 
-# ── Spending by category ─────────────────────────────────────────────────────
 st.subheader("Spending by Category")
 
 if not expense_df.empty:
@@ -140,10 +139,8 @@ if not expense_df.empty:
     cat_summary.columns = ["Category", "Projected", "Actual", "Difference"]
 
     def color_diff(val):
-        if val > 0:
-            return "color: #ff4b4b"
-        elif val < 0:
-            return "color: #21c354"
+        if val > 0:   return "color: #ff4b4b"
+        elif val < 0: return "color: #21c354"
         return ""
 
     styled = cat_summary.style\
@@ -152,13 +149,11 @@ if not expense_df.empty:
 
     st.dataframe(styled, use_container_width=True, hide_index=True)
 
-    # Bar chart
     st.subheader("Projected vs Actual by Category")
     chart_data = cat_summary.set_index("Category")[["Projected", "Actual"]]
     st.bar_chart(chart_data)
 
     st.markdown("---")
-    # Budget health detail
     col1, col2 = st.columns(2)
     with col1:
         if total_income > 0:

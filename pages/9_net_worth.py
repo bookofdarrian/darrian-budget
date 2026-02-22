@@ -2,14 +2,16 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, date
 from utils.db import get_conn, init_db, read_sql, execute, fetchone, load_investment_context
-from utils.auth import require_password
+from utils.auth import require_login, require_pro, render_sidebar_brand, render_sidebar_user_widget, inject_css
 
-st.set_page_config(page_title="Net Worth", page_icon="💎", layout="wide")
+st.set_page_config(page_title="Net Worth — Peach State Savings", page_icon="💎", layout="wide")
 init_db()
-require_password()
+require_login()
+require_pro("Net Worth Tracker")
+inject_css()
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
-st.sidebar.title("💰 Budget Dashboard")
+render_sidebar_brand()
 st.sidebar.markdown("---")
 st.sidebar.page_link("app.py",                    label="Overview",          icon="📊")
 st.sidebar.page_link("pages/1_expenses.py",       label="Expenses",          icon="📋")
@@ -18,9 +20,11 @@ st.sidebar.page_link("pages/3_sole_archive.py",   label="404 Sole Archive",  ico
 st.sidebar.page_link("pages/4_trends.py",         label="Monthly Trends",    icon="📈")
 st.sidebar.page_link("pages/5_bank_import.py",    label="Bank Import",       icon="🏦")
 st.sidebar.page_link("pages/6_receipts.py",       label="Receipts & HSA",    icon="🧾")
-st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights",       icon="🤖")
+st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights 🔒",    icon="🤖")
 st.sidebar.page_link("pages/8_goals.py",          label="Financial Goals",   icon="🎯")
-st.sidebar.page_link("pages/9_net_worth.py",      label="Net Worth",         icon="💎")
+st.sidebar.page_link("pages/9_net_worth.py",      label="Net Worth 🔒",      icon="💎")
+st.sidebar.page_link("pages/0_pricing.py",        label="⭐ Upgrade to Pro", icon="⭐")
+render_sidebar_user_widget()
 
 st.title("💎 Net Worth Tracker")
 st.caption("Log monthly snapshots of your assets and liabilities to track your net worth over time.")
