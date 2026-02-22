@@ -8,7 +8,7 @@ from utils.auth import (
     render_sidebar_brand, render_sidebar_user_widget,
     PEACH, PEACH_DARK, PEACH_GLOW, BG_CARD, BG_BORDER, TEXT_MUTED, TEXT_MAIN
 )
-from utils.stripe_utils import create_checkout_session, create_billing_portal_session, STRIPE_ENABLED
+from utils.stripe_utils import create_checkout_session, create_billing_portal_session, STRIPE_ENABLED, is_sandbox_mode
 
 try:
     from dotenv import load_dotenv
@@ -144,10 +144,11 @@ with col_pro:
 
     if user and is_pro_user(user):
         st.success("✅ You're on Pro!")
+        user_email = user.get("email", "")
         stripe_cid = user.get("stripe_customer_id", "")
         if stripe_cid and STRIPE_ENABLED:
             if st.button("Manage Subscription", use_container_width=True, key="manage_sub"):
-                portal_url = create_billing_portal_session(stripe_cid)
+                portal_url = create_billing_portal_session(stripe_cid, user_email)
                 if portal_url:
                     st.markdown(
                         f'<meta http-equiv="refresh" content="0; url={portal_url}">',
@@ -155,10 +156,20 @@ with col_pro:
                     )
                     st.markdown(f"[Open billing portal]({portal_url})")
     elif user:
-        if st.button("🚀 Upgrade to Pro — $7/month", type="primary",
-                     use_container_width=True, key="pro_cta"):
+        user_email = user.get("email", "")
+        sandbox = is_sandbox_mode(user_email)
+        if sandbox:
+            st.markdown(
+                "<div style='background:#1a2a1a; border:1px solid #3a6b3a; border-radius:8px; "
+                "padding:8px 12px; margin-bottom:10px; font-size:0.78rem; color:#7ec87e;'>"
+                "🧪 <strong>Sandbox mode</strong> — Stripe test keys active. "
+                "Use card <code>4242 4242 4242 4242</code>, any future date &amp; CVC.</div>",
+                unsafe_allow_html=True
+            )
+        btn_label = "🧪 Test Checkout — $7/month" if sandbox else "🚀 Upgrade to Pro — $7/month"
+        if st.button(btn_label, type="primary", use_container_width=True, key="pro_cta"):
             if STRIPE_ENABLED:
-                url = create_checkout_session(user.get("email", ""), user.get("id", 0))
+                url = create_checkout_session(user_email, user.get("id", 0))
                 if url:
                     st.markdown(
                         f'<meta http-equiv="refresh" content="0; url={url}">',
@@ -172,9 +183,10 @@ with col_pro:
                     "⚙️ Stripe not configured yet. Add `STRIPE_SECRET_KEY` and "
                     "`STRIPE_PRICE_ID` to your Railway environment variables."
                 )
+        footer = "🧪 Test mode — no real charge" if sandbox else "Secure payment via Stripe · Cancel anytime"
         st.markdown(
             f"<div style='text-align:center; color:{TEXT_MUTED}; font-size:0.78rem; margin-top:6px;'>"
-            "Secure payment via Stripe · Cancel anytime</div>",
+            f"{footer}</div>",
             unsafe_allow_html=True
         )
     else:

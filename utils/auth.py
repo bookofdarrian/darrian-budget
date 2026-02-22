@@ -19,7 +19,7 @@ import streamlit as st
 from utils.db import (
     init_db, authenticate_user, create_user, get_user_by_id,
     is_pro_user, get_setting, validate_email, validate_password,
-    is_account_locked
+    is_account_locked, set_active_db
 )
 
 # ── Brand ─────────────────────────────────────────────────────────────────────
@@ -248,6 +248,7 @@ def _show_auth_page():
                     else:
                         user = authenticate_user(email_clean, password)
                         if user:
+                            set_active_db(user.get("email"))
                             st.session_state["user"] = user
                             st.session_state["authenticated"] = True
                             st.rerun()
@@ -345,6 +346,8 @@ def require_login():
 
     if st.session_state.get("authenticated") and st.session_state.get("user"):
         user = st.session_state["user"]
+        # Ensure DB routing is correct for this session (survives page reloads)
+        set_active_db(user.get("email"))
         # Refresh from DB every page load to pick up subscription changes
         if user.get("id", 0) != 0:
             fresh = get_user_by_id(user["id"])
@@ -391,7 +394,7 @@ def require_pro(feature_name: str = "this feature"):
         <p>
             <strong>{feature_name}</strong> is available on the
             <strong>{APP_NAME} Pro</strong> plan.<br>
-            Upgrade for $9/month to unlock AI insights, trends analysis,
+            Upgrade for $7/month to unlock AI insights, trends analysis,
             and net worth tracking.
         </p>
     </div>
@@ -399,9 +402,19 @@ def require_pro(feature_name: str = "this feature"):
 
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        if st.button("🚀 Upgrade to Pro — $9/month", type="primary",
+        from utils.stripe_utils import create_checkout_session, STRIPE_ENABLED, is_sandbox_mode
+        sandbox = is_sandbox_mode(email)
+        if sandbox:
+            st.markdown(
+                "<div style='background:#1a2a1a; border:1px solid #3a6b3a; border-radius:8px; "
+                "padding:8px 12px; margin-bottom:10px; font-size:0.78rem; color:#7ec87e;'>"
+                "🧪 <strong>Sandbox mode</strong> — Stripe test keys active. "
+                "Use card <code>4242 4242 4242 4242</code>, any future date &amp; CVC.</div>",
+                unsafe_allow_html=True
+            )
+        btn_label = "🧪 Test Checkout — $7/month" if sandbox else "🚀 Upgrade to Pro — $7/month"
+        if st.button(btn_label, type="primary",
                      use_container_width=True, key="paywall_upgrade_btn"):
-            from utils.stripe_utils import create_checkout_session, STRIPE_ENABLED
             if STRIPE_ENABLED and user and user.get("id", 0) != 0:
                 url = create_checkout_session(email, user["id"])
                 if url:
@@ -415,9 +428,10 @@ def require_pro(feature_name: str = "this feature"):
             else:
                 st.switch_page("pages/0_pricing.py")
 
+        footer = "🧪 Test mode — no real charge" if sandbox else "Cancel anytime · Secure payment via Stripe"
         st.markdown(
             f"<div style='text-align:center; color:{TEXT_MUTED}; font-size:0.8rem; margin-top:8px;'>"
-            "Cancel anytime · Secure payment via Stripe</div>",
+            f"{footer}</div>",
             unsafe_allow_html=True
         )
 
@@ -467,6 +481,7 @@ def render_sidebar_user_widget():
                 st.switch_page("pages/0_pricing.py")
     with col2:
         if st.button("Sign Out", use_container_width=True, key="sidebar_logout"):
+            set_active_db(None)
             for key in ["user", "authenticated", "api_key",
                         "inv_loaded_from_db", "_css_injected"]:
                 st.session_state.pop(key, None)

@@ -26,7 +26,32 @@ if USE_POSTGRES:
     from psycopg2 import sql as pgsql
 
 # SQLite fallback path (local dev)
-DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'budget.db')
+DB_PATH    = os.path.join(os.path.dirname(__file__), '..', 'data', 'budget.db')
+DB_PATH_QA = os.path.join(os.path.dirname(__file__), '..', 'data', 'budget_qa.db')
+
+# QA / sandbox accounts that get their own isolated SQLite database
+_QA_EMAILS = {"dbelcher003@gmail.com"}
+
+# Module-level override: set by auth after login so get_conn() can route correctly
+_active_db_path: str | None = None
+
+
+def set_active_db(email: str | None):
+    """
+    Call this right after a user logs in (or logs out).
+    Routes QA accounts to their own isolated DB; everyone else uses the default.
+    Only has effect in SQLite mode (local dev).
+    """
+    global _active_db_path
+    if email and email.strip().lower() in _QA_EMAILS:
+        _active_db_path = DB_PATH_QA
+    else:
+        _active_db_path = DB_PATH
+
+
+def _get_db_path() -> str:
+    """Return the correct SQLite path for the current session."""
+    return _active_db_path if _active_db_path else DB_PATH
 
 
 # ── Connection factory ────────────────────────────────────────────────────────
@@ -35,7 +60,7 @@ def get_conn():
         conn = psycopg2.connect(DATABASE_URL)
         return conn
     else:
-        conn = sqlite3.connect(DB_PATH)
+        conn = sqlite3.connect(_get_db_path())
         conn.row_factory = sqlite3.Row
         return conn
 
@@ -734,7 +759,12 @@ def update_user_subscription(user_id: int, plan: str, stripe_customer_id: str,
 _OWNER_EMAILS = {
     "darrianbelcher@gmail.com",    # primary
     "darrianebelcher@gmail.com",   # registered account (lowercase)
-    "dbelcher003@gmail.com",       # dev test account — also always Pro
+}
+
+# ── Sandbox/QA accounts — NEVER granted Pro via owner/admin shortcuts ─────────
+# These accounts must go through real (test) Stripe checkout to get Pro.
+_SANDBOX_EMAILS = {
+    "dbelcher003@gmail.com",       # QA / payment testing account
 }
 
 def is_pro_user(user: dict) -> bool:
@@ -742,6 +772,11 @@ def is_pro_user(user: dict) -> bool:
     if not user:
         return False
     email = user.get("email", "").strip().lower()
+    # Sandbox accounts are NEVER auto-granted Pro — must pay via Stripe test checkout
+    if email in _SANDBOX_EMAILS:
+        plan = user.get("plan", "free")
+        status = user.get("subscription_status", "none")
+        return plan == "pro" and status in ("active", "trialing")
     # Owner accounts are always Pro
     if email in _OWNER_EMAILS:
         return True

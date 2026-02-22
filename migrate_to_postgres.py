@@ -89,6 +89,19 @@ pg.execute('''CREATE TABLE IF NOT EXISTS goal_checklist (
     goal_id INTEGER REFERENCES financial_goals(id) ON DELETE CASCADE,
     item TEXT NOT NULL, completed INTEGER DEFAULT 0, sort_order INTEGER DEFAULT 0)''')
 
+pg.execute('''CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    salt TEXT NOT NULL,
+    plan TEXT DEFAULT 'free',
+    stripe_customer_id TEXT DEFAULT '',
+    stripe_subscription_id TEXT DEFAULT '',
+    subscription_status TEXT DEFAULT 'none',
+    created_at TEXT DEFAULT (to_char(now(), 'YYYY-MM-DD HH24:MI:SS')),
+    last_login TEXT
+)''')
+
 pg.execute('''CREATE TABLE IF NOT EXISTS app_settings (
     key TEXT PRIMARY KEY, value TEXT)''')
 
@@ -147,6 +160,10 @@ tables = {
     ),
     'goal_checklist': (
         'goal_id', 'item', 'completed', 'sort_order'
+    ),
+    'users': (
+        'email', 'password_hash', 'salt', 'plan', 'stripe_customer_id',
+        'stripe_subscription_id', 'subscription_status', 'created_at', 'last_login'
     ),
     'app_settings': (
         'key', 'value'
