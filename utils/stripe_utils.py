@@ -97,7 +97,7 @@ def create_checkout_session(user_email: str, user_id: int) -> str | None:
             line_items=[{"price": price_id, "quantity": 1}],
             customer_email=user_email,
             client_reference_id=str(user_id),
-            success_url=f"{APP_URL}/?checkout=success",
+            success_url=f"{APP_URL}/0_pricing?checkout=success",
             cancel_url=f"{APP_URL}/0_pricing?checkout=cancelled",
             metadata={"user_id": str(user_id)},
         )
