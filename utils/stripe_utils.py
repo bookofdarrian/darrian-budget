@@ -3,13 +3,13 @@ Stripe integration utilities for Peach State Savings.
 
 Environment variables required:
   STRIPE_SECRET_KEY        — sk_live_... (production)
-  STRIPE_PRICE_ID          — price_...   (live $7/month recurring price)
+  STRIPE_PRICE_ID          — price_...   (live $4.99/month recurring price)
   STRIPE_WEBHOOK_SECRET    — whsec_...   (from Stripe dashboard → Webhooks)
   APP_URL                  — https://your-app.railway.app (no trailing slash)
 
 Optional — sandbox/test mode (used automatically for TEST_MODE_EMAILS):
   STRIPE_TEST_SECRET_KEY   — sk_test_...
-  STRIPE_TEST_PRICE_ID     — price_...   (test $7/month recurring price)
+  STRIPE_TEST_PRICE_ID     — price_...   (test $4.99/month recurring price)
 """
 
 import os

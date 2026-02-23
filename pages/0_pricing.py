@@ -157,7 +157,7 @@ with col_pro:
                          padding:2px 8px; border-radius:20px; letter-spacing:0.05em;">MOST POPULAR</span>
         </div>
         <div style="display:flex; align-items:baseline; gap:4px; margin-bottom:4px;">
-            <span class="price-amount">$7</span>
+            <span class="price-amount">$4.99</span>
             <span class="price-period">/month</span>
         </div>
         <div class="price-period">Cancel anytime · Billed monthly</div>
@@ -201,7 +201,7 @@ with col_pro:
                 "Use card <code>4242 4242 4242 4242</code>, any future date &amp; CVC.</div>",
                 unsafe_allow_html=True
             )
-        btn_label = "🧪 Test Checkout — $7/month" if sandbox else "🚀 Upgrade to Pro — $7/month"
+        btn_label = "🧪 Test Checkout — $4.99/month" if sandbox else "🚀 Upgrade to Pro — $4.99/month"
         if st.button(btn_label, type="primary", use_container_width=True, key="pro_cta"):
             if stripe_enabled_for(user_email):
                 url = create_checkout_session(user_email, user.get("id", 0))
@@ -231,7 +231,7 @@ with col_pro:
             unsafe_allow_html=True
         )
     else:
-        if st.button("🚀 Get Pro — $7/month", type="primary",
+        if st.button("🚀 Get Pro — $4.99/month", type="primary",
                      use_container_width=True, key="pro_cta_anon"):
             st.switch_page("app.py")
         st.markdown(
