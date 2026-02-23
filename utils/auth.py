@@ -394,7 +394,7 @@ def require_pro(feature_name: str = "this feature"):
         <p>
             <strong>{feature_name}</strong> is available on the
             <strong>{APP_NAME} Pro</strong> plan.<br>
-            Upgrade for $7/month to unlock AI insights, trends analysis,
+            Upgrade for $4.99/month to unlock AI insights, trends analysis,
             and net worth tracking.
         </p>
     </div>
@@ -412,7 +412,7 @@ def require_pro(feature_name: str = "this feature"):
                 "Use card <code>4242 4242 4242 4242</code>, any future date &amp; CVC.</div>",
                 unsafe_allow_html=True
             )
-        btn_label = "🧪 Test Checkout — $7/month" if sandbox else "🚀 Upgrade to Pro — $7/month"
+        btn_label = "🧪 Test Checkout — $4.99/month" if sandbox else "🚀 Upgrade to Pro — $4.99/month"
         if st.button(btn_label, type="primary",
                      use_container_width=True, key="paywall_upgrade_btn"):
             if stripe_enabled_for(email) and user and user.get("id", 0) != 0:
