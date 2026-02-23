@@ -8,7 +8,11 @@ from utils.auth import (
     render_sidebar_brand, render_sidebar_user_widget,
     PEACH, PEACH_DARK, PEACH_GLOW, BG_CARD, BG_BORDER, TEXT_MUTED, TEXT_MAIN
 )
-from utils.stripe_utils import create_checkout_session, create_billing_portal_session, STRIPE_ENABLED, is_sandbox_mode, stripe_enabled_for
+from utils.stripe_utils import (
+    create_checkout_session, create_billing_portal_session,
+    STRIPE_ENABLED, is_sandbox_mode, stripe_enabled_for,
+    poll_checkout_and_activate, get_latest_checkout_session_for_user,
+)
 
 try:
     from dotenv import load_dotenv
@@ -55,9 +59,40 @@ if user:
 # ── Handle checkout return ────────────────────────────────────────────────────
 params = st.query_params
 if params.get("checkout") == "success":
+    _session_id = params.get("session_id", "")
+    _user       = get_current_user() or {}
+    _user_id    = _user.get("id", 0)
+    _user_email = _user.get("email", "")
+
+    # ── Polling: activate Pro immediately without a webhook server ────────────
+    _activated = False
+    if _session_id and _user_id and _user_email:
+        _activated = poll_checkout_and_activate(_session_id, _user_id, _user_email)
+
+    # Fallback: if session_id was missing, try to find the latest paid session
+    if not _activated and _user_id and _user_email:
+        _fallback_sid = get_latest_checkout_session_for_user(_user_email, _user_id)
+        if _fallback_sid:
+            _activated = poll_checkout_and_activate(_fallback_sid, _user_id, _user_email)
+
+    # Refresh session state so the Pro badge and buttons update immediately
+    if _activated and _user_id:
+        from utils.db import get_user_by_id
+        _fresh = get_user_by_id(_user_id)
+        if _fresh:
+            _fresh.pop("password_hash", None)
+            _fresh.pop("salt", None)
+            st.session_state["user"] = _fresh
+            user = _fresh  # update local var so pricing cards render correctly
+
     st.balloons()
-    st.success("🎉 Welcome to Peach Savings Pro! Your subscription is active.")
+    if _activated:
+        st.success("🎉 Welcome to Peach Savings Pro! Your subscription is now active.")
+    else:
+        st.success("🎉 Payment received! Your Pro plan will activate within a minute.")
+        st.caption("If Pro features aren't visible yet, refresh the page in a moment.")
     st.query_params.clear()
+
 elif params.get("checkout") == "cancelled":
     st.info("Checkout cancelled — no charge was made. You can upgrade anytime.")
     st.query_params.clear()

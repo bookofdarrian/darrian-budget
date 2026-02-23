@@ -25,22 +25,59 @@ st.set_page_config(
 init_db()
 inject_css()
 
-# ── Handle Stripe checkout return BEFORE login gate ───────────────────────────
+# ── Handle Stripe checkout return ─────────────────────────────────────────────
+# This runs AFTER require_login so we have a valid user session to upgrade.
+require_login()
+
 _params = st.query_params
 if _params.get("checkout") == "success":
+    _session_id = _params.get("session_id", "")
+    _user       = st.session_state.get("user", {})
+    _user_id    = _user.get("id", 0)
+    _user_email = _user.get("email", "")
+
+    # ── Polling: activate Pro immediately without a webhook server ────────────
+    _activated = False
+    if _session_id and _user_id and _user_email:
+        from utils.stripe_utils import poll_checkout_and_activate
+        _activated = poll_checkout_and_activate(_session_id, _user_id, _user_email)
+
+    # Fallback: if session_id was missing, try to find the latest paid session
+    if not _activated and _user_id and _user_email:
+        from utils.stripe_utils import get_latest_checkout_session_for_user, poll_checkout_and_activate
+        _fallback_sid = get_latest_checkout_session_for_user(_user_email, _user_id)
+        if _fallback_sid:
+            _activated = poll_checkout_and_activate(_fallback_sid, _user_id, _user_email)
+
+    # Refresh the session state so the UI reflects Pro immediately
+    if _activated:
+        from utils.db import get_user_by_id
+        _fresh = get_user_by_id(_user_id)
+        if _fresh:
+            _fresh.pop("password_hash", None)
+            _fresh.pop("salt", None)
+            st.session_state["user"] = _fresh
+
     st.balloons()
-    st.success("🎉 Welcome to Peach Savings Pro! Your subscription is active.")
-    st.markdown("### You're all set!")
-    st.markdown(
-        "Your Pro plan is now active. Sign in below to access AI Insights, "
-        "Net Worth tracking, Monthly Trends, and all Pro features."
-    )
+    if _activated:
+        st.success("🎉 Welcome to Peach Savings Pro! Your subscription is now active.")
+        st.markdown("### You're all set! 🍑")
+        st.markdown(
+            "Your Pro plan is **live right now** — AI Insights, Net Worth tracking, "
+            "Monthly Trends, and all Pro features are unlocked. Use the sidebar to explore."
+        )
+    else:
+        # Payment went through but polling couldn't confirm yet (rare edge case)
+        st.success("🎉 Payment received! Your Pro plan will activate within a minute.")
+        st.markdown(
+            "If Pro features aren't visible yet, refresh the page in a moment. "
+            "Your payment was successful."
+        )
     st.query_params.clear()
+
 elif _params.get("checkout") == "cancelled":
     st.info("Checkout cancelled — no charge was made. You can upgrade anytime.")
     st.query_params.clear()
-
-require_login()
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 render_sidebar_brand()

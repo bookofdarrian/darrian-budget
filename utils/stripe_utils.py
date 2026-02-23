@@ -97,7 +97,8 @@ def create_checkout_session(user_email: str, user_id: int) -> str | None:
             line_items=[{"price": price_id, "quantity": 1}],
             customer_email=user_email,
             client_reference_id=str(user_id),
-            success_url=f"{APP_URL}/?checkout=success",
+            # {CHECKOUT_SESSION_ID} is a Stripe template variable — filled in by Stripe
+            success_url=f"{APP_URL}/?checkout=success&session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{APP_URL}/?checkout=cancelled",
             metadata={"user_id": str(user_id)},
         )
@@ -170,6 +171,94 @@ def get_subscription_status(stripe_customer_id: str, user_email: str = "") -> st
         return subs.data[0].status
     except Exception:
         return "none"
+
+
+def poll_checkout_and_activate(session_id: str, user_id: int, user_email: str) -> bool:
+    """
+    Poll a Stripe Checkout Session by ID and, if payment is complete,
+    immediately update the user's DB record to Pro.
+
+    Returns True if the user was successfully upgraded to Pro, False otherwise.
+
+    This is the "polling" approach — no webhook server required.
+    Call this when Stripe redirects back with ?checkout=success&session_id=<id>.
+    """
+    secret_key, _ = _get_keys(user_email)
+    if not secret_key or not session_id:
+        return False
+
+    try:
+        import stripe
+        stripe.api_key = secret_key
+
+        # Retrieve the checkout session with subscription expanded
+        session = stripe.checkout.Session.retrieve(
+            session_id,
+            expand=["subscription", "customer"],
+        )
+
+        # Only activate if payment is confirmed
+        if session.payment_status not in ("paid", "no_payment_required"):
+            return False
+
+        # Extract IDs from the session
+        customer = session.customer
+        customer_id = customer.id if hasattr(customer, "id") else str(customer)
+
+        subscription = session.subscription
+        if subscription is None:
+            return False
+
+        sub_id     = subscription.id if hasattr(subscription, "id") else str(subscription)
+        sub_status = subscription.status if hasattr(subscription, "status") else "active"
+
+        # Write Pro status to the database immediately
+        from utils.db import update_user_subscription
+        update_user_subscription(
+            user_id=user_id,
+            plan="pro",
+            stripe_customer_id=customer_id,
+            stripe_subscription_id=sub_id,
+            subscription_status=sub_status,
+        )
+        return True
+
+    except Exception as e:
+        # Log but don't crash — caller will handle the False return
+        try:
+            import streamlit as st
+            st.warning(f"Stripe poll error (non-fatal): {e}")
+        except Exception:
+            pass
+        return False
+
+
+def get_latest_checkout_session_for_user(user_email: str, user_id: int) -> str | None:
+    """
+    Look up the most recent completed Checkout Session for this user by
+    client_reference_id (which we set to user_id at session creation).
+
+    Useful as a fallback when the session_id query param is missing.
+    Returns the session ID string, or None.
+    """
+    secret_key, _ = _get_keys(user_email)
+    if not secret_key:
+        return None
+
+    try:
+        import stripe
+        stripe.api_key = secret_key
+
+        sessions = stripe.checkout.Session.list(limit=5)
+        for s in sessions.data:
+            if (
+                str(s.get("client_reference_id", "")) == str(user_id)
+                and s.payment_status in ("paid", "no_payment_required")
+            ):
+                return s.id
+        return None
+    except Exception:
+        return None
 
 
 def is_sandbox_mode(user_email: str) -> bool:
