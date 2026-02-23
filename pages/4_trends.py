@@ -17,6 +17,7 @@ except ImportError:
 st.set_page_config(page_title="Monthly Trends — Peach State Savings", page_icon="📈", layout="wide")
 init_db()
 require_login()
+require_pro("Monthly Trends")
 inject_css()
 
 # ── Load API key ──────────────────────────────────────────────────────────────
@@ -61,7 +62,7 @@ st.sidebar.page_link("app.py",                    label="Overview",          ico
 st.sidebar.page_link("pages/1_expenses.py",       label="Expenses",          icon="📋")
 st.sidebar.page_link("pages/2_income.py",         label="Income",            icon="💵")
 st.sidebar.page_link("pages/3_sole_archive.py",   label="404 Sole Archive",  icon="👟")
-st.sidebar.page_link("pages/4_trends.py",         label="Monthly Trends",    icon="📈")
+st.sidebar.page_link("pages/4_trends.py",         label="Monthly Trends 🔒", icon="📈")
 st.sidebar.page_link("pages/5_bank_import.py",    label="Bank Import",       icon="🏦")
 st.sidebar.page_link("pages/6_receipts.py",       label="Receipts & HSA",    icon="🧾")
 st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights 🔒",    icon="🤖")
@@ -397,13 +398,13 @@ if not current_user_is_pro():
         <h2>🔒 Pro Feature</h2>
         <p>
             AI Spending Insights are available on <strong>Peach State Savings Pro</strong>.<br>
-            Upgrade for $9/month to unlock Claude AI analysis of your spending habits.
+            Upgrade for $7/month to unlock Claude AI analysis of your spending habits.
         </p>
     </div>
     """, unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        if st.button("🚀 Upgrade to Pro — $9/month", type="primary",
+        if st.button("🚀 Upgrade to Pro — $7/month", type="primary",
                      use_container_width=True, key="trends_upgrade_btn"):
             st.switch_page("pages/0_pricing.py")
 elif not api_key:
