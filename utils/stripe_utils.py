@@ -58,9 +58,18 @@ def _get_keys(user_email: str) -> tuple[str, str]:
     """
     Return (secret_key, price_id) for the given user.
     Sandbox accounts use test keys; everyone else uses live keys.
+
+    SAFETY: Never mix test keys with live prices or vice versa.
+    If a sandbox user is missing STRIPE_TEST_PRICE_ID, return ("", "")
+    so the caller shows a config error instead of hitting Stripe with
+    mismatched key/price pairs.
     """
-    if _is_sandbox(user_email) and STRIPE_TEST_SECRET_KEY and STRIPE_TEST_PRICE_ID:
-        return STRIPE_TEST_SECRET_KEY, STRIPE_TEST_PRICE_ID
+    if _is_sandbox(user_email):
+        # Sandbox path — both test key AND test price must be present
+        if STRIPE_TEST_SECRET_KEY and STRIPE_TEST_PRICE_ID:
+            return STRIPE_TEST_SECRET_KEY, STRIPE_TEST_PRICE_ID
+        # Missing test price — refuse to fall back to live price with test key
+        return "", ""
     return STRIPE_SECRET_KEY, STRIPE_PRICE_ID
 
 
@@ -85,6 +94,12 @@ def create_checkout_session(user_email: str, user_id: int) -> str | None:
     """
     secret_key, price_id = _get_keys(user_email)
     if not secret_key or not price_id:
+        # Give a clear config error rather than silently returning None
+        if _is_sandbox(user_email):
+            st.error(
+                "⚙️ Sandbox config incomplete — `STRIPE_TEST_PRICE_ID` is not set. "
+                "Add it to your Railway environment variables and redeploy."
+            )
         return None
 
     try:
