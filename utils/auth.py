@@ -209,7 +209,7 @@ def _show_auth_page():
             {APP_EMOJI} {APP_NAME}
         </div>
         <div style="color:{TEXT_MUTED}; font-size:0.95rem; margin-top:8px;">
-            AI-powered personal finance — built different
+            AI-powered personal finance
         </div>
     </div>
     """, unsafe_allow_html=True)

@@ -274,11 +274,20 @@ with st.expander("Can I cancel anytime?"):
         "Yes. Cancel from your billing portal at any time. "
         "You keep Pro access until the end of your billing period."
     )
-with st.expander("Is my financial data secure?"):
-    st.write(
-        "Your data is stored in a private PostgreSQL database. "
-        "We never sell or share your data. Bank PDFs are parsed locally "
-        "and the raw file is not stored."
+with st.expander("Is my financial data secure and confidential?"):
+    st.markdown(
+        """
+        **Yes — your data is private, encrypted, and never shared.**
+
+        Here's exactly how we protect your information:
+
+        - 🔐 **Passwords** are hashed with **bcrypt** (industry-standard one-way hashing with a unique salt per user). We never store your plain-text password — not even we can read it.
+        - 🛡️ **All traffic** between your browser and the server is encrypted via **HTTPS / TLS 1.3**, so your data is protected in transit.
+        - 🗄️ **Your financial data** (expenses, income, goals, net worth) is stored in a **private PostgreSQL database** hosted on Railway's secure infrastructure. Each user's data is isolated by account.
+        - 📄 **Bank PDFs** are parsed in memory and immediately discarded — the raw file is never written to disk or stored in the database.
+        - 🚫 **We never sell, share, or monetize your data.** Your financial information is used solely to power your personal dashboard.
+        - 🤖 **AI features** (Claude): only the specific data you request analysis on is sent to Anthropic's API. No data is stored by Anthropic beyond their standard API request logs.
+        """
     )
 with st.expander("What bank does the import support?"):
     st.write(
