@@ -6,7 +6,7 @@ from datetime import datetime
 from utils.db import get_conn, init_db, read_sql, execute, get_setting, set_setting
 from utils.auth import require_login, require_pro, render_sidebar_brand, render_sidebar_user_widget, inject_css
 
-st.set_page_config(page_title="Business Income Tracker — Peach State Savings", page_icon="💼", layout="wide")
+st.set_page_config(page_title="Business Income Tracker — Peach State Savings", page_icon="💼", layout="wide", initial_sidebar_state="auto")
 init_db()
 require_login()
 require_pro("Business Income Tracker")
