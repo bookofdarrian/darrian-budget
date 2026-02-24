@@ -23,7 +23,8 @@ except ImportError:
 st.set_page_config(
     page_title="Pricing — Peach Savings",
     page_icon="🍑",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="auto"
 )
 init_db()
 inject_css()

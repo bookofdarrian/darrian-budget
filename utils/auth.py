@@ -143,6 +143,242 @@ GLOBAL_CSS = f"""
     background: {PEACH_DARK} !important;
     color: #000 !important;
 }}
+
+/* ── Mobile Responsiveness ─────────────────────────────────────────────────── */
+@media (max-width: 768px) {{
+
+    /* ── Main content padding ── */
+    .main .block-container {{
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        padding-top: 1rem !important;
+        max-width: 100% !important;
+    }}
+
+    /* ── Sidebar: collapse by default on mobile, full-width when open ── */
+    [data-testid="stSidebar"] {{
+        min-width: 85vw !important;
+        max-width: 85vw !important;
+    }}
+
+    /* ── Sidebar toggle button: bigger tap target ── */
+    [data-testid="stSidebarCollapsedControl"] button,
+    [data-testid="collapsedControl"] button {{
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+    }}
+
+    /* ── Page title sizing ── */
+    h1 {{ font-size: 1.5rem !important; line-height: 1.3 !important; }}
+    h2 {{ font-size: 1.25rem !important; }}
+    h3 {{ font-size: 1.1rem !important; }}
+
+    /* ── Metric cards: stack 2-per-row on mobile ── */
+    [data-testid="metric-container"] {{
+        padding: 10px 12px !important;
+        min-width: 0 !important;
+    }}
+    [data-testid="metric-container"] [data-testid="stMetricValue"] {{
+        font-size: 1.2rem !important;
+    }}
+    [data-testid="metric-container"] [data-testid="stMetricLabel"] {{
+        font-size: 0.72rem !important;
+    }}
+
+    /* ── Column layouts: force single column on very small screens ── */
+    [data-testid="stHorizontalBlock"] {{
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+    }}
+    [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {{
+        min-width: calc(50% - 0.5rem) !important;
+        flex: 1 1 calc(50% - 0.5rem) !important;
+    }}
+
+    /* ── 4-column KPI rows: 2x2 grid ── */
+    [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"]:nth-child(4)) > [data-testid="stColumn"] {{
+        min-width: calc(50% - 0.5rem) !important;
+        flex: 1 1 calc(50% - 0.5rem) !important;
+    }}
+
+    /* ── Buttons: full width, bigger tap targets ── */
+    .stButton > button {{
+        min-height: 44px !important;
+        font-size: 0.9rem !important;
+        padding: 10px 16px !important;
+        width: 100% !important;
+    }}
+
+    /* ── Tabs: scrollable on mobile ── */
+    [data-testid="stTabs"] [role="tablist"] {{
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        flex-wrap: nowrap !important;
+        scrollbar-width: none !important;
+    }}
+    [data-testid="stTabs"] [role="tablist"]::-webkit-scrollbar {{
+        display: none !important;
+    }}
+    [data-testid="stTabs"] [role="tab"] {{
+        white-space: nowrap !important;
+        min-width: fit-content !important;
+        padding: 8px 12px !important;
+        font-size: 0.82rem !important;
+    }}
+
+    /* ── Data tables: horizontal scroll ── */
+    [data-testid="stDataFrame"] {{
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }}
+    [data-testid="stDataFrame"] > div {{
+        min-width: 0 !important;
+    }}
+
+    /* ── Charts: full width ── */
+    [data-testid="stArrowVegaLiteChart"],
+    [data-testid="stVegaLiteChart"] {{
+        width: 100% !important;
+        overflow-x: auto !important;
+    }}
+
+    /* ── Text inputs & selects: bigger touch targets ── */
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    textarea,
+    select {{
+        font-size: 16px !important;  /* prevents iOS zoom on focus */
+        min-height: 44px !important;
+    }}
+    [data-testid="stTextInput"] input,
+    [data-testid="stNumberInput"] input,
+    [data-testid="stTextArea"] textarea {{
+        font-size: 16px !important;
+        min-height: 44px !important;
+    }}
+
+    /* ── Selectbox ── */
+    [data-testid="stSelectbox"] > div > div {{
+        min-height: 44px !important;
+        font-size: 0.9rem !important;
+    }}
+
+    /* ── Expanders ── */
+    [data-testid="stExpander"] summary {{
+        padding: 12px 16px !important;
+        font-size: 0.9rem !important;
+    }}
+
+    /* ── Progress bars ── */
+    [data-testid="stProgressBar"] {{
+        height: 8px !important;
+    }}
+
+    /* ── Auth page: remove side padding on login form ── */
+    .auth-center-col {{
+        padding: 0 !important;
+    }}
+
+    /* ── Paywall card: tighter padding ── */
+    .paywall-card {{
+        padding: 20px 16px !important;
+    }}
+
+    /* ── Price cards: full width stacked ── */
+    .price-card {{
+        padding: 20px 16px !important;
+        margin-bottom: 16px !important;
+    }}
+    .price-amount {{
+        font-size: 2rem !important;
+    }}
+
+    /* ── Brand header in sidebar ── */
+    .brand-name {{
+        font-size: 1rem !important;
+    }}
+
+    /* ── Sidebar nav links: bigger tap targets ── */
+    [data-testid="stSidebar"] a {{
+        padding: 8px 4px !important;
+        display: block !important;
+        min-height: 40px !important;
+        line-height: 40px !important;
+    }}
+
+    /* ── File uploader ── */
+    [data-testid="stFileUploader"] {{
+        padding: 16px !important;
+    }}
+    [data-testid="stFileUploader"] label {{
+        font-size: 0.9rem !important;
+    }}
+
+    /* ── Toast notifications ── */
+    [data-testid="stToast"] {{
+        max-width: 90vw !important;
+        font-size: 0.85rem !important;
+    }}
+
+    /* ── Download button ── */
+    [data-testid="stDownloadButton"] button {{
+        width: 100% !important;
+        min-height: 44px !important;
+    }}
+
+    /* ── Checkbox: bigger tap target ── */
+    [data-testid="stCheckbox"] label {{
+        min-height: 36px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }}
+
+    /* ── Form submit buttons ── */
+    [data-testid="stForm"] [data-testid="stFormSubmitButton"] button {{
+        min-height: 44px !important;
+        width: 100% !important;
+    }}
+
+    /* ── Hide wide-layout padding ── */
+    .appview-container .main {{
+        padding: 0 !important;
+    }}
+
+    /* ── Reduce top header bar height ── */
+    [data-testid="stHeader"] {{
+        height: 3rem !important;
+    }}
+}}
+
+/* ── Extra small screens (phones < 480px) ── */
+@media (max-width: 480px) {{
+    .main .block-container {{
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }}
+
+    h1 {{ font-size: 1.3rem !important; }}
+
+    /* ── Single column on very small screens for 4-col layouts ── */
+    [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"]:nth-child(3)) > [data-testid="stColumn"] {{
+        min-width: 100% !important;
+        flex: 1 1 100% !important;
+    }}
+
+    [data-testid="metric-container"] [data-testid="stMetricValue"] {{
+        font-size: 1.05rem !important;
+    }}
+
+    /* ── Tabs: even smaller text ── */
+    [data-testid="stTabs"] [role="tab"] {{
+        font-size: 0.75rem !important;
+        padding: 6px 8px !important;
+    }}
+}}
 </style>
 """
 
@@ -212,6 +448,19 @@ def _show_auth_page():
             AI-powered personal finance
         </div>
     </div>
+    <style>
+    /* On mobile, make the auth form full-width */
+    @media (max-width: 768px) {{
+        [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:first-child,
+        [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:last-child {{
+            display: none !important;
+        }}
+        [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) {{
+            min-width: 100% !important;
+            flex: 1 1 100% !important;
+        }}
+    }}
+    </style>
     """, unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 2, 1])

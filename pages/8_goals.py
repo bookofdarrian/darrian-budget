@@ -4,7 +4,7 @@ from datetime import datetime, date
 from utils.db import get_conn, init_db, read_sql, execute, fetchone
 from utils.auth import require_password
 
-st.set_page_config(page_title="Financial Goals", page_icon="🎯", layout="wide")
+st.set_page_config(page_title="Financial Goals", page_icon="🎯", layout="wide", initial_sidebar_state="auto")
 init_db()
 require_password()
 
