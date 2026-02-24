@@ -5,6 +5,7 @@ import anthropic
 from datetime import datetime
 from utils.db import get_conn, init_db, read_sql, load_investment_context, save_investment_context, get_setting, set_setting
 from utils.auth import require_login, require_pro, render_sidebar_brand, render_sidebar_user_widget, inject_css
+from utils.aura_client import compress_for_claude, get_status as aura_status
 
 try:
     from dotenv import load_dotenv
@@ -297,15 +298,29 @@ INPUT_COST_PER_M  = 3.00   # $3.00 per 1M input tokens
 OUTPUT_COST_PER_M = 15.00  # $15.00 per 1M output tokens
 
 def ask_claude(prompt: str, context: str) -> tuple[str, dict]:
-    """Returns (response_text, usage_info)"""
+    """
+    Compress context via AURA (if available) then send to Claude.
+    Returns (response_text, usage_info).
+    usage_info includes AURA savings data when compression was used.
+    """
     client = anthropic.Anthropic(api_key=api_key)
+
+    # ── AURA compression ──────────────────────────────────────────────────────
+    # Only compress non-empty context (categorize tab passes "" intentionally)
+    aura_result = None
+    if context.strip():
+        aura_result = compress_for_claude(context, mode="auto")
+        effective_context = aura_result.compressed
+    else:
+        effective_context = context
+
     try:
         message = client.messages.create(
             model="claude-opus-4-5",
             max_tokens=1024,
             messages=[{"role": "user", "content": (
                 "You are a friendly, practical personal finance advisor. "
-                f"You have access to the following budget data:\n\n{context}\n\n{prompt}\n\n"
+                f"You have access to the following budget data:\n\n{effective_context}\n\n{prompt}\n\n"
                 "IMPORTANT FORMATTING RULES: "
                 "1. Write dollar amounts as 'USD X.XX' or 'X dollars' — never use the dollar sign symbol. "
                 "2. Do NOT use any markdown formatting — no asterisks for bold, no underscores for italic, no pound signs for headers. "
@@ -323,6 +338,13 @@ def ask_claude(prompt: str, context: str) -> tuple[str, dict]:
             "total_tokens":  input_tokens + output_tokens,
             "cost_usd":      cost,
         }
+        # Attach AURA stats if compression ran
+        if aura_result and not aura_result.fallback_used:
+            usage_info["aura_original_tokens"]  = aura_result.original_tokens
+            usage_info["aura_compressed_tokens"] = aura_result.compressed_tokens
+            usage_info["aura_savings_pct"]       = aura_result.savings_pct
+            usage_info["aura_mode"]              = aura_result.mode_used
+            usage_info["aura_ms"]                = aura_result.processing_time_ms
         return message.content[0].text, usage_info
     except anthropic.AuthenticationError:
         return "❌ Invalid API key. Please check your key in the settings above.", {}
@@ -341,16 +363,37 @@ def render_response(text: str):
 
 
 def show_usage(usage_info: dict):
-    """Render a small token/cost badge below a response."""
+    """Render a small token/cost badge below a response, including AURA savings."""
     if not usage_info:
         return
-    with st.expander(f"📊 Token usage — ${usage_info['cost_usd']:.4f} this prompt", expanded=False):
+    aura_savings = usage_info.get("aura_savings_pct", 0)
+    label = f"📊 Token usage — ${usage_info['cost_usd']:.4f} this prompt"
+    if aura_savings:
+        label += f"  ·  ⚡ AURA saved {aura_savings:.0f}%"
+    with st.expander(label, expanded=False):
         c1, c2, c3 = st.columns(3)
         c1.metric("Input tokens",  f"{usage_info['input_tokens']:,}")
         c2.metric("Output tokens", f"{usage_info['output_tokens']:,}")
         c3.metric("Cost",          f"${usage_info['cost_usd']:.4f}")
         st.caption("Pricing: claude-opus-4-5 — $3/M input · $15/M output")
+        if aura_savings:
+            st.markdown("---")
+            a1, a2, a3 = st.columns(3)
+            a1.metric("Original tokens",    f"{usage_info.get('aura_original_tokens', 0):,}")
+            a2.metric("After compression",  f"{usage_info.get('aura_compressed_tokens', 0):,}")
+            a3.metric("AURA savings",       f"{aura_savings:.1f}%")
+            st.caption(
+                f"AURA mode: {usage_info.get('aura_mode', '—')}  ·  "
+                f"Compression time: {usage_info.get('aura_ms', 0):.0f}ms"
+            )
 
+
+# ── AURA status banner ────────────────────────────────────────────────────────
+_aura = aura_status()
+if _aura["available"]:
+    st.sidebar.success("⚡ AURA: Active")
+else:
+    st.sidebar.info("⚡ AURA: Offline (no savings)")
 
 tab1, tab2, tab3, tab4 = st.tabs(["📊 Monthly Summary", "💡 Budget Tips", "🏷️ Auto-Categorize", "💬 Ask Anything"])
 context = build_budget_context(selected_month)

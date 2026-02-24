@@ -1,0 +1,4 @@
+# AURA Compression Service dependencies
+# No external packages needed — uses Python stdlib only
+# (http.server, json, re, hashlib, time, os, logging)
+# This file exists so Docker COPY requirements.txt works cleanly.

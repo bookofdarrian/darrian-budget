@@ -1,0 +1,56 @@
+version: "3.9"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AURA Compression Service — Docker Compose
+#
+# Usage (once Docker Desktop is installed):
+#   cd aura
+#   docker-compose up -d
+#
+# The service will be available at http://localhost:8000
+# Health check: http://localhost:8000/health
+#
+# To stop:
+#   docker-compose down
+#
+# To view logs:
+#   docker-compose logs -f aura
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  aura:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aura-compression
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # Service config
+      - AURA_HOST=0.0.0.0
+      - AURA_PORT=8000
+      - AURA_WORKERS=2
+      # Optional API key auth (leave blank to disable)
+      - AURA_API_KEY=${AURA_API_KEY:-}
+      # Cache settings
+      - AURA_CACHE_TTL=3600
+      - AURA_CACHE_MAX_SIZE=1000
+      # Compression defaults
+      - AURA_DEFAULT_MODE=auto
+      - AURA_MAX_INPUT_TOKENS=32000
+    volumes:
+      # Persist cache between restarts
+      - aura_cache:/app/cache
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    mem_limit: 512m
+    cpus: "1.0"
+
+volumes:
+  aura_cache:
+    driver: local
