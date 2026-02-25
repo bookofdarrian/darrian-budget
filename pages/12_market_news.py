@@ -324,6 +324,131 @@ else:
                     st.caption(summary)
             st.markdown("---")
 
+# ── Finnhub Deep Dive ─────────────────────────────────────────────────────────
+st.markdown("---")
+st.subheader("📊 Finnhub Deep Dive")
+st.caption("News sentiment scores, analyst recommendations, and live quotes — all from Finnhub's free tier.")
+
+def fetch_news_sentiment(ticker: str, api_key_fh: str) -> dict:
+    """Fetch Finnhub news sentiment for a ticker (/news-sentiment)."""
+    if not api_key_fh:
+        return {}
+    try:
+        resp = requests.get(
+            "https://finnhub.io/api/v1/news-sentiment",
+            params={"symbol": ticker, "token": api_key_fh},
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            return resp.json()
+        return {}
+    except Exception:
+        return {}
+
+def fetch_recommendation_trends(ticker: str, api_key_fh: str) -> list:
+    """Fetch analyst recommendation trends (/stock/recommendation)."""
+    if not api_key_fh:
+        return []
+    try:
+        resp = requests.get(
+            "https://finnhub.io/api/v1/stock/recommendation",
+            params={"symbol": ticker, "token": api_key_fh},
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            return resp.json()[:3]  # last 3 months
+        return []
+    except Exception:
+        return []
+
+def fetch_quote(ticker: str, api_key_fh: str) -> dict:
+    """Fetch real-time quote (/quote)."""
+    if not api_key_fh:
+        return {}
+    try:
+        resp = requests.get(
+            "https://finnhub.io/api/v1/quote",
+            params={"symbol": ticker, "token": api_key_fh},
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            return resp.json()
+        return {}
+    except Exception:
+        return {}
+
+if not finnhub_key:
+    st.info("🔑 Add your Finnhub API key above to unlock Deep Dive.")
+else:
+    dd_ticker = st.selectbox(
+        "Select ticker for deep dive",
+        st.session_state.get("watchlist", ["AAPL"]),
+        key="dd_ticker_select",
+    )
+    if st.button("🔍 Run Deep Dive", key="btn_deep_dive"):
+        col_q, col_s, col_r = st.columns(3)
+
+        # Live Quote
+        with col_q:
+            st.markdown("**💹 Live Quote**")
+            q = fetch_quote(dd_ticker, finnhub_key)
+            if q and q.get("c"):
+                chg = q.get("d", 0) or 0
+                chg_pct = q.get("dp", 0) or 0
+                color = "🟢" if chg >= 0 else "🔴"
+                st.metric(
+                    label=dd_ticker,
+                    value=f"${q['c']:.2f}",
+                    delta=f"{chg:+.2f} ({chg_pct:+.2f}%)",
+                )
+                st.caption(f"Open: ${q.get('o',0):.2f}  High: ${q.get('h',0):.2f}  Low: ${q.get('l',0):.2f}")
+                st.caption(f"Prev close: ${q.get('pc',0):.2f}")
+            else:
+                st.info("No quote data.")
+
+        # News Sentiment
+        with col_s:
+            st.markdown("**📰 News Sentiment**")
+            ns = fetch_news_sentiment(dd_ticker, finnhub_key)
+            if ns and ns.get("sentiment"):
+                bull = ns["sentiment"].get("bullishPercent", 0) * 100
+                bear = ns["sentiment"].get("bearishPercent", 0) * 100
+                score = ns.get("companyNewsScore", 0)
+                buzz  = ns.get("buzz", {})
+                st.metric("Bullish %", f"{bull:.1f}%")
+                st.metric("Bearish %", f"{bear:.1f}%")
+                st.metric("News Score", f"{score:.2f}")
+                if buzz:
+                    st.caption(f"Articles last week: {buzz.get('articlesInLastWeek', 0)}")
+                    st.caption(f"Weekly avg: {buzz.get('weeklyAverage', 0):.1f}")
+            else:
+                st.info("No sentiment data (US stocks only).")
+
+        # Analyst Recommendations
+        with col_r:
+            st.markdown("**📋 Analyst Recs**")
+            recs = fetch_recommendation_trends(dd_ticker, finnhub_key)
+            if recs:
+                for rec in recs:
+                    period = rec.get("period", "")[:7]
+                    strong_buy = rec.get("strongBuy", 0)
+                    buy        = rec.get("buy", 0)
+                    hold       = rec.get("hold", 0)
+                    sell       = rec.get("sell", 0)
+                    strong_sell= rec.get("strongSell", 0)
+                    total = strong_buy + buy + hold + sell + strong_sell or 1
+                    bull_pct = (strong_buy + buy) / total * 100
+                    st.markdown(f"**{period}** — {total} analysts")
+                    st.caption(
+                        f"🟢 Strong Buy: {strong_buy}  Buy: {buy}  "
+                        f"🟡 Hold: {hold}  "
+                        f"🔴 Sell: {sell}  Strong Sell: {strong_sell}"
+                    )
+                    st.caption(f"Bullish consensus: {bull_pct:.0f}%")
+                    st.markdown("---")
+            else:
+                st.info("No recommendation data.")
+
 # ── SEC EDGAR Feed ─────────────────────────────────────────────────────────────
 st.subheader("📄 SEC EDGAR Filings (Free, No Key)")
 st.caption("Official 8-K and 10-Q filings — pure signal, zero noise.")
