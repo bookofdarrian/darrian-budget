@@ -3,8 +3,6 @@ import streamlit as st
 import pandas as pd
 import anthropic
 from datetime import datetime, date
-from utils.db import get_conn, init_db, load_investment_context, get_setting
-from utils.auth import require_login, require_pro, render_sidebar_brand, render_sidebar_user_widget, inject_css
 
 try:
     from dotenv import load_dotenv
@@ -12,305 +10,220 @@ try:
 except ImportError:
     pass
 
-st.set_page_config(page_title="RSU/ESPP Advisor — Peach State Savings", page_icon="📈", layout="wide", initial_sidebar_state="auto")
+from utils.db import init_db, get_setting
+from utils.auth import require_login, require_pro, render_sidebar_brand, render_sidebar_user_widget, inject_css
+
+st.set_page_config(page_title="RSU/ESPP Advisor - Peach State Savings", page_icon="📈", layout="wide")
 init_db()
 require_login()
 require_pro("RSU/ESPP Decision Support")
 inject_css()
 
-# ── Sidebar ───────────────────────────────────────────────────────────────────
 render_sidebar_brand()
 st.sidebar.markdown("---")
-st.sidebar.page_link("app.py",                    label="Overview", import os
-import streamlit as st
-import pandas as pd
-import anthropic
-from datetimensimport s  import pandas as pd
-iidimport anthropic
-fgefrom datetime",  from utils.db import get_conn, iniicfrom utils.auth import require_login, require_pro, render_sidebar_brand, res 
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
+st.sidebar.page_link("app.py",                    label="Overview",              icon="📊")
+st.sidebar.page_link("pages/1_expenses.py",       label="Expenses",              icon="📋")
+st.sidebar.page_link("pages/2_income.py",         label="Income",                icon="💵")
+st.sidebar.page_link("pages/3_sole_archive.py",   label="Business Tracker",      icon="💼")
+st.sidebar.page_link("pages/4_trends.py",         label="Monthly Trends",        icon="📈")
+st.sidebar.page_link("pages/5_bank_import.py",    label="Bank Import",           icon="🏦")
+st.sidebar.page_link("pages/6_receipts.py",       label="Receipts & HSA",        icon="🧾")
+st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights",           icon="🤖")
+st.sidebar.page_link("pages/8_goals.py",          label="Financial Goals",       icon="🎯")
+st.sidebar.page_link("pages/9_net_worth.py",      label="Net Worth",             icon="💎")
+st.sidebar.page_link("pages/10_rsu_espp.py",      label="RSU/ESPP Advisor",      icon="📈")
+st.sidebar.page_link("pages/11_portfolio.py",     label="Portfolio Analysis",    icon="🗂️")
+st.sidebar.page_link("pages/12_market_news.py",   label="Market News",           icon="📰")
+st.sidebar.page_link("pages/13_backtesting.py",   label="Strategy Backtest",     icon="🔬")
+st.sidebar.page_link("pages/14_trading_bot.py",   label="Paper Trading Bot",     icon="🤖")
+st.sidebar.page_link("pages/0_pricing.py",        label="Upgrade to Pro",        icon="⭐")
+render_sidebar_user_widget()
 
-st.set_page_config(pa"?  )
-    load_dotenv()
-except ImportErk_except ImportErrab    pass
+# ── API key ───────────────────────────────────────────────────────────────────
+_ck = os.environ.get("ANTHROPIC_API_KEY", "")
+if "api_key" not in st.session_state:
+    if _ck:
+        st.session_state["api_key"] = _ck
+    else:
+        k = get_setting("anthropic_api_key", "")
+        if k:
+            st.session_state["api_key"] = k
+api_key = st.session_state.get("api_key", "")
 
-st.set_p  
-st.setn="init_db()
-require_login()
-require_pro("RSU/ESPP Decision Support")
-inject_css()
+# ── Page header ───────────────────────────────────────────────────────────────
+st.title("📈 RSU / ESPP Decision Support")
+st.caption("Model your equity compensation, understand the tax impact, and get AI-powered sell-vs-hold analysis.")
 
-# ── Sidebar ────────────?trequire_  require_pro("Rghinject_css()
+tab_rsu, tab_espp, tab_ai = st.tabs(["🏷️ RSU Vesting", "💰 ESPP Calculator", "🧠 AI Analysis"])
 
-# ── Sidebar ──?e
-# ── Ss/8render_sidebar_brand()
-st.sidebar.markdown("---")
-st.sidebar.page_link("app.py",                    label="Overview", import os
-import streamlit as st
-import pandas as pd
-import anthropic
-from datetimensimport s  impoP st.sidebar.markdown("?t.sidebar.page_link("app("import streamlit as st
-import pandas as pd
-import anthropic
-fromn="🗂️")
-st.sidebar.page_link("paimport anthropic
-f.pfrom datetimensrkiidimport anthropic
-fgefrom datetime",  froagf_link("pages/13_bactry:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
+# ─────────────────────────────────────────────────────────────────────────────
+with tab_rsu:
+    st.subheader("🏷️ RSU Vesting Schedule & Tax Impact")
+    st.caption("RSUs are taxed as ordinary income at vest. Model your upcoming vests and their tax cost.")
 
-st.set_page_config(pa"?  )
-    load_dotenvBot ?   load_dotenv()
-except ImportErliexcept ImportErrin    pass
-
-st.set_pl=
-st.setgra    load_", icon="⭐")
-rendeexcept ImportErkid
-st.set_p  
-st.setn="init_db()
-require_log─st.setn="?equire_login()
-r??require_pro("R?──────────────
-# ── S??# ── Sidebar ──?e
-# ── Ss/8render_sidebar_brand()
-st.sidebar.markdown("---")
-s.en# ── Ss/8render_sidebaEYst.sidebar.markdown("---")
-st.sideiost.sidebar.page_link("app
- import streamlit as st
-import pandas as pd
-import anthropic
-from datetimensit_import pandas as pd
-ii_import anthr      iffrom datet       import pandas as pd
-import anthropic
-fromn="🗂️")
-st.sidebar.page_link("paimport anthropic
-f.pfrom??import anthropic
-fiofromn="🗂️"cast.sid"Model sellf.pfrom datetimensrkiidimport anthropicaxfgefrom datetime",  froagf_link("pageson risk analysis.")
-
-if not api_key:
-    st.warning(    load_dotenv()
-except ImportErd.except ImportErrgh    pass
-
-st.set_pke
-st.set re    load_dotenvBot ?   l
-#except ImportErliexcept ImportErrin   ?st.set_pl=
-st.setgra    load_", icon="⭐??t.setgra??endeexcept ImportErkid
-st.set_??t.set_p  
-st.setn="in??t.setn="??require_log─st.????require_pro("R?───────? ── S??# ── Sidebar ──?e
-# ── Ss/8rend??# ── Ss/8render_sidebar_brand()
-st.s??st.sidebar.markdown("---")
-s.en# ─s.en# ── Ss/8render_s??st.sideiost.sidebar.page_link("app
- import streamlit as sb1 import streamlit as st
-import pa Vimport pandas as pd
-imSPimport anthropic
-f??from datetimensviii_import anthr      iffrom datet   ??mport anthropic
-fromn="🗂️")
-st.sidebar.page_link("pa?══════st.sidebar.page?.pfrom??import anthropic
-fiofromn="🗐═════════
-if not api_key:
-    st.warning(    load_dotenv()
-except ImportErd.except ImportErrgh    pass
-
-st.set_pke
-st.set re    load_dotenvBot ??   st.warning??except ImportErd.except ImportE??
-st.set_pke
-st.set re    load_dotenvBot ???st.set re?except ImportErliexcept ImportErri??st.setgra    load_", icon="⭐??t.setgra??endeex  st.set_??t.set_p  
-st.setn="in??t.setn="??require_log─st.???? tst.setn=" and net pr# ── Ss/8rend??# ── Ss/8render_sidebar_brand()
-st.s??st.sidebar.markdown("---")
-s.en# ─s.en# ── S("#### Grant Dest.s??st.sidebar.markdown("---")
-s.en# ─s.en# ─? s.en# ─s.en# ── Ss/8rende_t import streamlit as sb1 import streamlit as st
-import pa Vimport panreimport pa Vimport pandas as pd
-imSPimport anthy="rsu_shares")
-        fmv_at_vef??from datetimensvpufromn="🗂️")
-st.sidebar.page_link("pa?══════st.sidebar.pat=st.si", key="rsu_fiofromn="🗐═════════
-if not api_key:
-    st.warning(    load_doveif not api_key:
-    st.warning(    load_      st.warning  except ImportErd.except ImportEva
-st.set_pke
-st.set re    load_dotenvBot ?? wst.set re
- st.set_pke
-st.set re    load_dotenvBot ???st.set re?except ImportErliexcept("st.set rencst.setn="in??t.setn="??require_log─st.???? tst.setn=" and net pr# ── Ss/8rend??# ── Ss/8render_sidebar_brand()
-st.s??st.sidebar.markdown("--)
-st.s??st.sidebar.markdown("---")
-s.en# ─s.en# ── S("#### Grant Dest.s??st.u_state_rate")
-        fica_rate     = st.ns.en# ─s.en# ── S("#### G",s.en# ─s.en# ─? s.en# ─s.en# ── Ss/8rende_t import stream,
-import pa Vimport panreimport pa Vimport pandas as pd
-imSPimport anthy="rsu_shares")
-        fmv_at_vreimSPimport anthy="rsu_shares")
-        fmv_at_vef??f S       ice ($/share)", min_valust.sidebar.page_link("pa?══════st.sidebarkeif not api_key:
-    st.warning(    load_doveif not api_key:
-    st.warning(    load_      st.warning  except Importri    st.warningrk    st.warning(    load_      st.warning  o st.set_pke
-st.set re    load_dotenvBot ?? wst.set re
- st.set_pke
-st.set rlist.set remb st.set_pke
-st.set re    load_dotenvBot ?vst.set re vast.s??st.sidebar.markdown("--)
-st.s??st.sidebar.markdown("---")
-s.en# ─s.en# ── S("#### Grant Dest.s??st.u_state_rate")
-        fica_rate     = st.ns.en# ─s.en# ── S("#### G",s.en# ─s.en# s st.s??st.sidebar.markdown("--oms.en# ─s.en# ── S("#### G v        fica_1, key="rsu_existing_shares")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        ticker = st.text_input("Company Ticker", value="AAPL", key="rsu_ticker").upper()
+        shares_total = st.number_input("Total Granted Shares", min_value=1, value=1000, key="rsu_total")
+    with c2:
+        vest_schedule = st.selectbox("Vesting Schedule", ["4-year monthly (1/48)", "4-year quarterly (1/16)", "4-year annual (25%/yr)", "3-year annual (33%/yr)", "Custom"], key="rsu_sched")
+        grant_price = st.number_input("Grant Price (USD)", min_value=0.01, value=150.0, step=0.01, key="rsu_grant")
     with c3:
-      import pa Vimport panreimport pa Vimport pandas as pd
-imSPimport anthy="rsu_shares")
-        fmv_at_vreimSPimport anthy="rsu_shareeximSPimport anthy="rsu_shares")
-        fmv_at_vreimS??        fmv_at_vreimSPimport ??       fmv_at_vef??f S       ice ($/share)", m?   st.warning(    load_doveif not api_key:
-    st.warning(    load_      st.warning  except Importri    st.warningrk    st f    st.warning(    load_      st.warning  l_st.set re    load_dotenvBot ?? wst.set re
- st.set_pke
-st.set rlist.set remb st.set_pke
-st.set re    load_dotenvBot ?vst.set e  st.set_pke
-st.set rlist.set remb st.set_loss from vestst.set re    load_dotenvBot ?ve st.s??st.sidebar.markdown("---")
-s.en# ─s.en# ── S("#### Grant Desues.en# ─s.en# ── S("#### G 1        fica_rate     = st.ns.en# ─s.en# ── S("#### G"      with c3:
-      import pa Vimport panreimport pa Vimport pandas as pd
-imSPimport anthy="rsu_shares")
-        fmv_at_vreimSPimport anthy="rsu_shareeximSPimport anthy="rsu_shares")
- or      impormeimSPimport anthy="rsu_shares")
-        fmv_at_vreimSPimporco        fmv_at_vreimSPimport y_        fmv_at_vreimS?? * current_price)
-    concentration_pct = (new_company_    st.warning(    load_      st.warning  except Importri    st.warningrk    st f    st.warning(    load_      st.warning  l_st.set re    load_do4  st.set_pke
-st.set rlist.set remb st.set_pke
-st.set re    load_dotenvBot ?vst.set e  st.set_pke
-st.set rlist.set remb st.set_loss from vestst.set re    load_dotenvBoaxst.set rli.1st.set re    load_dotenvBot ?vr=st.set rlist.set remb st.set_loss from vestst.set , s.en# ─s.en# ── S("#### Grant Desues.en# ─s.en# ── ntration", f"{concentration_pct:.1f}%",
-            import pa Vimport panreimport pa Vimport pandas as pd
-imSPimport anthy="rsu_shares")
-        fmv_at_vreimSPimport anthy="rsu else "normal")
+        current_price = st.number_input("Current Price (USD)", min_value=0.01, value=175.0, step=0.01, key="rsu_current")
+        fed_tax_rate = st.slider("Federal Tax Rate (%)", min_value=10, max_value=37, value=24, key="rsu_fed")
 
-  imSPimport anthy="rsu_shares")
-        fmv_at_vreimSPimpor)
-        fmv_at_vreimSPimport t. or      impormeimSPimport anthy="rsu_shares")
-        fmv_at_vreimSPimporco [        fmv_at_vreimSPimporco        fmv_at_v,     concentration_pct = (new_company_    st.warning(    load_      st.warning  except Importri    s}"st.set rlist.set remb st.set_pke
-st.set re    load_dotenvBot ?vst.set e  st.set_pke
-st.set rlist.set remb st.set_loss from vestst.set re    load_dotenvBoaxst.set rli.1st.set re    load_dotenvBo  st.set re    load_dotenvBot ?v  st.set rlist.set remb st.set_loss from vestst.set ra            import pa Vimport panreimport pa Vimport pandas as pd
-imSPimport anthy="rsu_shares")
-        fmv_at_vreimSPimport anthy="rsu else "normal")
+    state_tax = st.slider("State Tax Rate (%)", min_value=0, max_value=15, value=6, key="rsu_state")
 
-  imSPimport anthy="rsu_shares")
-        fmv_at_vreimSPimpor)
-        fmv_at_vreimSPimport t. or      im Vest")
-      imSPimport anthy="rsu_shares")
-        fmv_at_vreimSPimport anthom        fmv_at_vreimSPimport f"
-  imSPimport anthy="rsu_s "Unrealized Gain/Loss", "LTCG        fmv_at_vreimSPimpor)
-  if        fmv_at_vreimSPimpor"A        fmv_at_vreimSPimporco [        fmv_at_vreimSPimporco        fmv_at_vowst.set re    load_dotenvBot ?vst.set e  st.set_pke
-st.set rlist.set remb st.set_loss from vestst.set re    load_dotenvBoaxst.set rli.1st.set re    load_dotenvBo  st.set re    load_dotenvBot ?v  st.set rlist.st.st.set rlist.set remb st.set_loss from vestst.sr_widimSPimport anthy="rsu_shares")
-        fmv_at_vreimSPimport anthy="rsu else "normal")
+    st.markdown("---")
 
-  imSPimport anthy="rsu_shares")
-        fmv_at_vreimSPimpor)
-        fmv_at_vreimSPimport t. or      im Vest")
-      imSPimport anthy="rsu_shares")
-    ??──────?       fmv_at_vreimSPimport ??────────────────
-    st.        fmv_at_vreimSPimpor)
-  an        fmv_at_vreimSPimporle      imSPimport anthy="rsu_shares")
-        fmvAd        fmv_at_vreimSPimport anthomto  imSPimport anthy="rsu_s "Unrealized Gain/Loss", "LTCG   "rsu_sche  if        fmv_at_vreimSPimpor"A        fmv_at_vreimSPimporco [        fmv_at_vre  st.set rlist.set remb st.set_loss from vestst.set re    load_dotenvBoaxst.set rli.1st.set re    load_dotenvBo  st.set re    load_dotenvBot ?v  st.set rlist.st.sha        fmv_at_vreimSPimport anthy="rsu else "normal")
+    # Calculate vesting
+    if vest_schedule == "4-year monthly (1/48)":
+        periods = 48; label = "months"
+    elif vest_schedule == "4-year quarterly (1/16)":
+        periods = 16; label = "quarters"
+    elif vest_schedule == "4-year annual (25%/yr)":
+        periods = 4; label = "years"
+    elif vest_schedule == "3-year annual (33%/yr)":
+        periods = 3; label = "years"
+    else:
+        periods = st.number_input("Custom periods", min_value=1, value=12, key="rsu_custom_p")
+        label = "periods"
 
-  imSPimport anthy="rsu_shares")
-        fmv_at_vreimSPimpor)
-        fmv_at_vreimSPimport t. or      im Vest")
-      imSPimport anthy="rsu_shares")
-  "Ticker", value="AAPL", key="sv_tick
-  imSPimport anthy="rsu_shares")
-        fmv_at_vrei"ad        fmv_at_vreimSPimpor)
-  n_        fmv_at_vreimSPimpord(      imSPimport anthy="rsu_shares")
-    ??─?     ??──────?         "S    st.        fmv_at_vreimSPimpor)
-  an        fmv_at_vreimSPimporle      imSPimport anthy="rsu_shares".)  an        fmv_at_vreimSPimporle ra        fmvAd        fmv_at_vreimSPimport anthomto  imSPimport anthy,
+    shares_per_period = shares_total / periods
+    total_tax_rate = (fed_tax_rate + state_tax) / 100.0
 
-  imSPimport anthy="rsu_shares")
-        fmv_at_vreimSPimpor)
-        fmv_at_vreimSPimport t. or      im Vest")
-      imSPimport anthy="rsu_shares")
-  "Ticker", value="AAPL", key="sv_tick
-  imSPimport anthy="rsu_shares")
-        fmv_at_vrei"ad        fmv_at_vreimSPimpor)
-  n_        fmv_at_vreimSPimpord(      imSPimport anthy="rsu_shares")
-    ??─?     ??──────?         "S    st.        fmv_at_vr([s         pd.DataFrame([totals])],        fmv_at_vreimSPimpor        imSPimport anthy="rsu_shares")
-  "Ticker",e.  "Ticker", value="AAPL", key="sv_tes  imSP"${:,.2f}", "Net": "${:,.2f}"}),
-        fmv_at_vrei"ad        fid  n_        fmv_at_vreimSPimpord(      imSPimport      ??─?     ??─────le", key="clear_sched"):
-             an        fmv_at_vreimSPimporle      imSPimport anthy="rsu_shares".)  an        fm??  imSPimport anthy="rsu_shares")
-        fmv_at_vreimSPimpor)
-        fmv_at_vreimSPimport t. or      im Vest")
-      imSPimport anthy="rsu_shares")
-  "Ticker", value="AAPL"???       fmv_at_vreimSPimpor)
-  ??       fmv_at_vreimSPimporES      imSPimport anthy="rs??═══════? "Ticker", value="AAPL", key="sv_t? imSPimport anthy="rsu_shares")
-    ?       fmv_at_vrei"ad        f? n_        fmv_at_vreimSPimpord(      imSPi??═?   ??─?     ??──────?         "S    st.        feade  "Ticker",e.  "Ticker", value="AAPL", key="sv_tes  imSP"${:,.2f}", "Net": "${:,.2f}"}),
-        fmv_at_vrei"ad        fid  n_        fmv_at_vreimSPimpord(      imSPimport             fmv_at_vrei"ad        fi### ESPP Plan Details")
-        espp_ticker       = st.te             an        fmv_at_vreimSPimporle      imSPimport anthy="rsu_shares".)  an        fm??  imSPimport anthy="rsu_shares")
-        fmre        fmv_at_vreimSPimpor)
-        fmv_at_vreimSPimport t. or      im Vest")
-      imSPimport anthy="rsu_shares")
-  "Ticker", vic        fmv_at_vreimSPimporin      imSPimport anthy="rsu_shares")
-  "Ticker",er  "Ticker", value="AAPL"???       e)  ??       fmv_at_vreimSPimporES      imSPimport anthur    ?       fmv_at_vrei"ad        f? n_        fmv_at_vreimSPimpord(      imSPi??═?   ??─?     ??──────?         "S    st.    SP        fmv_at_vrei"ad        fid  n_        fmv_at_vreimSPimpord(      imSPimport             fmv_at_vrei"ad        fi### ESPP Plan Details")
-        espp_ticker       = st.te             an        fmv_at_vreimSPimporle      imSPimport anthy="rsu          espp_ticker       = st.te             an        fmv_at_vreimSPimporle      imSPimport anthy="rsu_shares".)  an        fm??  imSPimpo##        fmre        fmv_at_vreimSPimpor)
-        fmv_at_vreimSPimport t. or      im Vest")
-      imSPimport anthy="rsu_shares")
-  "Ticker", vic        fmv_at_vrei k        fmv_at_vreimSPimport t. or     ri      imSPimport anthy="rsu_shares")($/share)", mi  "Ticker", vic        fmv_at_vreimri  "Ticker",er  "Ticker", value="AAPL"???       e)  ??       fmv_at_vreimSPimp
-         espp_ticker       = st.te             an        fmv_at_vreimSPimporle      imSPimport anthy="rsu          espp_ticker       = st.te             an        fmv_at_vreimSPimporle      imSPimport anthy="rsu_shares".)  an        fm??  imSPimpo##        fmre        fmv_at_vreimSPimpor)
-        fmv_at_vreimSPimport t. or      im Vest")
-      imSPimport anthy="rsu_shares")
-  "Ticker", vic        ?       fmv_at_vreimSPimport t. or      im Vest")
-      imSPimport anthy="rsu_shares")
-  "Ticker", vic        fmv_at_vrei k        fmv_at_vreimSPimport t. or     ri      imSPimport anthy="rsu_shares")($/share)", mi  "Ticker", vic        fmv_at_vreimri  "Ticker",er  "Ticker", value="AAPL"spp_shares * espp_actual_cost
-    espp_discount_gain  "Ticker", vic        fmv_at_vrei st         espp_ticker       = st.te             an        fmv_at_vreimSPimporle      imSPimport anthy="rsu          espp_ticker       = st.te             an        fmv_at_vreimSPimporle      imSPimport anthy="rsu_shares".)  an        fm??  im_f        fmv_at_vreimSPimport t. or      im Vest")
-      imSPimport anthy="rsu_shares")
-  "Ticker", vic        ?       fmv_at_vreimSPimport t. or      im Vest")
-      imSPimport anthy="rsu_shares")
-  "Ticker", vic        fmv_at_vrei k        fmv_at_vreimSPimport t. or     ri      imSPimp_p      imSPimport anthy="rsu_shares")
-  "Ticker",    "Ticker", vic        ?       fmin      imSPimport anthy="rsu_shares")
-  "Ticker", vic        fmv_at_vrei kx(  "Ticker", vic        fmv_at_vrei       espp_discount_gain  "Ticker", vic        fmv_at_vrei st         espp_ticker       = st.te             an        fmv_at_vreimSPimporle      imSPimport anthy="rsu          espp_ticker       = st.te             an        fmv_at_Co      imSPimport anthy="rsu_shares")
-  "Ticker", vic        ?       fmv_at_vreimSPimport t. or      im Vest")
-      imSPimport anthy="rsu_shares")
-  "Ticker", vic        fmv_at_vrei k        fmv_at_vreimSPimport t. or     ri      imSPimp_p      imSPimport anthy="rsu_shares")
-  "Ticker",    "Ticker", vic        ?       fmin      imSPimport ant.colu  "Ticker", vic        ?       fmst      imSPimport anthy="rsu_shares")
-  "Ticker", vic        fmv_at_vrei kda  "Ticker", vic        fmv ["Purchase  "Ticker",    "Ticker", vic        ?       fmin      imSPimport anthy="rsu_shares")
-  "Ticker", vic        fmv_at_vrei kx(  _c  "Ticker", vic        fmv_at_vrei kx(  "Ticker", vic        fmv_at_vrei       espp_dax  "Ticker", vic        ?       fmv_at_vreimSPimport t. or      im Vest")
-      imSPimport anthy="rsu_shares")
-  "Ticker", vic        fmv_at_vrei k        fmv_at_vreimSPimport t. or     ri      imSPimp_p      imSPimport anthy="rsu_shares")
-  "Ticker",    "Ticker", vic        ?       fmin      imSPimport ant.colu  "Ticker", vic        ?       imSPimport anthy="rsu_shares")
-  "Ticker", vic        fm Income Porti  "Ticker", vic        fmv_at_vrei io  "Ticker",    "Ticker", vic        ?       fmin      imSPimport ant.colu  "Ticker", vic        ?       fmst      imSPimporf}  "Ticker", vic        fmv_at_vrei kda  "Ticker", vic        fmv ["Purchase  "Ticker",    "Ticker", vic        ?       fmin      imSPimport anthy    "Ticker", vic        fmv_at_vrei kx(  _c  "Ticker", vic        fmv_at_vrei kx(  "Ticker", vic        fmv_at_vrei       espp_dax  "Ticker", vic        ?      d      imSPimport anthy="rsu_shares")
-  "Ticker", vic        fmv_at_vrei k        fmv_at_vreimSPimport t. or     ri      imSPimp_p      imSPimport anthy="rsu_shares")
-  "Ticker",    "Ticker", vic        ? "Ticker", vic        fmv_at_vrei ??  "Ticker",    "Ticker", vic        ?       fmin      imSPimport ant.colu  "Ticker", vic        ?       imSPimport anthy="r?? "Ticker", vic        fm Income Porti  "Ticker", vic        fmv_at_vrei io  "Ticker",    "Ticker", vic        ?       fmin      imSPim? "Ticker", vic        fmv_at_vrei k        fmv_at_vreimSPimport t. or     ri      imSPimp_p      imSPimport anthy="rsu_shares")
-  "Ticker",    "Ticker", vic        ? "Ticker", vic        fmv_at_vrei ??  "Ticker",    "Ticker", vic        ?       fmin      imSPimport ant.colu  "Ticker", vic        ?       imSPimport anthy="r?? "Ticker", vic        fm Income Porti  "Ticker", vic        fmv_at_vrei io  "Ticker",    "Ticker", vic        ?       fmin      imSPim? "Ticker", vic        fmv_at_vrei k        fmv_at_vreimSPimport t. or     ri ke  "Ticker",    "Ticker", vic        ? "Ticker", vic        fmv_at_vrei ??  "Ticker",    "Ticker", vic        ?       fmin  rr  "Ticker",    "Ticker", vic        ? "Ticker", vic        fmv_at_vrei ??  "Ticker",    "Ticker", vic        ?       fmin      imSPimport ant.colu  "Ticker", vic        ?       imSPimport anthy="r?? "Ticker", vic        fm Income Porti  "Ticker", vic        fmv_at_vrei io  "Ticker",    "Ticker", vic        ?       fmin      imSPim? "Ticker", vic        fmv_at_vrei k        fmv_at_vreimSPimport t. or     ri ke  "Ticker",    "Ticker", vic        ? "Tickerl Context", placeholder="e.g. 'I have 4 more vest events this year', 'Company has earnings next week', 'I need cash for a house down payment'", key="ai_notes", height=80)
+    rows = []
+    for i in range(1, min(int(periods) + 1, 13)):
+        vest_value = shares_per_period * current_price
+        tax_owed = vest_value * total_tax_rate
+        net_value = vest_value - tax_owed
+        rows.append({
+            "Period": i,
+            "Shares Vesting": round(shares_per_period, 2),
+            "Vest Value (USD)": round(vest_value, 2),
+            "Tax Owed (USD)": round(tax_owed, 2),
+            "Net After Tax (USD)": round(net_value, 2),
+        })
 
-    if st.button("🤖 Get AI Recommendation", type="primary", key="btn_ai_rsu"):
-        gross = ai_shares_vest * ai_fmv
-        tax_rate = (ai_fed_rate + ai_state_rate + 7.65) / 100
-        net_sell = gross * (1 - tax_rate)
-        hold_val = ai_shares_vest * ai_current_px
+    df_rsu = pd.DataFrame(rows)
+    st.dataframe(df_rsu, use_container_width=True, hide_index=True)
 
-        context = f"""
-RSU/ESPP Decision Analysis Request:
-- Company: {ai_ticker_sym}
-- Shares vesting: {ai_shares_vest}
-- FMV at vest: ${ai_fmv:.2f}/share
-- Current price: ${ai_current_px:.2f}/share
-- Gross RSU income: ${gross:,.2f}
-- Estimated tax rate (fed + state + FICA): {tax_rate*100:.1f}%
-- Net proceeds if sold at vest: ${net_sell:,.2f}
-- Current hold value: ${hold_val:,.2f}
-- Total portfolio value: ${ai_portfolio_val:,.2f}
-- Current concentration in this stock: {ai_company_pct}%
-- After vesting, new concentration would be: {((ai_company_pct/100*ai_portfolio_val +
-    if st.button("🤖 Get AI Recommendation", type="primary", key="btn_ai_rsu"):
-        gross = ai_shares_vest * ai_fmv
-        tax_rate = (ai_fed_rate + ai_state_r0):        gross = ai_shares_vest * ai_fmv
-        tax_rate = (ai_fed_rate + ai_staot  }
-"""
-        prompt = """Analyze this        net_sell = gross * (1 - tax_rate)
-        hold_val =nd        hold_val = ai_shares_vest * ai_cse
-        contexold)
-2. Concentration risk assessment (is this too much sin- Company: {ai_ticker_sym}
-- Sharefi- Shares vesting: {ai_shaso- FMV at vest: ${ai_fmv:.2f}/sharon- Current price: ${ai_currenttion p- Gross RSU income: ${gross:,.2f}
-- Estimabe- Estimated tax rate (fed + statol- Net proceeds if sold at vest: ${net_sell:,.2f}
-- Current hoh st.spinner("Claude is analyzing your RSU situatio- Total portfolio value: ${ai_portfol  - Current concentration in this stock: {ai_compa  - After vesting, new concentrasages.create(
-                 if st.button("🤖 Get AI Recommendation", type="primary", key="btn_ai_rsu"):
-            gross = ai_shares_vest * ai_fmv
-        tax_rate = (ai_fed_rate + ai_sta s        tax_rate = (ai_fed_rate + ai_sn{        tax_rate = (ai_fed_rate + ai_staot  }
-"""
-        prompt = """Analyze thisent[0"""
-        prompt = """Analyze this        t.  rk        hold_val =nd  ommendation")
-                st.text(response_text)        contexold)
-2. Concentration risk assessment (is this ag2. Concentration 1_- Sharefi- Shares vesting: {ai_shaso- FMV at vest: ${ai_fmv:.2f}/sharon- Currenst- Estimabe- Estimated tax rate (fed + statol- Net proceeds if sold at vest: ${net_sell:,.2f}
-- Current hoh st.spinner("Claude is analyzingic- Current hoh st.spinner("Claude is analyzing your RSU situatio- Total portfolio value: ${af"                 if st.button("🤖 Get AI Recommendation", type="primary", key="btn_ai_rsu"):
-            gross = ai_shares_vest * ai_fmv
-        tax_rate = (ai_fed_rate + ai_sta s        tax_r"?           gross = ai_shares_vest * ai_fmv
-        tax_rate = (ai_fed_rate + ai_sta s      adv        tax_rate = (ai_fituation.")
+    total_vest_value = shares_total * current_price
+    total_tax = total_vest_value * total_tax_rate
+    total_net = total_vest_value - total_tax
+    gain_pct = ((current_price - grant_price) / grant_price) * 100
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Total Grant Value", f"${total_vest_value:,.0f}")
+    m2.metric("Total Tax Owed", f"${total_tax:,.0f}", help=f"{fed_tax_rate + state_tax}% combined rate")
+    m3.metric("Net After Tax", f"${total_net:,.0f}")
+    m4.metric("Price Gain vs Grant", f"{gain_pct:+.1f}%")
+
+    st.info("Tip: Many companies withhold 22% federal at vest. If your bracket is higher, you may owe more at tax time.")
+
+# ─────────────────────────────────────────────────────────────────────────────
+with tab_espp:
+    st.subheader("💰 ESPP Calculator")
+    st.caption("ESPP lets you buy company stock at a discount. The discount is taxed as ordinary income; gains beyond that are capital gains.")
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        espp_ticker = st.text_input("Company Ticker", value="MSFT", key="espp_ticker").upper()
+        espp_contribution = st.number_input("Per-Period Contribution (USD)", min_value=1.0, value=500.0, step=50.0, key="espp_contrib")
+        espp_periods = st.number_input("Offering Periods per Year", min_value=1, value=2, key="espp_periods")
+    with c2:
+        espp_discount = st.slider("ESPP Discount (%)", min_value=5, max_value=15, value=15, key="espp_disc")
+        espp_lookback = st.checkbox("Lookback Provision?", value=True, key="espp_look", help="Lookback uses the lower of offering start or end price")
+        espp_offering_price = st.number_input("Offering Start Price (USD)", min_value=0.01, value=160.0, step=0.01, key="espp_offer")
+    with c3:
+        espp_current = st.number_input("Current / End Price (USD)", min_value=0.01, value=175.0, step=0.01, key="espp_cur")
+        espp_fed = st.slider("Federal Tax Rate (%)", min_value=10, max_value=37, value=24, key="espp_fed")
+        espp_state = st.slider("State Tax Rate (%)", min_value=0, max_value=15, value=6, key="espp_state")
+
+    st.markdown("---")
+
+    base_price = min(espp_offering_price, espp_current) if espp_lookback else espp_current
+    purchase_price = base_price * (1 - espp_discount / 100)
+    annual_contribution = espp_contribution * espp_periods
+    shares_purchased = annual_contribution / purchase_price
+    current_value = shares_purchased * espp_current
+    discount_income = shares_purchased * (espp_current - purchase_price)
+    tax_on_discount = discount_income * (espp_fed + espp_state) / 100
+    net_gain = current_value - annual_contribution - tax_on_discount
+    immediate_roi = (net_gain / annual_contribution) * 100
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Purchase Price", f"${purchase_price:.2f}", help=f"{espp_discount}% off {'lower of start/end' if espp_lookback else 'end price'}")
+    m2.metric("Shares Purchased", f"{shares_purchased:.2f}")
+    m3.metric("Current Value", f"${current_value:,.2f}")
+    m4.metric("Net Gain After Tax", f"${net_gain:,.2f}", delta=f"{immediate_roi:.1f}% ROI")
+
+    st.markdown("#### Sell Immediately vs Hold")
+    sell_now_net = current_value - tax_on_discount - annual_contribution
+    st.success(f"Sell immediately: net gain ~${sell_now_net:,.2f} (guaranteed {espp_discount}% discount minus tax)")
+    st.warning("Hold longer: subject to stock price risk, but gains beyond discount taxed at lower capital gains rate if held 2+ years from offering start.")
+
+    st.info(f"Immediate guaranteed return: ~{espp_discount}% discount. After {espp_fed + espp_state}% tax on discount, effective return is ~{espp_discount * (1 - (espp_fed + espp_state)/100):.1f}%. Most financial advisors recommend selling immediately to lock in the guaranteed gain.")
+
+# ─────────────────────────────────────────────────────────────────────────────
+with tab_ai:
+    st.subheader("🧠 AI Analysis: Sell vs Hold Decision")
+    st.caption("Claude analyzes your specific RSU/ESPP situation and gives a direct recommendation.")
+
+    if not api_key:
+        st.warning("No Claude API key found. Go to AI Insights to save your key.")
+    else:
+        st.markdown("**Describe your situation for a personalized analysis:**")
+        c1, c2 = st.columns(2)
+        with c1:
+            ai_comp_type = st.selectbox("Compensation Type", ["RSU", "ESPP", "Both RSU and ESPP"], key="ai_comp")
+            ai_ticker = st.text_input("Ticker", value="AAPL", key="ai_tick").upper()
+            ai_shares = st.number_input("Shares / Value at stake (USD)", min_value=0.0, value=50000.0, step=1000.0, key="ai_shares")
+            ai_holding = st.selectbox("Current holding period", ["Just vested / just purchased", "6-12 months", "1-2 years", "2+ years"], key="ai_hold")
+        with c2:
+            ai_concentration = st.slider("% of net worth in this stock", min_value=0, max_value=100, value=20, key="ai_conc")
+            ai_need_cash = st.selectbox("Cash need", ["No immediate need", "Might need in 1 year", "Need cash now"], key="ai_cash")
+            ai_sentiment = st.selectbox("Your view on the company", ["Very bullish", "Neutral", "Cautious", "Bearish"], key="ai_sent")
+            ai_tax_year = st.selectbox("Tax situation", ["High income year", "Normal income year", "Low income year (e.g. job change)"], key="ai_tax")
+
+        ai_notes = st.text_area("Any other context (optional)", placeholder="e.g. planning to buy a house next year, company has earnings next month...", key="ai_notes")
+
+        if st.button("🧠 Get AI Recommendation", type="primary", key="btn_rsu_ai"):
+            context = (
+                f"Equity Compensation Analysis Request\n"
+                f"Type: {ai_comp_type}\n"
+                f"Ticker: {ai_ticker}\n"
+                f"Value at stake: ${ai_shares:,.0f}\n"
+                f"Holding period: {ai_holding}\n"
+                f"Concentration in net worth: {ai_concentration}%\n"
+                f"Cash need: {ai_need_cash}\n"
+                f"View on company: {ai_sentiment}\n"
+                f"Tax situation: {ai_tax_year}\n"
+                f"Additional context: {ai_notes or 'None'}"
+            )
+            prompt = (
+                "You are a fee-only financial advisor specializing in equity compensation. "
+                "Give a direct, honest sell-vs-hold recommendation for this person's RSU/ESPP situation. "
+                "Cover: 1. Concentration risk. 2. Tax optimization (ordinary income vs capital gains). "
+                "3. The 'sell immediately' vs 'hold for long-term gains' tradeoff. "
+                "4. Your specific recommendation with reasoning. "
+                "5. One thing they should do this week. "
+                "Be direct. No generic disclaimers. No markdown. No dollar signs."
+            )
+            with st.spinner("Claude is analyzing your equity compensation..."):
+                try:
+                    client = anthropic.Anthropic(api_key=api_key)
+                    msg = client.messages.create(
+                        model="claude-opus-4-5",
+                        max_tokens=700,
+                        messages=[{"role": "user", "content": f"{context}\n\n{prompt}"}]
+                    )
+                    st.text(msg.content[0].text)
+                    usage = msg.usage
+                    cost = (usage.input_tokens / 1e6 * 3.0) + (usage.output_tokens / 1e6 * 15.0)
+                    st.caption(f"Cost: ${cost:.4f} - {usage.input_tokens + usage.output_tokens:,} tokens")
+                except Exception as e:
+                    st.error(f"Error: {e}")
+
+st.markdown("---")
+st.caption("This tool provides educational information only. Consult a tax professional for advice specific to your situation.")
