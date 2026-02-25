@@ -3,6 +3,11 @@ import streamlit as st
 import pandas as pd
 import anthropic
 from datetime import datetime
+try:
+    import yfinance as yf
+    _yf_ok = True
+except ImportError:
+    _yf_ok = False
 from utils.db import init_db, load_investment_context, get_setting
 from utils.auth import require_login, require_pro, render_sidebar_brand, render_sidebar_user_widget, inject_css
 
@@ -124,6 +129,30 @@ st.dataframe(
     holdings_df.style.format({"Value": "${:,.2f}", "Weight (%)": "{:.2f}%"}),
     use_container_width=True, hide_index=True
 )
+
+# ── Live Price Refresh ─────────────────────────────────────────────────────────
+if _yf_ok:
+    if st.button("🔄 Refresh Live Prices via yfinance", key="refresh_prices"):
+        updated = 0
+        for i, row in enumerate(st.session_state["holdings"]):
+            ticker = row.get("Ticker", "").strip().upper()
+            if ticker and ticker not in ("CASH", ""):
+                try:
+                    data = yf.Ticker(ticker).fast_info
+                    price = float(data.get("last_price") or data.get("regularMarketPrice") or 0)
+                    if price > 0:
+                        # Update value based on implied shares (value / old price approximation)
+                        # Just store the latest price as a note; user controls shares
+                        st.session_state["holdings"][i]["_live_price"] = price
+                        updated += 1
+                except Exception:
+                    pass
+        if updated:
+            st.success(f"Live prices fetched for {updated} tickers. Update your values above to reflect current prices.")
+        else:
+            st.warning("Could not fetch prices. Check tickers or try again.")
+else:
+    st.caption("Install yfinance (`pip install yfinance`) to enable live price refresh.")
 
 st.markdown("---")
 col_sector, col_account = st.columns(2)
