@@ -54,7 +54,38 @@ api_key = st.session_state.get("api_key", "")
 st.title("📈 RSU / ESPP Decision Support")
 st.caption("Model your equity compensation, understand the tax impact, and get AI-powered sell-vs-hold analysis.")
 
+# ── Visa one-time RSU award info banner ───────────────────────────────────────
+with st.expander("ℹ️ Your Visa Inc. RSU Award Details", expanded=False):
+    st.markdown("""
+**One-Time New Hire Equity Award — Visa Inc. (V)**
+
+| Field | Value |
+|---|---|
+| Award Value | **USD $20,000** |
+| Plan | Visa Inc. 2007 Equity Incentive Compensation Plan |
+| Custodian | **Merrill Lynch** |
+| Vesting | 1/3 per year over 3 years from grant date |
+| Grant Timing | Mid-month of the first full calendar month after your start date |
+| Acceptance Window | 90 days from grant date (via Merrill Lynch email to your Visa email) |
+
+**LTIP (Annual):** Discretionary equity (stock options and/or RSUs) awarded at fiscal year-end based on performance.
+
+> Shares are converted to RSUs on the grant date. Check your Merrill Lynch account for grant date, vesting dates, and share count.
+""")
+
 tab_rsu, tab_espp, tab_ai = st.tabs(["🏷️ RSU Vesting", "💰 ESPP Calculator", "🧠 AI Analysis"])
+
+# ── Visa RSU defaults ─────────────────────────────────────────────────────────
+# $20,000 award ÷ ~$340 (approx Visa share price) ≈ 58 shares
+# Vesting: 1/3 each year for 3 years
+# Custodian: Merrill Lynch | Plan: Visa Inc. 2007 Equity Incentive Compensation Plan
+_VISA_TICKER        = "V"
+_VISA_AWARD_VALUE   = 20_000.0   # USD
+_VISA_GRANT_PRICE   = 340.0      # approx — update once Merrill Lynch confirms grant
+_VISA_CURRENT_PRICE = 340.0      # approx — update to live price
+_VISA_SHARES        = round(_VISA_AWARD_VALUE / _VISA_GRANT_PRICE)  # ~58
+_VISA_FED_TAX       = 22         # standard RSU withholding rate
+_VISA_STATE_TAX     = 5          # Georgia flat income tax (5.49% → rounded to 5)
 
 # ─────────────────────────────────────────────────────────────────────────────
 with tab_rsu:
@@ -63,16 +94,23 @@ with tab_rsu:
 
     c1, c2, c3 = st.columns(3)
     with c1:
-        ticker = st.text_input("Company Ticker", value="AAPL", key="rsu_ticker").upper()
-        shares_total = st.number_input("Total Granted Shares", min_value=1, value=1000, key="rsu_total")
+        ticker = st.text_input("Company Ticker", value=_VISA_TICKER, key="rsu_ticker").upper()
+        shares_total = st.number_input("Total Granted Shares", min_value=1, value=_VISA_SHARES, key="rsu_total",
+                                        help="Visa one-time award: ~$20,000 ÷ grant price. Confirm exact share count in Merrill Lynch.")
     with c2:
-        vest_schedule = st.selectbox("Vesting Schedule", ["4-year monthly (1/48)", "4-year quarterly (1/16)", "4-year annual (25%/yr)", "3-year annual (33%/yr)", "Custom"], key="rsu_sched")
-        grant_price = st.number_input("Grant Price (USD)", min_value=0.01, value=150.0, step=0.01, key="rsu_grant")
+        vest_schedule = st.selectbox("Vesting Schedule",
+                                      ["4-year monthly (1/48)", "4-year quarterly (1/16)", "4-year annual (25%/yr)", "3-year annual (33%/yr)", "Custom"],
+                                      index=3,   # default: 3-year annual (matches Visa offer letter)
+                                      key="rsu_sched")
+        grant_price = st.number_input("Grant Price (USD)", min_value=0.01, value=_VISA_GRANT_PRICE, step=0.01, key="rsu_grant",
+                                       help="Update once Merrill Lynch confirms your grant date price.")
     with c3:
-        current_price = st.number_input("Current Price (USD)", min_value=0.01, value=175.0, step=0.01, key="rsu_current")
-        fed_tax_rate = st.slider("Federal Tax Rate (%)", min_value=10, max_value=37, value=24, key="rsu_fed")
+        current_price = st.number_input("Current Price (USD)", min_value=0.01, value=_VISA_CURRENT_PRICE, step=0.01, key="rsu_current")
+        fed_tax_rate = st.slider("Federal Tax Rate (%)", min_value=10, max_value=37, value=_VISA_FED_TAX, key="rsu_fed",
+                                  help="Visa withholds 22% federal at vest. Adjust if your bracket is higher.")
 
-    state_tax = st.slider("State Tax Rate (%)", min_value=0, max_value=15, value=6, key="rsu_state")
+    state_tax = st.slider("State Tax Rate (%)", min_value=0, max_value=15, value=_VISA_STATE_TAX, key="rsu_state",
+                           help="Georgia flat income tax ~5.49%")
 
     st.markdown("---")
 
@@ -176,17 +214,28 @@ with tab_ai:
         st.markdown("**Describe your situation for a personalized analysis:**")
         c1, c2 = st.columns(2)
         with c1:
-            ai_comp_type = st.selectbox("Compensation Type", ["RSU", "ESPP", "Both RSU and ESPP"], key="ai_comp")
-            ai_ticker = st.text_input("Ticker", value="AAPL", key="ai_tick").upper()
-            ai_shares = st.number_input("Shares / Value at stake (USD)", min_value=0.0, value=50000.0, step=1000.0, key="ai_shares")
-            ai_holding = st.selectbox("Current holding period", ["Just vested / just purchased", "6-12 months", "1-2 years", "2+ years"], key="ai_hold")
+            ai_comp_type = st.selectbox("Compensation Type", ["RSU", "ESPP", "Both RSU and ESPP"],
+                                         index=0, key="ai_comp")  # default: RSU
+            ai_ticker = st.text_input("Ticker", value=_VISA_TICKER, key="ai_tick").upper()
+            ai_shares = st.number_input("Shares / Value at stake (USD)", min_value=0.0,
+                                         value=_VISA_AWARD_VALUE, step=1000.0, key="ai_shares",
+                                         help="Visa one-time new hire RSU award: $20,000")
+            ai_holding = st.selectbox("Current holding period",
+                                       ["Just vested / just purchased", "6-12 months", "1-2 years", "2+ years"],
+                                       index=0, key="ai_hold")
         with c2:
-            ai_concentration = st.slider("% of net worth in this stock", min_value=0, max_value=100, value=20, key="ai_conc")
-            ai_need_cash = st.selectbox("Cash need", ["No immediate need", "Might need in 1 year", "Need cash now"], key="ai_cash")
-            ai_sentiment = st.selectbox("Your view on the company", ["Very bullish", "Neutral", "Cautious", "Bearish"], key="ai_sent")
-            ai_tax_year = st.selectbox("Tax situation", ["High income year", "Normal income year", "Low income year (e.g. job change)"], key="ai_tax")
+            ai_concentration = st.slider("% of net worth in this stock", min_value=0, max_value=100, value=5, key="ai_conc",
+                                          help="New hire award — likely a small % of net worth initially")
+            ai_need_cash = st.selectbox("Cash need", ["No immediate need", "Might need in 1 year", "Need cash now"],
+                                         index=0, key="ai_cash")
+            ai_sentiment = st.selectbox("Your view on the company", ["Very bullish", "Neutral", "Cautious", "Bearish"],
+                                         index=0, key="ai_sent")
+            ai_tax_year = st.selectbox("Tax situation", ["High income year", "Normal income year", "Low income year (e.g. job change)"],
+                                        index=0, key="ai_tax")
 
-        ai_notes = st.text_area("Any other context (optional)", placeholder="e.g. planning to buy a house next year, company has earnings next month...", key="ai_notes")
+        ai_notes = st.text_area("Any other context (optional)",
+                                  value="New hire at Visa Inc. One-time RSU award of $20,000 vesting 1/3 per year over 3 years. Custodian: Merrill Lynch. Relocating to Atlanta, GA. Also eligible for annual LTIP discretionary equity.",
+                                  key="ai_notes")
 
         if st.button("🧠 Get AI Recommendation", type="primary", key="btn_rsu_ai"):
             context = (
