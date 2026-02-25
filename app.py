@@ -106,6 +106,11 @@ st.sidebar.page_link("pages/6_receipts.py",       label="Receipts & HSA",    ico
 st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights 🔒",    icon="🤖")
 st.sidebar.page_link("pages/8_goals.py",          label="Financial Goals",   icon="🎯")
 st.sidebar.page_link("pages/9_net_worth.py",      label="Net Worth 🔒",      icon="💎")
+st.sidebar.page_link("pages/10_rsu_espp.py",      label="RSU/ESPP Advisor 🔒", icon="📈")
+st.sidebar.page_link("pages/11_portfolio.py",     label="Portfolio Analysis 🔒", icon="🗂️")
+st.sidebar.page_link("pages/12_market_news.py",   label="Market News 🔒",    icon="📰")
+st.sidebar.page_link("pages/13_backtesting.py",   label="Strategy Backtest 🔒", icon="🔬")
+st.sidebar.page_link("pages/14_trading_bot.py",   label="Paper Trading Bot 🔒", icon="🤖")
 st.sidebar.page_link("pages/0_pricing.py",        label="⭐ Upgrade to Pro", icon="⭐")
 
 render_sidebar_user_widget()

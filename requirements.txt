@@ -6,4 +6,6 @@ psycopg2-binary>=2.9.0
 python-dotenv>=1.0.0
 bcrypt>=4.1.0
 stripe>=8.0.0
-# build: 2026-02-22-monetize
+yfinance>=0.2.40
+feedparser>=6.0.0
+# build: 2026-02-25-invest-features
