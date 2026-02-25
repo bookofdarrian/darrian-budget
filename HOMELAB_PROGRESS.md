@@ -27,13 +27,24 @@
 
 ## Network Plan
 
+**Current situation (2025-02-25):**
+- MacBook IP: `172.17.84.3` (on WiFi via home router, subnet `172.17.84.x`)
+- Beelink IP: `100.117.1.42` (on ethernet via Gigstreem gateway, subnet `100.117.1.x`)
+- ⚠️ They are on DIFFERENT subnets — cannot communicate directly yet
+- Fix: Connect both devices to the SAME router/switch (see below)
+
+**Target network layout:**
 ```
-Router
+Home Router (172.17.84.1)
   └── TP-Link Switch Port 1
-        ├── Port 2 → Beelink (192.168.1.50) — Proxmox
-        ├── Port 3 → MacBook (optional wired)
+        ├── Port 2 → Beelink ethernet → gets 172.17.84.x IP
+        ├── Port 3 → MacBook ethernet (optional)
         └── Port 4+ → future devices
 ```
+
+**To fix the subnet mismatch:**
+Move the Beelink's ethernet cable from the Gigstreem gateway to the TP-Link switch,
+which is connected to your home router (172.17.84.x network).
 
 ---
 
