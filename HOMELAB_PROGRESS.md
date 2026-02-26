@@ -55,6 +55,7 @@ which is connected to your home router (172.17.84.x network).
 | Proxmox VE 9.1.1 | ✅ Running | https://100.117.1.50:8006 |
 | AURA Compression Server | ✅ **LIVE & HEALTHY** | http://100.117.1.171:8000/health |
 | Budget App (Streamlit) | ✅ **LIVE & HEALTHY** | http://100.117.1.171:8501 |
+| Todo App (AI To-Do) | ✅ **LIVE & HEALTHY** | http://100.117.1.171:3456 |
 | Portainer (Docker UI) | ✅ **LIVE** | http://100.117.1.171:9000 |
 | Nginx Proxy Manager | ✅ **LIVE** | http://100.117.1.171:81 |
 | TrueNAS Scale | ⏳ Waiting for drives | — |
@@ -224,6 +225,7 @@ curl http://localhost:8000/health
 |---------|-----|
 | Proxmox Web UI | https://100.117.1.50:8006 |
 | Budget App | http://100.117.1.171:8501 |
+| Todo App (AI To-Do) | http://100.117.1.171:3456 |
 | AURA Health | http://100.117.1.171:8000/health |
 | Portainer | http://100.117.1.171:9000 |
 | Nginx Proxy Manager | http://100.117.1.171:81 |
@@ -233,6 +235,7 @@ curl http://localhost:8000/health
 | Service | URL |
 |---------|-----|
 | Budget App | http://100.95.125.112:8501 |
+| Todo App (AI To-Do) | http://100.95.125.112:3456 |
 | AURA | http://100.95.125.112:8000/health |
 | Proxmox | https://100.95.125.112:8006 |
 | Portainer | http://100.95.125.112:9000 |
