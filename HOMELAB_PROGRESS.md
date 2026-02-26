@@ -55,13 +55,12 @@ which is connected to your home router (172.17.84.x network).
 | Proxmox VE 9.1.1 | ✅ Running | https://100.117.1.50:8006 |
 | AURA Compression Server | ✅ **LIVE & HEALTHY** | http://100.117.1.171:8000/health |
 | Budget App (Streamlit) | ✅ **LIVE & HEALTHY** | http://100.117.1.171:8501 |
-| Vikunja (Todo App) | ✅ **LIVE** | http://100.117.1.171:3456 |
 | Portainer (Docker UI) | ✅ **LIVE** | http://100.117.1.171:9000 |
 | Nginx Proxy Manager | ✅ **LIVE** | http://100.117.1.171:81 |
 | TrueNAS Scale | ⏳ Waiting for drives | — |
 | **Tailscale VPN** | ✅ **LIVE on CT100** | `100.95.125.112` (Tailscale IP) |
 
-> **Note (2026-02-25):** Llama/Ollama was never deployed to the homelab — confirmed by full audit of CT100 and Proxmox host. No llama containers or compose entries exist. Vikunja is the active to-do app.
+> **Note (2026-02-25):** Llama/Ollama was never deployed to the homelab — confirmed by full audit of CT100 and Proxmox host. No llama containers or compose entries exist. Vikunja was removed 2026-02-25 — budget app is the only app.
 
 **Docker host container:** CT100 at `100.117.1.171` (Ubuntu 22.04, 4 cores, 4GB RAM, 50GB disk)
 **All services auto-restart** on reboot (`restart: unless-stopped`)
@@ -81,7 +80,6 @@ which is connected to your home router (172.17.84.x network).
 **All services verified reachable via Tailscale from Mac:**
 - ✅ Budget App: `http://100.95.125.112:8501` → `ok`
 - ✅ AURA: `http://100.95.125.112:8000/health` → `healthy`
-- ✅ Vikunja: `http://100.95.125.112:3456` → `200`
 - ✅ Portainer: `http://100.95.125.112:9000` → `200`
 - ✅ NPM: `http://100.95.125.112:81` → `200`
 
@@ -227,7 +225,6 @@ curl http://localhost:8000/health
 | Proxmox Web UI | https://100.117.1.50:8006 |
 | Budget App | http://100.117.1.171:8501 |
 | AURA Health | http://100.117.1.171:8000/health |
-| Vikunja (Todo) | http://100.117.1.171:3456 |
 | Portainer | http://100.117.1.171:9000 |
 | Nginx Proxy Manager | http://100.117.1.171:81 |
 | TrueNAS | ⏳ Not yet (waiting for drives) |
@@ -237,10 +234,10 @@ curl http://localhost:8000/health
 |---------|-----|
 | Budget App | http://100.95.125.112:8501 |
 | AURA | http://100.95.125.112:8000/health |
-| Vikunja (Todo) | http://100.95.125.112:3456 |
 | Proxmox | https://100.95.125.112:8006 |
 | Portainer | http://100.95.125.112:9000 |
 | Nginx Proxy Manager | http://100.95.125.112:81 |
+| Mac (SSH) | ssh darrianbelcher@100.74.143.69 |
 
 ### Railway (Public Internet — Always On)
 | Service | URL |
