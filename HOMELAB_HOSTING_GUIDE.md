@@ -15,10 +15,9 @@ All phases 1–5 are **complete**. Everything is running on CT100 at `100.117.1.
 | Vikunja (Todo App) | ✅ Live | http://100.117.1.171:3456 |
 | Portainer (Docker UI) | ✅ Live | http://100.117.1.171:9000 |
 | Nginx Proxy Manager | ✅ Live | http://100.117.1.171:81 |
-| **Tailscale VPN** | ⏳ **← DO THIS NEXT** | Remote access from anywhere |
+| **Tailscale VPN** | ✅ **LIVE on CT100** | Tailscale IP: `100.95.125.112` |
 
-> **The only thing missing:** Tailscale. Without it, your home lab is only reachable on your local network.
-> Once Tailscale is installed, you can access everything from your phone, work, or anywhere in the world.
+> **Tailscale is now live on CT100** (`100.95.125.112`). Install it on your Mac + iPhone to get remote access from anywhere.
 
 ---
 
@@ -42,9 +41,9 @@ Beelink (100.117.1.50) ← Proxmox hypervisor ✅
          ├── Portainer UI        → port 9000  ✅
          └── Nginx Proxy Manager → port 81    ✅
 
-Tailscale VPN ← INSTALL THIS NEXT
-   └── Gives you a 100.64.x.x IP for the Beelink
-   └── Access all services from anywhere via that IP
+Tailscale VPN ✅ LIVE
+   └── CT100 Tailscale IP: 100.95.125.112
+   └── Install on Mac + iPhone to access from anywhere
 ```
 
 ---
@@ -238,14 +237,15 @@ Now `https://budget.yourdomain.com` works from anywhere with a real SSL cert. �
 | Portainer | http://100.117.1.171:9000 |
 | Nginx Proxy Manager | http://100.117.1.171:81 |
 
-### ⏳ After Tailscale (From Anywhere) ← NEXT STEP
+### ✅ Via Tailscale (From Anywhere) — CT100 IP: 100.95.125.112
 | Service | URL |
 |---------|-----|
-| Budget App | http://100.64.x.x:8501 |
-| AURA | http://100.64.x.x:8000 |
-| Vikunja (Todo) | http://100.64.x.x:3456 |
-| Proxmox | https://100.64.x.x:8006 |
-| Portainer | http://100.64.x.x:9000 |
+| Budget App | http://100.95.125.112:8501 |
+| AURA | http://100.95.125.112:8000/health |
+| Vikunja (Todo) | http://100.95.125.112:3456 |
+| Proxmox | https://100.95.125.112:8006 |
+| Portainer | http://100.95.125.112:9000 |
+| Nginx Proxy Manager | http://100.95.125.112:81 |
 
 ### 🌐 Railway (Public Internet — Always On)
 | Service | URL |
@@ -266,7 +266,10 @@ Now `https://budget.yourdomain.com` works from anywhere with a real SSL cert. �
 - [x] All services started with docker compose
 - [x] Nginx Proxy Manager configured
 - [x] `.local` domains added to Mac's /etc/hosts
-- [ ] **Tailscale installed on Beelink + Mac + iPhone** ← DO THIS NEXT
-- [ ] Railway updated to use home lab AURA URL (after Tailscale)
+- [x] **Tailscale installed on CT100** ✅ IP: `100.95.125.112`
+- [ ] **Install Tailscale on Mac** (downloading from tailscale.com/download/macos)
+- [ ] **Install Tailscale on iPhone** (App Store → "Tailscale")
+- [ ] **Verify remote access** — turn off phone WiFi, open http://100.95.125.112:8501
+- [ ] Railway updated to use home lab AURA URL (after verifying Tailscale works remotely)
 - [ ] TrueNAS set up with RAID 1 (when drives arrive)
 - [ ] (Optional) Real domain + SSL configured

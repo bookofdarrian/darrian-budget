@@ -59,7 +59,7 @@ which is connected to your home router (172.17.84.x network).
 | Portainer (Docker UI) | ✅ **LIVE** | http://100.117.1.171:9000 |
 | Nginx Proxy Manager | ✅ **LIVE** | http://100.117.1.171:81 |
 | TrueNAS Scale | ⏳ Waiting for drives | — |
-| **Tailscale VPN** | ⏳ **← NEXT STEP** | Needed for remote access |
+| **Tailscale VPN** | ✅ **LIVE on CT100** | `100.95.125.112` (Tailscale IP) |
 
 > **Note (2026-02-25):** Llama/Ollama was never deployed to the homelab — confirmed by full audit of CT100 and Proxmox host. No llama containers or compose entries exist. Vikunja is the active to-do app.
 
@@ -177,10 +177,10 @@ AURA_ENABLED=true
 - [x] **Step 19** — Add `.local` domains to Mac's `/etc/hosts`
 
 ### 🔒 Phase 6 — Tailscale VPN (Remote Access) ← YOU ARE HERE
-- [ ] **Step 20** — Install Tailscale on Proxmox host (Beelink)
-- [ ] **Step 21** — Install Tailscale on Mac
+- [x] **Step 20** — Install Tailscale on CT100 (100.117.1.171) — Proxmox host has no internet
+- [ ] **Step 21** — Install Tailscale on Mac (downloading from tailscale.com/download/macos)
 - [ ] **Step 22** — Install Tailscale on iPhone
-- [ ] **Step 23** — Verify remote access via Tailscale IP
+- [ ] **Step 23** — Verify remote access via Tailscale IP `100.95.125.112`
 - [ ] **Step 24** — (Optional) Update Railway env vars to use home lab AURA
 
 ### 💾 Phase 7 — TrueNAS Storage (When Drives Arrive)
@@ -276,14 +276,15 @@ curl http://localhost:8000/health
 | Nginx Proxy Manager | http://100.117.1.171:81 |
 | TrueNAS | ⏳ Not yet (waiting for drives) |
 
-### After Tailscale (Remote Access — From Anywhere) ← NEXT STEP
+### ✅ Via Tailscale (Remote Access — From Anywhere)
 | Service | URL |
 |---------|-----|
-| Budget App | http://100.64.x.x:8501 |
-| AURA | http://100.64.x.x:8000 |
-| Vikunja (Todo) | http://100.64.x.x:3456 |
-| Proxmox | https://100.64.x.x:8006 |
-| Portainer | http://100.64.x.x:9000 |
+| Budget App | http://100.95.125.112:8501 |
+| AURA | http://100.95.125.112:8000/health |
+| Vikunja (Todo) | http://100.95.125.112:3456 |
+| Proxmox | https://100.95.125.112:8006 |
+| Portainer | http://100.95.125.112:9000 |
+| Nginx Proxy Manager | http://100.95.125.112:81 |
 
 ### Railway (Public Internet — Always On)
 | Service | URL |
