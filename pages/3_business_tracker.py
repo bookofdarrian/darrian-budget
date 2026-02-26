@@ -381,3 +381,201 @@ if _kicks_key:
             st.dataframe(display_df, use_container_width=True, hide_index=True)
 else:
     st.info("🔑 Add your free KicksDB API key above to search StockX & GOAT prices (1,000 free requests/month, no credit card).")
+
+# ── Sole Alert Bot — Status + Alert Log + Price History ──────────────────────
+st.markdown("---")
+st.subheader("🤖 Sole Alert Bot — Live Status")
+st.caption("The bot runs every 30 min on CT100 and pings @sole_archive_alerts_bot when profit opportunities appear.")
+
+conn = get_conn()
+
+# ── Bot status metrics ────────────────────────────────────────────────────────
+try:
+    alert_df = read_sql("""
+        SELECT platform, profit, alerted_at, item, size
+        FROM alert_log
+        ORDER BY alerted_at DESC
+        LIMIT 100
+    """, conn)
+    has_alert_log = True
+except Exception:
+    alert_df = pd.DataFrame()
+    has_alert_log = False
+
+try:
+    history_df = read_sql("""
+        SELECT item, size, ebay_avg, mercari_avg, checked_at
+        FROM price_history
+        ORDER BY checked_at DESC
+        LIMIT 500
+    """, conn)
+    has_price_history = True
+except Exception:
+    history_df = pd.DataFrame()
+    has_price_history = False
+
+conn.close()
+
+if has_alert_log and not alert_df.empty:
+    total_alerts = len(alert_df)
+    total_profit_alerted = alert_df['profit'].sum()
+    last_alert = pd.to_datetime(alert_df['alerted_at'].iloc[0]).strftime("%b %d %I:%M %p") if not alert_df.empty else "—"
+    ebay_alerts = len(alert_df[alert_df['platform'] == 'ebay'])
+    mercari_alerts = len(alert_df[alert_df['platform'] == 'mercari'])
+    arb_alerts = len(alert_df[alert_df['platform'] == 'arb'])
+
+    b1, b2, b3, b4 = st.columns(4)
+    b1.metric("📨 Total Alerts Sent", total_alerts)
+    b2.metric("💰 Total Profit Signaled", f"${total_profit_alerted:,.0f}")
+    b3.metric("🕐 Last Alert", last_alert)
+    b4.metric("🔵 Arb Signals", arb_alerts)
+
+    st.markdown("#### 📋 Recent Alerts")
+    alert_display = alert_df.copy()
+    alert_display['alerted_at'] = pd.to_datetime(alert_display['alerted_at']).dt.strftime("%b %d %I:%M %p")
+    alert_display['profit'] = alert_display['profit'].apply(lambda x: f"${x:,.0f}")
+    alert_display['platform'] = alert_display['platform'].map({
+        'ebay': '🟢 eBay Sell',
+        'mercari': '🟢 Mercari Sell',
+        'arb': '🔵 Arb Buy',
+    }).fillna(alert_display['platform'])
+    alert_display.columns = ['Platform', 'Profit', 'Time', 'Sneaker', 'Size']
+    st.dataframe(alert_display[['Time', 'Platform', 'Sneaker', 'Size', 'Profit']],
+                 use_container_width=True, hide_index=True)
+else:
+    st.info(
+        "📭 No alerts sent yet — the bot hasn't run or no profitable opportunities found.\n\n"
+        "**To go live:**\n"
+        "1. Add inventory below (or above in the Add New Pair section)\n"
+        "2. Save your eBay credentials in the section above\n"
+        "3. Reboot CT100 → Proxmox UI → CT100 → Reboot\n"
+        "4. Tell Darrian to set the Telegram env vars + cron job"
+    )
+
+# ── Price History Chart ───────────────────────────────────────────────────────
+if has_price_history and not history_df.empty:
+    st.markdown("#### 📈 Price History")
+    items_with_history = history_df['item'].unique().tolist()
+    selected_chart_item = st.selectbox("Select sneaker to chart", items_with_history, key="chart_item_select")
+
+    item_history = history_df[history_df['item'] == selected_chart_item].copy()
+    item_history['checked_at'] = pd.to_datetime(item_history['checked_at'])
+    item_history = item_history.sort_values('checked_at')
+    item_history = item_history.set_index('checked_at')[['ebay_avg', 'mercari_avg']].rename(columns={
+        'ebay_avg': 'eBay Avg ($)',
+        'mercari_avg': 'Mercari Avg ($)',
+    })
+    st.line_chart(item_history, use_container_width=True)
+
+# ── Quick Inventory Add (bot-focused) ────────────────────────────────────────
+st.markdown("---")
+st.subheader("📦 Add Inventory for Bot Monitoring")
+st.caption("Items added here are automatically monitored by the alert bot every 30 minutes.")
+
+with st.form("bot_inventory_form", clear_on_submit=True):
+    fc1, fc2, fc3 = st.columns(3)
+    with fc1:
+        bot_item = st.text_input("Sneaker Name", placeholder="Jordan 1 Chicago")
+        bot_size = st.text_input("Size", placeholder="10")
+    with fc2:
+        bot_cost = st.number_input("Your Cost Basis ($)", min_value=0.0, step=5.0,
+                                    help="What you paid — the bot uses this to calculate profit")
+        bot_notes = st.text_input("Notes (optional)", placeholder="Bought at outlet, DS")
+    with fc3:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("**Bot will alert when:**")
+        _thresh = get_setting("min_profit_threshold", "30")
+        st.markdown(f"• eBay profit > **${_thresh}** after fees")
+        st.markdown(f"• Mercari profit > **${_thresh}** after fees")
+        st.markdown(f"• Arb profit > **${float(_thresh)*1.5:.0f}** (1.5× threshold)")
+
+    submitted = st.form_submit_button("➕ Add to Bot Inventory", type="primary")
+    if submitted:
+        if bot_item.strip():
+            conn = get_conn()
+            execute(conn,
+                "INSERT INTO sole_archive (date, item, size, buy_price, sell_price, platform, fees, shipping, status, notes) VALUES (?, ?, ?, ?, 0, NULL, 0, 0, 'inventory', ?)",
+                (datetime.today().strftime("%Y-%m-%d"), bot_item.strip(), bot_size.strip(), bot_cost, bot_notes.strip())
+            )
+            conn.commit()
+            conn.close()
+            st.success(f"✅ Added **{bot_item}** (Sz {bot_size}) at ${bot_cost:.0f} — bot will monitor this every 30 min!")
+            st.rerun()
+        else:
+            st.error("Sneaker name is required.")
+
+# ── Alert Threshold Setting ───────────────────────────────────────────────────
+with st.expander("⚙️ Bot Alert Settings"):
+    st.markdown("These settings control when the bot fires alerts. Changes take effect on the next bot run.")
+    col_t1, col_t2, col_t3 = st.columns(3)
+    with col_t1:
+        cur_thresh = float(get_setting("min_profit_threshold", "30"))
+        new_thresh = st.number_input("Min Profit Threshold ($)", value=cur_thresh, min_value=5.0, step=5.0,
+                                      help="Bot only alerts when net profit exceeds this amount")
+    with col_t2:
+        cur_ebay_fee = float(get_setting("ebay_fee_rate", "0.129"))
+        new_ebay_fee = st.number_input("eBay Fee Rate", value=cur_ebay_fee, min_value=0.0, max_value=0.5, step=0.001, format="%.3f",
+                                        help="eBay's fee as a decimal (12.9% = 0.129)")
+    with col_t3:
+        cur_merc_fee = float(get_setting("mercari_fee_rate", "0.10"))
+        new_merc_fee = st.number_input("Mercari Fee Rate", value=cur_merc_fee, min_value=0.0, max_value=0.5, step=0.01, format="%.2f",
+                                        help="Mercari's fee as a decimal (10% = 0.10)")
+
+    if st.button("💾 Save Bot Settings", key="save_bot_settings"):
+        set_setting("min_profit_threshold", str(new_thresh))
+        set_setting("ebay_fee_rate", str(new_ebay_fee))
+        set_setting("mercari_fee_rate", str(new_merc_fee))
+        st.success("Bot settings saved! These will be picked up on the next cron run.")
+        st.rerun()
+
+# ── CT100 Deploy Instructions ─────────────────────────────────────────────────
+with st.expander("🚀 CT100 Deploy Checklist — Go Live in 3 Steps"):
+    st.markdown("""
+### 3 Steps to Go Fully Live
+
+**Step 1 — Add Inventory** ✅ (do it above)
+Add your shoes + cost basis using the form above. The bot reads directly from this database.
+
+**Step 2 — Save eBay API Keys** ✅ (do it in the eBay section above)
+Budget app → Business Tracker → eBay API Credentials section → paste your keys → Save.
+
+**Step 3 — Reboot CT100 + Set Env Vars**
+```bash
+# SSH into CT100 (Tailscale must be connected on your Mac)
+ssh root@100.95.125.112
+
+# Edit environment variables
+nano /etc/environment
+
+# Add these lines (fill in your real values):
+DATABASE_URL=postgres://user:password@host.railway.app:5432/railway
+TELEGRAM_BOT_TOKEN=7123456789:AAFxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TELEGRAM_CHAT_ID=123456789
+EBAY_CLIENT_ID=DarrianB-404Sole-PRD-xxxxxxxxxxxx-xxxxxxxx
+EBAY_CLIENT_SECRET=PRD-xxxxxxxxxxxxxxxxxxxx-xxxxxxxx-xxxx-xxxx
+
+# Save (Ctrl+O, Enter, Ctrl+X), then reload:
+source /etc/environment
+
+# Deploy the bot:
+cd /Users/darrianbelcher/Downloads/darrian-budget/sole_alert_bot
+./deploy.sh
+
+# Test it:
+python3 /opt/sole-alert/alert.py --test     # sends test Telegram message
+python3 /opt/sole-alert/alert.py --dry-run  # shows what alerts would fire
+```
+
+**After reboot:** Tell me and I'll set the Telegram env vars + cron job in 2 minutes.
+
+---
+### Alert Types You'll Receive
+
+| Alert | When | Example |
+|-------|------|---------|
+| 🟢 eBay Sell Signal | eBay avg − cost − fees > $30 | "Jordan 1 Chicago Sz 10: eBay avg $285, cost $180, net profit $87 → list it now" |
+| 🟢 Mercari Sell Signal | Mercari avg − cost − fees > $30 | Same but Mercari (10% fees vs eBay's 13% = more profit per flip) |
+| 🔵 Arb Opportunity | Mercari low → eBay avg profit > $45 | "Nike Dunk Panda Sz 11 on Mercari $95, eBay avg $165 → buy + flip for $52 profit" |
+
+**Checks every 30 minutes, 8am–midnight. No spam — same item suppressed for 4 hours.**
+    """)
