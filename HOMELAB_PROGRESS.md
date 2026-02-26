@@ -59,6 +59,7 @@ which is connected to your home router (172.17.84.x network).
 | Portainer (Docker UI) | ✅ **LIVE** | http://100.117.1.171:9000 |
 | Nginx Proxy Manager | ✅ **LIVE** | http://100.117.1.171:81 |
 | TrueNAS Scale | ⏳ Waiting for drives | — |
+| code-server (VS Code) | ✅ **LIVE** | http://100.117.1.171:8080 |
 | **Tailscale VPN** | ✅ **LIVE on CT100** | `100.95.125.112` (Tailscale IP) |
 
 > **Note (2026-02-25):** Llama/Ollama was never deployed to the homelab — confirmed by full audit of CT100 and Proxmox host. No llama containers or compose entries exist. Vikunja was removed 2026-02-25 — budget app is the only app.
@@ -229,6 +230,7 @@ curl http://localhost:8000/health
 | AURA Health | http://100.117.1.171:8000/health |
 | Portainer | http://100.117.1.171:9000 |
 | Nginx Proxy Manager | http://100.117.1.171:81 |
+| code-server (VS Code) | http://100.117.1.171:8080 |
 | TrueNAS | ⏳ Not yet (waiting for drives) |
 
 ### ✅ Via Tailscale (Remote Access — From Anywhere)
@@ -236,6 +238,7 @@ curl http://localhost:8000/health
 |---------|-----|
 | Budget App | http://100.95.125.112:8501 |
 | Todo App (AI To-Do) | http://100.95.125.112:3456 |
+| code-server (VS Code) | http://100.95.125.112:8080 |
 | AURA | http://100.95.125.112:8000/health |
 | Proxmox | https://100.95.125.112:8006 |
 | Portainer | http://100.95.125.112:9000 |
