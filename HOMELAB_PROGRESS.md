@@ -68,80 +68,36 @@ which is connected to your home router (172.17.84.x network).
 
 ---
 
-## 🚀 NEXT STEP: Install Tailscale (Phase 6)
+## ✅ Phase 6 Complete — Tailscale is LIVE
 
-> **Why this matters:** Right now your home lab is only accessible on your local network (`100.117.1.x`).
-> Tailscale gives you a secure VPN tunnel so you can reach everything from your phone, work, or anywhere — no port forwarding needed.
+**Tailscale network (confirmed working 2026-02-25):**
 
-### Step 1 — Install Tailscale on the Proxmox Host (Beelink)
+| Device | Tailscale IP |
+|--------|-------------|
+| CT100 (docker-host) | `100.95.125.112` |
+| MacBook Pro | `100.74.143.69` |
+| iPhone | ⏳ Install from App Store |
 
-SSH into your Proxmox host from your Mac:
-```bash
-ssh root@100.117.1.50
-```
+**All services verified reachable via Tailscale from Mac:**
+- ✅ Budget App: `http://100.95.125.112:8501` → `ok`
+- ✅ AURA: `http://100.95.125.112:8000/health` → `healthy`
+- ✅ Vikunja: `http://100.95.125.112:3456` → `200`
+- ✅ Portainer: `http://100.95.125.112:9000` → `200`
+- ✅ NPM: `http://100.95.125.112:81` → `200`
 
-Then install Tailscale:
-```bash
-curl -fsSL https://tailscale.com/install.sh | sh
-tailscale up
-```
+## 🚀 NEXT STEP: Install Tailscale on iPhone
 
-You'll get a URL like:
-```
-To authenticate, visit:
-  https://login.tailscale.com/a/xxxxxxxxxxxxxxxx
-```
-
-Open that URL in your browser, log in with Google/GitHub/email, and your Beelink joins your Tailscale network.
-
-Get your Tailscale IP:
-```bash
-tailscale ip -4
-# Returns something like: 100.64.x.x  ← save this!
-```
-
-### Step 2 — Install Tailscale on Your Mac
-
-```bash
-brew install tailscale
-sudo tailscaled &
-sudo tailscale up
-```
-
-Or download the GUI app: https://tailscale.com/download/mac
-(Easier — installs as a menu bar app)
-
-### Step 3 — Install Tailscale on Your iPhone
-
-1. App Store → search "Tailscale" → Install
-2. Open app → Sign in with same account as Step 1
+1. App Store → search **"Tailscale"** → Install
+2. Open → Sign in with `dbelcher003@` account
 3. Toggle VPN on
+4. Open Safari → `http://100.95.125.112:8501` — budget app should load on cellular
 
-### Step 4 — Verify Remote Access
-
-Once all devices are on Tailscale, replace `100.117.1.171` with your Beelink's **Tailscale IP** (`100.64.x.x`):
-
-| Service | New Remote URL |
-|---------|---------------|
-| Budget App | `http://100.64.x.x:8501` |
-| AURA | `http://100.64.x.x:8000/health` |
-| Vikunja (Todo) | `http://100.64.x.x:3456` |
-| Portainer | `http://100.64.x.x:9000` |
-| Proxmox | `https://100.64.x.x:8006` |
-
-Test from your phone (turn off WiFi, use cellular) — if it loads, you're done! 🎉
-
-### Step 5 — (Optional) Update Railway to Use Home Lab AURA
-
-Once Tailscale is working, you can point your Railway-hosted budget app at your home lab AURA server to save on Claude API costs:
-
-In Railway dashboard → `darrian-budget` project → Variables:
+**After iPhone:** Optionally point Railway AURA at your home lab to cut Claude API costs:
 ```
-AURA_BASE_URL=http://100.64.x.x:8000
+AURA_BASE_URL=http://100.95.125.112:8000
 AURA_ENABLED=true
 ```
-
-> ⚠️ Only do this after confirming AURA is reachable via Tailscale IP from outside your home network.
+(Set in Railway dashboard → `darrian-budget` project → Variables)
 
 ---
 
@@ -176,12 +132,12 @@ AURA_ENABLED=true
 - [x] **Step 18** — Add proxy hosts
 - [x] **Step 19** — Add `.local` domains to Mac's `/etc/hosts`
 
-### 🔒 Phase 6 — Tailscale VPN (Remote Access) ← YOU ARE HERE
-- [x] **Step 20** — Install Tailscale on CT100 (100.117.1.171) — Proxmox host has no internet
-- [ ] **Step 21** — Install Tailscale on Mac (downloading from tailscale.com/download/macos)
-- [ ] **Step 22** — Install Tailscale on iPhone
-- [ ] **Step 23** — Verify remote access via Tailscale IP `100.95.125.112`
-- [ ] **Step 24** — (Optional) Update Railway env vars to use home lab AURA
+### 🔒 Phase 6 — Tailscale VPN (Remote Access) ✅ MOSTLY DONE
+- [x] **Step 20** — Install Tailscale on CT100 (`100.95.125.112`) ✅
+- [x] **Step 21** — Install Tailscale on Mac (`100.74.143.69`) ✅
+- [ ] **Step 22** — Install Tailscale on iPhone (App Store → "Tailscale" → sign in with dbelcher003@)
+- [x] **Step 23** — Verify remote access ✅ All 5 services confirmed healthy via Tailscale
+- [ ] **Step 24** — (Optional) Update Railway env vars: `AURA_BASE_URL=http://100.95.125.112:8000`
 
 ### 💾 Phase 7 — TrueNAS Storage (When Drives Arrive)
 - [ ] **Step 25** — Connect dual-bay enclosure with 2x WD Red 4TB drives
