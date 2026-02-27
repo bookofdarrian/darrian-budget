@@ -3,6 +3,26 @@
 
 ---
 
+## Confirmed Server Details (2026-02-26) ✅
+
+| Property | Value |
+|----------|-------|
+| **Hostname** | `pue` |
+| **Kernel** | `6.8.12-1-pve` (Proxmox patched) |
+| **Proxmox UI** | https://100.117.1.50:8006 |
+| **Physical NIC** | `enp2s0` / `enx78553607ea20` (MAC: `78:55:36:07:ea:20`) |
+| **Bridge name** | `umbro` (non-default, but works fine) |
+| **Host IP** | `100.117.1.50/24` on `umbro` |
+| **WiFi** | `wlp3s0` — DOWN, not used |
+| **Networking** | Verified stable after `systemctl restart networking` |
+
+> **Setup files created 2026-02-26:**
+> - `proxmox_setup.sh` — post-install config script (run on Proxmox host)
+> - `proxmox_network.conf` — correct `/etc/network/interfaces` for `umbro` bridge
+> - `PVE_SETUP.md` — full step-by-step configuration guide
+
+---
+
 ## Hardware Purchased ✅
 
 | Item | Status | Notes |
@@ -59,6 +79,7 @@ which is connected to your home router (172.17.84.x network).
 | Portainer (Docker UI) | ✅ **LIVE** | http://100.117.1.171:9000 |
 | Nginx Proxy Manager | ✅ **LIVE** | http://100.117.1.171:81 |
 | TrueNAS Scale | ⏳ Waiting for drives | — |
+| Immich (Photo AI) | ⏳ Ready to deploy | http://100.117.1.171:2283 |
 | code-server (VS Code) | ✅ **LIVE** | http://100.117.1.171:8080 |
 | **Tailscale VPN** | ✅ **LIVE on CT100** | `100.95.125.112` (Tailscale IP) |
 
@@ -152,6 +173,17 @@ AURA_ENABLED=true
 - [ ] **Step 32** — Add SSL cert in NPM (Let's Encrypt, free)
 - [ ] **Step 33** — Access budget app at `https://budget.yourdomain.com` from anywhere
 
+### 📸 Phase 9 — Immich (Self-Hosted Google Photos + AI Search)
+> **Guide:** `immich/IMMICH_SETUP.md` | **Files ready:** `immich/docker-compose.yml` + `immich/.env`
+- [ ] **Step 34** — SSH into CT100: `ssh root@100.95.125.112`
+- [ ] **Step 35** — Create `/opt/immich` directory and copy compose files from repo
+- [ ] **Step 36** — Edit `.env` — change `DB_PASSWORD` to something real
+- [ ] **Step 37** — Run `docker compose up -d` in `/opt/immich`
+- [ ] **Step 38** — Create admin account at `http://100.95.125.112:2283`
+- [ ] **Step 39** — Install Immich iPhone app → connect to `http://100.95.125.112:2283` → enable auto-backup
+- [ ] **Step 40** — Trigger AI jobs: Administration → Jobs → Smart Search + Face Detection
+- [ ] **Step 41** — (After TrueNAS) Update `UPLOAD_LOCATION=/mnt/truenas/photos` in `.env` → restart
+
 ---
 
 ## AURA — Already Built in This Repo
@@ -232,6 +264,7 @@ curl http://localhost:8000/health
 | Nginx Proxy Manager | http://100.117.1.171:81 |
 | code-server (VS Code) | http://100.117.1.171:8080 |
 | TrueNAS | ⏳ Not yet (waiting for drives) |
+| Immich (Photo AI) | ⏳ Not yet deployed — http://100.117.1.171:2283 |
 
 ### ✅ Via Tailscale (Remote Access — From Anywhere)
 | Service | URL |
