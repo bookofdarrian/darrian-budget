@@ -12,10 +12,9 @@ env:
   DEV_PORT: 8501
 
 jobs:
-  deploy-dev:
-    name: Deploy to Dev Environment
+  build:
+    name: Build & Push Docker Image
     runs-on: ubuntu-latest
-    environment: dev
     permissions:
       contents: read
       packages: write
@@ -44,43 +43,49 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Deploy to Home Lab via SSH
-        # Only runs if DEV_SSH_KEY secret is configured
-        if: ${{ secrets.DEV_SSH_KEY != '' }}
+  deploy:
+    name: Deploy to Home Lab
+    runs-on: ubuntu-latest
+    needs: build
+    environment: dev
+    # This job only runs if DEV_SSH_KEY is configured as a GitHub secret.
+    # If not set, the build job above still runs (Docker image is built & pushed).
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy via SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.DEV_SSH_KEY }}
         run: |
+          if [ -z "$SSH_PRIVATE_KEY" ]; then
+            echo "ℹ️  DEV_SSH_KEY not configured — skipping SSH deploy."
+            echo "Add it at: Settings → Secrets → Actions → New secret → DEV_SSH_KEY"
+            exit 0
+          fi
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ env.DEV_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
-
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no root@${{ env.DEV_HOST }} << 'EOF'
-            cd /opt/darrian-budget || mkdir -p /opt/darrian-budget && cd /opt/darrian-budget
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no root@${{ env.DEV_HOST }} << 'ENDSSH'
+            set -e
+            cd /opt/darrian-budget 2>/dev/null || (mkdir -p /opt/darrian-budget && cd /opt/darrian-budget)
             git pull origin dev || true
-            docker compose down || docker-compose down || true
-            docker compose up -d || docker-compose up -d
+            docker compose down 2>/dev/null || docker-compose down 2>/dev/null || true
+            docker compose up -d 2>/dev/null || docker-compose up -d
             docker ps
-          EOF
-
-      - name: Skip SSH deploy (DEV_SSH_KEY not configured)
-        if: ${{ secrets.DEV_SSH_KEY == '' }}
-        run: |
-          echo "ℹ️  DEV_SSH_KEY secret not set — skipping SSH deploy to home lab."
-          echo "To enable: Settings → Secrets → New secret → DEV_SSH_KEY"
-          echo "Docker image was still built and pushed to GHCR ✅"
+          ENDSSH
 
       - name: Health Check
         run: |
-          sleep 10
-          curl -f http://${{ env.DEV_HOST }}:${{ env.DEV_PORT }} || echo "ℹ️  App may still be starting or SSH deploy was skipped."
+          sleep 15
+          curl -sf http://${{ env.DEV_HOST }}:${{ env.DEV_PORT }} > /dev/null \
+            && echo "✅ App is up at http://${{ env.DEV_HOST }}:${{ env.DEV_PORT }}" \
+            || echo "ℹ️  App not reachable (may still be starting or SSH deploy was skipped)"
         continue-on-error: true
 
-      - name: Deployment Summary
+      - name: Summary
         if: always()
         run: |
           echo "✅ DEV workflow complete"
-          echo "Docker image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev"
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev"
           echo "Commit: ${{ github.sha }}"
-          echo "Branch: dev"
-          echo "Home lab: http://${{ env.DEV_HOST }}:${{ env.DEV_PORT }} (Tailscale)"
