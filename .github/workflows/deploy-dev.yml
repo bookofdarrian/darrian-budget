@@ -86,11 +86,36 @@ jobs:
           ssh-keyscan -H ${{ env.DEV_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o ConnectTimeout=30 root@${{ env.DEV_HOST }} << 'ENDSSH'
             set -e
-            cd /opt/darrian-budget 2>/dev/null || (mkdir -p /opt/darrian-budget && cd /opt/darrian-budget)
-            git pull origin dev || true
-            docker compose down 2>/dev/null || docker-compose down 2>/dev/null || true
-            docker compose up -d 2>/dev/null || docker-compose up -d
-            docker ps
+            # Clone repo if not present, otherwise pull latest
+            if [ ! -d /opt/darrian-budget/.git ]; then
+              echo "Cloning repo for first time..."
+              git clone https://github.com/bookofdarrian/darrian-budget.git /opt/darrian-budget
+            fi
+            cd /opt/darrian-budget
+            git fetch origin
+            git checkout dev
+            git pull origin dev
+
+            # Install docker compose plugin if missing
+            if ! docker compose version &>/dev/null; then
+              apt-get update -qq && apt-get install -y -qq docker-compose-plugin
+            fi
+
+            # Install pip deps directly (no docker-compose needed for simple deploy)
+            if [ -f requirements.txt ]; then
+              pip3 install -q -r requirements.txt || true
+            fi
+
+            # Restart the app (kill existing streamlit, start fresh)
+            pkill -f "streamlit run" || true
+            sleep 2
+            nohup streamlit run app.py \
+              --server.port=8501 \
+              --server.address=0.0.0.0 \
+              --server.headless=true \
+              > /var/log/budget-app.log 2>&1 &
+            sleep 3
+            pgrep -f "streamlit run" && echo "App started successfully" || echo "App may have failed to start"
           ENDSSH
 
       - name: Health Check
