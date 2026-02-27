@@ -17,7 +17,7 @@ try:
 except ImportError:
     pass
 
-st.set_page_config(page_title="Portfolio Analysis — Peach State Savings", page_icon="🗂️", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(page_title="Portfolio Analysis — Peach State Savings", page_icon="🍑", layout="wide", initial_sidebar_state="auto")
 init_db()
 require_login()
 require_pro("Portfolio Analysis")

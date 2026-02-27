@@ -37,7 +37,7 @@ from utils.budget_importer import (
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Budget Intake — Peach State Savings",
-    page_icon="📥",
+    page_icon="🍑",
     layout="wide",
     initial_sidebar_state="auto",
 )

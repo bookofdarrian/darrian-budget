@@ -12,7 +12,7 @@ try:
 except ImportError:
     pass
 
-st.set_page_config(page_title="Strategy Backtesting — Peach State Savings", page_icon="🔬", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(page_title="Strategy Backtesting — Peach State Savings", page_icon="🍑", layout="wide", initial_sidebar_state="auto")
 init_db()
 require_login()
 require_pro("Strategy Backtesting")

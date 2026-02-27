@@ -14,7 +14,7 @@ except ImportError:
     pass
 _env_key = os.environ.get("ANTHROPIC_API_KEY", "")
 
-st.set_page_config(page_title="AI Insights — Peach State Savings", page_icon="🤖", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(page_title="AI Insights — Peach State Savings", page_icon="🍑", layout="wide", initial_sidebar_state="auto")
 init_db()
 require_login()
 require_pro("AI Insights (Claude AI analysis)")

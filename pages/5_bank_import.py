@@ -167,7 +167,7 @@ def _is_duplicate(conn, date: str, description: str, amount: float) -> bool:
     return row is not None
 
 
-st.set_page_config(page_title="Bank Import", page_icon="🏦", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(page_title="Bank Import", page_icon="🍑", layout="wide", initial_sidebar_state="auto")
 init_db()
 require_password()
 

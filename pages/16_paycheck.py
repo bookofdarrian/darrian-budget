@@ -6,7 +6,7 @@ from utils.auth import require_login, render_sidebar_brand, render_sidebar_user_
 
 st.set_page_config(
     page_title="Paycheck Allocator — Peach State Savings",
-    page_icon="💸",
+    page_icon="🍑",
     layout="wide",
     initial_sidebar_state="auto"
 )
