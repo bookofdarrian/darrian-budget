@@ -283,3 +283,28 @@ curl http://localhost:8000/health
 |---------|-----|
 | Budget App (primary) | https://www.peachstatesavings.com |
 | Budget App (mirror) | https://darrian-todo-production.up.railway.app |
+
+---
+
+## 🗑️ Railway Migration — COMPLETE (2026-02-27)
+
+### What Was Done
+- ✅ **Database migrated off Railway** — all 21 tables, 645 bank transactions dumped from Railway Postgres and restored to local `budget-postgres` container on CT100
+- ✅ **budget-postgres container** running on CT100 at `172.17.0.3:5432` (volume: `budget_pgdata`)
+- ✅ **budget-app restarted** with `DATABASE_URL=postgresql://budget:budget2026secure@budget-postgres:5432/budget`
+- ✅ **budget-app verified healthy** — HTTP 200 at `http://100.95.125.112:8501`
+- ✅ **DB backup saved** at `/opt/db-backups/railway_backup.sql` on CT100
+- ⏳ **Delete Railway projects** — do manually in browser (see below)
+
+### Railway Projects to Delete (Do in Browser)
+1. Go to https://railway.app → log in
+2. Delete **darrian-todo** project (Settings → Danger Zone → Delete Project)
+3. Delete **handsome-freedom** project (check what it is first, then delete)
+4. Delete **darrian-budget** project (Settings → Danger Zone → Delete Project)
+
+### Config Files Created on CT100
+| File | Purpose |
+|------|---------|
+| `/opt/budget/.env` | All env vars for budget-app (local DB, AURA, Stripe, Anthropic) |
+| `/opt/budget/docker-compose.yml` | Compose file for budget-app + budget-postgres |
+| `/opt/db-backups/railway_backup.sql` | Full Railway Postgres dump (98KB) |
