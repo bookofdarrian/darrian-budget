@@ -3,6 +3,7 @@ Real Estate Bot — Page 18
 Darrian's personal home-buying assistant for Atlanta, GA.
 """
 import json
+import os
 import streamlit as st
 from utils.db import get_conn, USE_POSTGRES
 from utils.real_estate import (
@@ -169,9 +170,12 @@ with st.sidebar:
                               value=", ".join(CRITERIA["target_zips"][:5]))
 
     st.subheader("🔑 RapidAPI Key (optional)")
-    rapidapi_key = st.text_input("RapidAPI key", type="password",
-                                 help="Get free key at rapidapi.com → 'US Real Estate'",
+    _env_key = os.environ.get("RAPIDAPI_KEY", "")
+    rapidapi_key = st.text_input("RapidAPI key", value=_env_key, type="password",
+                                 help="Pre-loaded from RAPIDAPI_KEY env var. Override here if needed.",
                                  key="rapidapi_key_input")
+    if _env_key and not rapidapi_key:
+        rapidapi_key = _env_key
 
     run_all    = st.button("🔄 Search ALL Sources", use_container_width=True,
                            help="MLS + US Real Estate API (if key provided) — deduped & merged",
