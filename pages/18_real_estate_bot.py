@@ -4,7 +4,7 @@ Darrian's personal home-buying assistant for Atlanta, GA.
 """
 import json
 import streamlit as st
-from utils.db import get_connection, USE_POSTGRES
+from utils.db import get_conn, USE_POSTGRES
 from utils.real_estate import (
     CRITERIA, MOCK_LISTINGS, score_listing, effective_price,
     flag_red_flags, search_zillow, init_re_tables,
@@ -18,7 +18,7 @@ if not st.session_state.get("authenticated"):
     st.stop()
 
 # ── DB init ───────────────────────────────────────────────────────────────────
-conn = get_connection()
+conn = get_conn()
 init_re_tables(conn, use_postgres=USE_POSTGRES)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
