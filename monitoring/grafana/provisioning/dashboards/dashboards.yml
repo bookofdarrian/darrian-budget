@@ -1,0 +1,20 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Grafana Dashboard Provisioning
+# Loads all JSON dashboards from the /dashboards directory automatically.
+# ─────────────────────────────────────────────────────────────────────────────
+
+apiVersion: 1
+
+providers:
+  - name: "homelab"
+    orgId: 1
+    folder: "Homelab"
+    folderUid: "homelab"
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: false

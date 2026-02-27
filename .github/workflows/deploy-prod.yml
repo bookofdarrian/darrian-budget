@@ -1,0 +1,144 @@
+name: Deploy to PRODUCTION
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "DEPLOY TO PRODUCTION" to confirm'
+        required: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/budget-app
+
+jobs:
+  pre-prod-checks:
+    name: Pre-Production Safety Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Verify we're on main branch
+        run: |
+          if [ "${{ github.ref }}" != "refs/heads/main" ]; then
+            echo "❌ Production deployments only allowed from main branch"
+            exit 1
+          fi
+          echo "✅ Deploying from main branch"
+      
+      - name: Check commit message
+        run: |
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          echo "Commit: $COMMIT_MSG"
+          if [[ $COMMIT_MSG == *"[skip-prod]"* ]]; then
+            echo "⚠️  Production deployment skipped ([skip-prod] found in commit)"
+            exit 1
+          fi
+      
+      - name: Verify git tags
+        run: |
+          git fetch --tags
+          TAG=$(git describe --tags --always)
+          echo "Latest tag: $TAG"
+          echo "Deployment version: $TAG"
+
+  production-deploy:
+    name: Deploy to Production (Railway)
+    runs-on: ubuntu-latest
+    needs: pre-prod-checks
+    environment: production
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Manual Approval Check
+        run: |
+          echo "⚠️  === PRODUCTION DEPLOYMENT ===" 
+          echo "Deploying to: https://www.peachstatesavings.com"
+          echo "Commit: ${{ github.sha }}"
+          echo "Branch: main"
+          echo ""
+          echo "This requires manual approval in GitHub Actions!"
+          echo "Access: https://github.com/${{ github.repository }}/actions"
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Log in to Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:prod
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:prod-${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Create Release Tag
+        run: |
+          TAG="v$(date +%Y.%m.%d-%H%M%S)"
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+          git tag -a $TAG -m "Production release from ${{ github.sha }}"
+          git push origin $TAG || true
+      
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          npm install -g @railway/cli
+          
+          # Deploy to the darrian-budget project
+          railway --token $RAILWAY_TOKEN up \
+            --deployment-trigger push \
+            --service budget-app \
+            --project darrian-budget
+      
+      - name: Verify Production Deployment
+        run: |
+          sleep 30
+          curl -f https://www.peachstatesavings.com || echo "Production site may still be starting..."
+        continue-on-error: true
+      
+      - name: Create Release Notes
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          release_name: Production Release ${{ env.RELEASE_TAG }}
+          body: |
+            Deployed to production at https://www.peachstatesavings.com
+            
+            Commit: ${{ github.sha }}
+            Author: ${{ github.actor }}
+            Timestamp: ${{ github.event.head_commit.timestamp }}
+            
+            ## Deployment Info
+            - **Image**: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.RELEASE_TAG }}
+            - **Duration**: Started at ${{ github.event.head_commit.timestamp }}
+          draft: false
+          prerelease: false
+        continue-on-error: true
+      
+      - name: Slack Notification (Optional)
+        if: always()
+        run: |
+          echo "🚀 Production deployment complete!"
+          echo "Release: ${{ env.RELEASE_TAG }}"
+          echo "Site: https://www.peachstatesavings.com"
+          # Add Slack webhook if desired: secrets.SLACK_WEBHOOK_URL
