@@ -22,6 +22,7 @@ seed_budget(selected_month)
 
 st.sidebar.markdown("---")
 st.sidebar.page_link("app.py",                    label="Overview",          icon="📊")
+st.sidebar.page_link("pages/19_budget_intake.py", label="Budget Intake",     icon="📥")
 st.sidebar.page_link("pages/1_expenses.py",       label="Expenses",          icon="📋")
 st.sidebar.page_link("pages/2_income.py",         label="Income",            icon="💵")
 st.sidebar.page_link("pages/3_business_tracker.py",   label="Business Tracker 🔒", icon="💼")
