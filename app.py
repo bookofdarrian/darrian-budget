@@ -117,6 +117,7 @@ st.sidebar.page_link("pages/15_bills.py",         label="Bill Calendar",        
 st.sidebar.page_link("pages/16_paycheck.py",      label="Paycheck Allocator",   icon="💸")
 st.sidebar.page_link("pages/0_pricing.py",        label="⭐ Upgrade to Pro",    icon="⭐")
 st.sidebar.page_link("pages/20_homelab.py",        label="🖥️ Homelab",           icon="🖥️")
+st.sidebar.page_link("pages/21_setup_homescreen.py", label="📱 iPhone Setup",     icon="📱")
 
 render_sidebar_user_widget()
 

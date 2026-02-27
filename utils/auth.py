@@ -384,9 +384,18 @@ GLOBAL_CSS = f"""
 
 
 def inject_css():
-    """Inject global CSS once per session."""
+    """Inject global CSS + favicon meta tags once per session."""
     if not st.session_state.get("_css_injected"):
         st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
+        # Inject apple-touch-icon and favicon for iPhone "Add to Home Screen"
+        st.markdown("""
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍑</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍑</text></svg>">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Peach State">
+<meta name="theme-color" content="#FFAB76">
+""", unsafe_allow_html=True)
         st.session_state["_css_injected"] = True
 
 
