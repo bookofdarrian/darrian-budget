@@ -293,28 +293,31 @@ with tab_listings:
         payment = monthly_payment(eff_price)
         net_payment = payment - CRITERIA["roommate_income"]
 
-        # Source badge
+        # Source badge — bright solid colors so they're always visible
         _src = listing.get("source", "mock")
-        _src_map = {
-            "realtor": ("#1b5e20", "#a5d6a7", "🏠 MLS"),
-            "redfin":  ("#b71c1c", "#ef9a9a", "🔴 Redfin"),
-            "zillow":  ("#e65100", "#ffcc80", "🟡 Zillow"),
-            "manual":  ("#1a237e", "#90caf9", "✏️ Manual"),
-            "mock":    ("#37474f", "#b0bec5", "🔵 Demo"),
+        _src_styles = {
+            "realtor": ("background:#00c853;color:#000;", "🏠 MLS"),
+            "redfin":  ("background:#f44336;color:#fff;", "🔴 Redfin"),
+            "zillow":  ("background:#ff9800;color:#000;", "🟡 Zillow"),
+            "manual":  ("background:#2196f3;color:#fff;", "✏️ Manual"),
+            "mock":    ("background:#9e9e9e;color:#000;", "📋 Demo"),
         }
-        _bg, _fg, _label = _src_map.get(_src, ("#37474f", "#b0bec5", _src.title()))
-        source_badge = f'<span style="background:{_bg};color:{_fg};padding:2px 8px;border-radius:4px;font-size:11px;margin-left:6px;border:1px solid {_fg}40">{_label}</span>'
+        _style, _label = _src_styles.get(_src, ("background:#9e9e9e;color:#000;", _src.title()))
+        source_badge = (
+            f'<span style="{_style}padding:3px 10px;border-radius:12px;'
+            f'font-size:12px;font-weight:bold;margin-right:6px">{_label}</span>'
+        )
 
         # Card header
-        tag_html = f'<span style="background:#1565c0;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;margin-left:8px">{tag}</span>' if tag else ""
+        tag_html = f'<span style="background:#1565c0;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;margin-left:4px">{tag}</span>' if tag else ""
         score_html = f'<span style="background:{score_color(score)};color:#000;padding:3px 10px;border-radius:12px;font-weight:bold;font-size:14px">{score}/100</span>'
 
         st.markdown(f"""
 <div style="border:1px solid #333;border-radius:10px;padding:16px 20px;margin-bottom:16px;background:#1a1a2e">
   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
     <div>
+      <div style="margin-bottom:6px">{source_badge}{tag_html}</div>
       <span style="font-size:17px;font-weight:bold">🏡 {listing.get('address','')}</span>
-      {source_badge}{tag_html}
       <br><span style="color:#aaa;font-size:13px">{listing.get('neighborhood','Atlanta')} · {listing.get('condition','Unknown')}</span>
     </div>
     <div style="text-align:right">
