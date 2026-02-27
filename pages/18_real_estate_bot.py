@@ -7,7 +7,8 @@ import streamlit as st
 from utils.db import get_conn, USE_POSTGRES
 from utils.real_estate import (
     CRITERIA, MOCK_LISTINGS, score_listing, effective_price,
-    flag_red_flags, search_zillow, init_re_tables,
+    flag_red_flags, search_zillow, search_realtor_mls, search_redfin,
+    init_re_tables,
 )
 
 st.set_page_config(page_title="🏠 Real Estate Bot",
@@ -68,16 +69,22 @@ with st.sidebar:
 | **Roommate income** | ${CRITERIA['roommate_income']:,}/mo |
 """)
     st.divider()
-    st.subheader("🔑 Zillow API Key")
-    zillow_key = st.text_input("RapidAPI key (optional)", type="password",
-                               help="Get a free key at rapidapi.com → Zillow API")
-    st.caption("Without a key, demo listings are shown.")
-    st.divider()
     st.subheader("🔍 Live Search")
     zip_input = st.text_input("ZIP codes (comma-separated)",
                               value=", ".join(CRITERIA["target_zips"][:5]))
-    run_search = st.button("🔄 Fetch Live Listings", use_container_width=True,
-                           disabled=not zillow_key)
+
+    run_mls    = st.button("🏠 Search MLS (Realtor.com)", use_container_width=True,
+                           help="Free — no API key needed. Pulls from Realtor.com MLS feed.")
+    run_redfin = st.button("🔴 Search Redfin", use_container_width=True,
+                           help="Free — no API key needed. Same MLS data, Redfin-labeled.")
+
+    st.divider()
+    st.subheader("🔑 Zillow API (optional)")
+    zillow_key = st.text_input("RapidAPI key", type="password",
+                               help="Get a free key at rapidapi.com → Zillow API")
+    run_zillow = st.button("🟡 Search Zillow", use_container_width=True,
+                           disabled=not zillow_key,
+                           help="Requires a RapidAPI key for Zillow.")
 
 # ── Ensure listings are always stored as a mutable session-state list ─────────
 if "live_listings" not in st.session_state:
@@ -93,23 +100,54 @@ tab_listings, tab_add, tab_saved, tab_calc, tab_criteria = st.tabs([
 # TAB 1 — LISTINGS
 # ═══════════════════════════════════════════════════════════════════════════════
 with tab_listings:
-    # Live search
-    if run_search and zillow_key:
-        zips = [z.strip() for z in zip_input.split(",") if z.strip()]
+    zips = [z.strip() for z in zip_input.split(",") if z.strip()]
+
+    # ── MLS / Realtor.com search (free) ──────────────────────────────────────
+    if run_mls:
         all_results = []
-        with st.spinner(f"Searching {len(zips)} ZIP codes via Zillow…"):
+        with st.spinner(f"🏠 Searching MLS (Realtor.com) across {len(zips)} ZIPs… this may take 30–60s"):
+            all_results = search_realtor_mls(zip_codes=zips)
+        errors = [r for r in all_results if "error" in r]
+        good   = [r for r in all_results if "error" not in r]
+        if errors:
+            st.warning(f"Some ZIPs had errors: {errors[0].get('error')}")
+        if good:
+            st.success(f"✅ MLS: Found {len(good)} listings across {len(zips)} ZIPs")
+            st.session_state["live_listings"] = good
+        else:
+            st.warning("No MLS results — check ZIPs or try again.")
+
+    # ── Redfin search (free) ──────────────────────────────────────────────────
+    elif run_redfin:
+        all_results = []
+        with st.spinner(f"🔴 Searching Redfin across {len(zips)} ZIPs… this may take 30–60s"):
+            all_results = search_redfin(zip_codes=zips)
+        errors = [r for r in all_results if "error" in r]
+        good   = [r for r in all_results if "error" not in r]
+        if errors:
+            st.warning(f"Some ZIPs had errors: {errors[0].get('error')}")
+        if good:
+            st.success(f"✅ Redfin: Found {len(good)} listings across {len(zips)} ZIPs")
+            st.session_state["live_listings"] = good
+        else:
+            st.warning("No Redfin results — check ZIPs or try again.")
+
+    # ── Zillow search (API key required) ─────────────────────────────────────
+    elif run_zillow and zillow_key:
+        all_results = []
+        with st.spinner(f"🟡 Searching {len(zips)} ZIP codes via Zillow…"):
             for z in zips:
                 results = search_zillow(zillow_key, z)
                 all_results.extend(results)
         errors = [r for r in all_results if "error" in r]
-        good = [r for r in all_results if "error" not in r]
+        good   = [r for r in all_results if "error" not in r]
         if errors:
-            st.error(f"API errors: {errors[0].get('error')}")
+            st.error(f"Zillow API error: {errors[0].get('error')}")
         if good:
-            st.success(f"Found {len(good)} listings across {len(zips)} ZIPs")
+            st.success(f"✅ Zillow: Found {len(good)} listings across {len(zips)} ZIPs")
             st.session_state["live_listings"] = good
         else:
-            st.warning("No results — showing demo listings.")
+            st.warning("No Zillow results — showing demo listings.")
 
     # Choose data source
     listings = st.session_state.get("live_listings", MOCK_LISTINGS)
