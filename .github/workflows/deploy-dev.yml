@@ -71,6 +71,7 @@ jobs:
         env:
           SSH_PRIVATE_KEY: ${{ secrets.DEV_SSH_KEY }}
           TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -z "$TAILSCALE_AUTHKEY" ]; then
             echo "ℹ️  Skipping SSH deploy (TAILSCALE_AUTHKEY not configured)."
@@ -84,39 +85,51 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ env.DEV_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o ConnectTimeout=30 root@${{ env.DEV_HOST }} << 'ENDSSH'
-            set -e
-            # Clone repo if not present, otherwise pull latest
-            if [ ! -d /opt/darrian-budget/.git ]; then
-              echo "Cloning repo for first time..."
-              git clone https://github.com/bookofdarrian/darrian-budget.git /opt/darrian-budget
-            fi
+
+          # Write deploy script locally, then copy and run it on the server
+          cat > /tmp/deploy.sh << 'SCRIPTEOF'
+          #!/bin/bash
+          set -e
+          GH_TOKEN="__GH_TOKEN__"
+          REPO_URL="https://x-access-token:${GH_TOKEN}@github.com/bookofdarrian/darrian-budget.git"
+
+          if [ ! -d /opt/darrian-budget/.git ]; then
+            echo "Cloning repo for first time..."
+            git clone "$REPO_URL" /opt/darrian-budget
+          else
             cd /opt/darrian-budget
+            git remote set-url origin "$REPO_URL"
             git fetch origin
             git checkout dev
             git pull origin dev
+          fi
 
-            # Install docker compose plugin if missing
-            if ! docker compose version &>/dev/null; then
-              apt-get update -qq && apt-get install -y -qq docker-compose-plugin
-            fi
+          cd /opt/darrian-budget
 
-            # Install pip deps directly (no docker-compose needed for simple deploy)
-            if [ -f requirements.txt ]; then
-              pip3 install -q -r requirements.txt || true
-            fi
+          # Install pip deps
+          if [ -f requirements.txt ]; then
+            pip3 install -q -r requirements.txt 2>&1 | tail -5 || true
+          fi
 
-            # Restart the app (kill existing streamlit, start fresh)
-            pkill -f "streamlit run" || true
-            sleep 2
-            nohup streamlit run app.py \
-              --server.port=8501 \
-              --server.address=0.0.0.0 \
-              --server.headless=true \
-              > /var/log/budget-app.log 2>&1 &
-            sleep 3
-            pgrep -f "streamlit run" && echo "App started successfully" || echo "App may have failed to start"
-          ENDSSH
+          # Restart streamlit
+          pkill -f "streamlit run" 2>/dev/null || true
+          sleep 2
+          nohup streamlit run app.py \
+            --server.port=8501 \
+            --server.address=0.0.0.0 \
+            --server.headless=true \
+            > /var/log/budget-app.log 2>&1 &
+          sleep 3
+          pgrep -f "streamlit run" && echo "✅ App started successfully" || echo "⚠️ App may have failed to start"
+          SCRIPTEOF
+
+          # Replace token placeholder
+          sed -i "s/__GH_TOKEN__/${GH_TOKEN}/g" /tmp/deploy.sh
+          chmod +x /tmp/deploy.sh
+
+          # Copy and run on homelab
+          scp -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no /tmp/deploy.sh root@${{ env.DEV_HOST }}:/tmp/deploy.sh
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o ConnectTimeout=30 root@${{ env.DEV_HOST }} "bash /tmp/deploy.sh && rm /tmp/deploy.sh"
 
       - name: Health Check
         env:
