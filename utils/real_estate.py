@@ -314,7 +314,126 @@ def search_redfin(
     return all_results
 
 
-# ── Zillow RapidAPI helper ────────────────────────────────────────────────────
+# ── US Real Estate RapidAPI helper (us-real-estate.p.rapidapi.com) ────────────
+US_RE_HOST = "us-real-estate.p.rapidapi.com"
+
+
+def search_us_real_estate(
+    api_key: str,
+    city: str = "Atlanta",
+    state_code: str = "GA",
+    limit: int = 50,
+) -> list[dict]:
+    """
+    Search for active for-sale listings via the US Real Estate RapidAPI.
+    Endpoint: GET /v3/for-sale
+    Returns a list of normalized listing dicts.
+    """
+    url = f"https://{US_RE_HOST}/v3/for-sale"
+    headers = {
+        "X-RapidAPI-Key": api_key,
+        "X-RapidAPI-Host": US_RE_HOST,
+    }
+    params = {
+        "city": city,
+        "state_code": state_code,
+        "beds_min": str(CRITERIA["min_beds"]),
+        "price_min": str(CRITERIA["min_price"]),
+        "price_max": str(CRITERIA["max_price"]),
+        "home_size_min": "1500",   # closest allowed value to 1,600
+        "sort": "newest",
+        "limit": str(min(limit, 200)),
+        "offset": "0",
+    }
+    try:
+        r = requests.get(url, headers=headers, params=params, timeout=20)
+        r.raise_for_status()
+        data = r.json()
+        hs = (data.get("data") or {}).get("home_search") or {}
+        props = hs.get("results", []) or []
+        return [_normalize_us_re(p) for p in props]
+    except Exception as e:
+        return [{"error": str(e)}]
+
+
+def _normalize_us_re(p: dict) -> dict:
+    """Map US Real Estate API fields to our internal listing schema."""
+    loc  = (p.get("location") or {}).get("address", {})
+    desc = p.get("description") or {}
+    coord = loc.get("coordinate") or {}
+
+    street = str(loc.get("line", "") or "")
+    city   = str(loc.get("city", "Atlanta") or "Atlanta")
+    state  = str(loc.get("state_code", "GA") or "GA")
+    zip_   = str(loc.get("postal_code", "") or "")
+    address = f"{street}, {city}, {state} {zip_}".strip(", ")
+
+    price      = int(p.get("list_price", 0) or 0)
+    beds       = int(desc.get("beds", 0) or 0)
+    baths_raw  = desc.get("baths_consolidated") or desc.get("baths", 0)
+    baths      = float(baths_raw or 0)
+    sqft       = int(desc.get("sqft", 0) or 0)
+    year_built = int(desc.get("year_built", 0) or 0)
+    dom        = int(p.get("days_on_market", 0) or 0)
+    hoa        = int((p.get("hoa") or {}).get("fee", 0) or 0)
+    lat        = coord.get("lat")
+    lng        = coord.get("lon")
+    prop_id    = str(p.get("property_id", "") or "")
+    img_url    = str((p.get("primary_photo") or {}).get("href", "") or "")
+    prop_url   = str(p.get("href", "") or "")
+    if not prop_url and prop_id:
+        prop_url = f"https://www.realtor.com/realestateandhomes-detail/{prop_id}"
+
+    invest_eligible = zip_ in CRITERIA["target_zips"]
+
+    highlights = []
+    if year_built >= 1980:
+        highlights.append(f"Post-{year_built} build")
+    if hoa == 0:
+        highlights.append("No HOA")
+    if beds >= 5:
+        highlights.append(f"{beds} beds — great for roommate")
+    if sqft >= 2000:
+        highlights.append(f"Large home ({sqft:,} sqft)")
+    if invest_eligible:
+        highlights.append("Invest Atlanta eligible ZIP")
+
+    listing = {
+        "source": "us_re_api",
+        "external_id": prop_id or f"usre-{address[:20].replace(' ','-').lower()}",
+        "address": address,
+        "neighborhood": _guess_neighborhood(address),
+        "price": price,
+        "beds": beds,
+        "baths": baths,
+        "sqft": sqft,
+        "year_built": year_built,
+        "dom": dom,
+        "hoa": hoa,
+        "lat": lat,
+        "lng": lng,
+        "img_url": img_url,
+        "listing_url": prop_url,
+        "condition": "Unknown",
+        "invest_atlanta_eligible": invest_eligible,
+        "commute_min": None,
+        "roof_age": None,
+        "hvac_age": None,
+        "price_history": [],
+        "highlights": highlights,
+        "red_flags": [],
+        "tag": "",
+        "ai_insight": "",
+        "status": "active",
+        "notes": "",
+        "fetched_at": datetime.now().isoformat(),
+    }
+    listing["score"] = score_listing(listing)
+    listing["red_flags"] = flag_red_flags(listing)
+    return listing
+
+
+# ── Zillow RapidAPI helper (legacy — original API deprecated) ─────────────────
 ZILLOW_HOST = "zillow-com1.p.rapidapi.com"
 
 

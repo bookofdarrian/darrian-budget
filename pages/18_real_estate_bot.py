@@ -8,7 +8,7 @@ from utils.db import get_conn, USE_POSTGRES
 from utils.real_estate import (
     CRITERIA, MOCK_LISTINGS, score_listing, effective_price,
     flag_red_flags, search_zillow, search_realtor_mls, search_redfin,
-    init_re_tables,
+    search_us_real_estate, init_re_tables,
 )
 
 st.set_page_config(page_title="🏠 Real Estate Bot",
@@ -168,19 +168,23 @@ with st.sidebar:
     zip_input = st.text_input("ZIP codes (comma-separated)",
                               value=", ".join(CRITERIA["target_zips"][:5]))
 
-    run_mls    = st.button("🏠 Search MLS (Realtor.com)", use_container_width=True,
-                           help="Free — no API key needed. Pulls from Realtor.com MLS feed.")
-    run_redfin = st.button("🔴 Search Redfin", use_container_width=True,
-                           help="Free — no API key needed. Same MLS data, Redfin-labeled.")
+    st.subheader("🔑 RapidAPI Key (optional)")
+    rapidapi_key = st.text_input("RapidAPI key", type="password",
+                                 help="Get free key at rapidapi.com → 'US Real Estate'",
+                                 key="rapidapi_key_input")
 
-    st.divider()
-    st.subheader("🔑 Zillow / US Real Estate API (optional)")
-    zillow_key = st.text_input("RapidAPI key", type="password",
-                               help="Get a free key at rapidapi.com → search 'US Real Estate' or 'Zillow Com1'")
-    run_zillow = st.button("🟡 Search via RapidAPI", use_container_width=True,
-                           disabled=not zillow_key,
-                           help="Requires a RapidAPI key.")
-    st.caption("💡 The free MLS search above works without any key.")
+    run_all    = st.button("🔄 Search ALL Sources", use_container_width=True,
+                           help="MLS + US Real Estate API (if key provided) — deduped & merged",
+                           type="primary")
+    run_mls    = st.button("🏠 MLS Only (Realtor.com)", use_container_width=True,
+                           help="Free — no API key needed.")
+    run_redfin = st.button("🔴 Redfin Only", use_container_width=True,
+                           help="Free — no API key needed.")
+    run_usre   = st.button("🟡 US Real Estate API Only", use_container_width=True,
+                           disabled=not rapidapi_key,
+                           help="Requires RapidAPI key.")
+    zillow_key = rapidapi_key  # reuse same key field
+    run_zillow = False  # legacy — disabled
 
 # ── Merge DB-saved listings into session state on first load ──────────────────
 if "live_listings" not in st.session_state:
@@ -205,52 +209,71 @@ tab_listings, tab_add, tab_saved, tab_calc, tab_criteria = st.tabs([
 with tab_listings:
     zips = [z.strip() for z in zip_input.split(",") if z.strip()]
 
-    # ── MLS / Realtor.com search (free) ──────────────────────────────────────
-    if run_mls:
-        all_results = []
-        with st.spinner(f"🏠 Searching MLS (Realtor.com) across {len(zips)} ZIPs… this may take 30–60s"):
-            all_results = search_realtor_mls(zip_codes=zips)
-        errors = [r for r in all_results if "error" in r]
-        good   = [r for r in all_results if "error" not in r]
-        if errors:
-            st.warning(f"Some ZIPs had errors: {errors[0].get('error')}")
+    def _dedupe(listings: list[dict]) -> list[dict]:
+        """Deduplicate listings by normalised street address."""
+        seen, out = set(), []
+        for l in listings:
+            key = l.get("address","").lower().strip()[:40]
+            if key and key not in seen:
+                seen.add(key)
+                out.append(l)
+        return out
+
+    # ── Search ALL sources ────────────────────────────────────────────────────
+    if run_all:
+        combined: list[dict] = []
+        with st.spinner("🔄 Searching MLS (Realtor.com)…"):
+            mls_res = search_realtor_mls(zip_codes=zips)
+            combined.extend([r for r in mls_res if "error" not in r])
+        if rapidapi_key:
+            with st.spinner("🟡 Searching US Real Estate API…"):
+                usre_res = search_us_real_estate(rapidapi_key)
+                combined.extend([r for r in usre_res if "error" not in r])
+        combined = _dedupe(combined)
+        if combined:
+            st.success(f"✅ All Sources: {len(combined)} unique listings (MLS + {'US RE API' if rapidapi_key else 'free only'})")
+            st.session_state["live_listings"] = combined
+        else:
+            st.warning("No results — check ZIPs or try again.")
+
+    # ── MLS only ──────────────────────────────────────────────────────────────
+    elif run_mls:
+        with st.spinner(f"🏠 Searching MLS across {len(zips)} ZIPs…"):
+            res = search_realtor_mls(zip_codes=zips)
+        good = [r for r in res if "error" not in r]
+        errs = [r for r in res if "error" in r]
+        if errs: st.warning(f"Some ZIPs had errors: {errs[0].get('error')}")
         if good:
-            st.success(f"✅ MLS: Found {len(good)} listings across {len(zips)} ZIPs")
+            st.success(f"✅ MLS: {len(good)} listings")
             st.session_state["live_listings"] = good
         else:
-            st.warning("No MLS results — check ZIPs or try again.")
+            st.warning("No MLS results.")
 
-    # ── Redfin search (free) ──────────────────────────────────────────────────
+    # ── Redfin only ───────────────────────────────────────────────────────────
     elif run_redfin:
-        all_results = []
-        with st.spinner(f"🔴 Searching Redfin across {len(zips)} ZIPs… this may take 30–60s"):
-            all_results = search_redfin(zip_codes=zips)
-        errors = [r for r in all_results if "error" in r]
-        good   = [r for r in all_results if "error" not in r]
-        if errors:
-            st.warning(f"Some ZIPs had errors: {errors[0].get('error')}")
+        with st.spinner(f"🔴 Searching Redfin across {len(zips)} ZIPs…"):
+            res = search_redfin(zip_codes=zips)
+        good = [r for r in res if "error" not in r]
+        errs = [r for r in res if "error" in r]
+        if errs: st.warning(f"Some ZIPs had errors: {errs[0].get('error')}")
         if good:
-            st.success(f"✅ Redfin: Found {len(good)} listings across {len(zips)} ZIPs")
+            st.success(f"✅ Redfin: {len(good)} listings")
             st.session_state["live_listings"] = good
         else:
-            st.warning("No Redfin results — check ZIPs or try again.")
+            st.warning("No Redfin results.")
 
-    # ── Zillow search (API key required) ─────────────────────────────────────
-    elif run_zillow and zillow_key:
-        all_results = []
-        with st.spinner(f"🟡 Searching {len(zips)} ZIP codes via Zillow…"):
-            for z in zips:
-                results = search_zillow(zillow_key, z)
-                all_results.extend(results)
-        errors = [r for r in all_results if "error" in r]
-        good   = [r for r in all_results if "error" not in r]
-        if errors:
-            st.error(f"Zillow API error: {errors[0].get('error')}")
+    # ── US Real Estate API only ───────────────────────────────────────────────
+    elif run_usre and rapidapi_key:
+        with st.spinner("🟡 Searching US Real Estate API…"):
+            res = search_us_real_estate(rapidapi_key)
+        good = [r for r in res if "error" not in r]
+        errs = [r for r in res if "error" in r]
+        if errs: st.error(f"API error: {errs[0].get('error')}")
         if good:
-            st.success(f"✅ Zillow: Found {len(good)} listings across {len(zips)} ZIPs")
+            st.success(f"✅ US Real Estate API: {len(good)} listings")
             st.session_state["live_listings"] = good
         else:
-            st.warning("No Zillow results — showing demo listings.")
+            st.warning("No results from US Real Estate API.")
 
     # Choose data source
     listings = st.session_state.get("live_listings", MOCK_LISTINGS)
@@ -297,11 +320,12 @@ with tab_listings:
         # Source badge — bright solid colors so they're always visible
         _src = listing.get("source", "mock")
         _src_styles = {
-            "realtor": ("background:#00c853;color:#000;", "🏠 MLS"),
-            "redfin":  ("background:#f44336;color:#fff;", "🔴 Redfin"),
-            "zillow":  ("background:#ff9800;color:#000;", "🟡 Zillow"),
-            "manual":  ("background:#2196f3;color:#fff;", "✏️ Manual"),
-            "mock":    ("background:#9e9e9e;color:#000;", "📋 Demo"),
+            "realtor":   ("background:#00c853;color:#000;", "🏠 MLS"),
+            "redfin":    ("background:#f44336;color:#fff;", "🔴 Redfin"),
+            "zillow":    ("background:#ff9800;color:#000;", "🟡 Zillow"),
+            "us_re_api": ("background:#ff9800;color:#000;", "🟡 US RE API"),
+            "manual":    ("background:#2196f3;color:#fff;", "✏️ Manual"),
+            "mock":      ("background:#9e9e9e;color:#000;", "📋 Demo"),
         }
         _style, _label = _src_styles.get(_src, ("background:#9e9e9e;color:#000;", _src.title()))
         source_badge = (
