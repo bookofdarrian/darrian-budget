@@ -57,6 +57,7 @@ selected_month = st.sidebar.selectbox("📅 Month", months, index=default_idx)
 
 st.sidebar.markdown("---")
 st.sidebar.page_link("app.py",                    label="Overview",          icon="📊")
+st.sidebar.page_link("pages/18_real_estate_bot.py", label="🏠 Real Estate Bot", icon="🏠")
 st.sidebar.page_link("pages/1_expenses.py",       label="Expenses",          icon="📋")
 st.sidebar.page_link("pages/2_income.py",         label="Income",            icon="💵")
 st.sidebar.page_link("pages/3_business_tracker.py",   label="Business Tracker 🔒", icon="💼")
