@@ -116,6 +116,7 @@ st.sidebar.page_link("pages/14_trading_bot.py",   label="Paper Trading Bot 🔒"
 st.sidebar.page_link("pages/15_bills.py",         label="Bill Calendar",        icon="📅")
 st.sidebar.page_link("pages/16_paycheck.py",      label="Paycheck Allocator",   icon="💸")
 st.sidebar.page_link("pages/0_pricing.py",        label="⭐ Upgrade to Pro",    icon="⭐")
+st.sidebar.page_link("pages/20_homelab.py",        label="🖥️ Homelab",           icon="🖥️")
 
 render_sidebar_user_widget()
 
