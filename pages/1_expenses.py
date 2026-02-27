@@ -31,6 +31,8 @@ st.sidebar.page_link("pages/6_receipts.py",       label="Receipts & HSA",    ico
 st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights",       icon="🤖")
 st.sidebar.page_link("pages/8_goals.py",          label="Financial Goals",   icon="🎯")
 st.sidebar.page_link("pages/9_net_worth.py",      label="Net Worth",         icon="💎")
+st.sidebar.page_link("pages/15_bills.py",         label="Bill Calendar",     icon="📅")
+st.sidebar.page_link("pages/16_paycheck.py",      label="Paycheck Allocator",icon="💸")
 
 st.title(f"📋 Expenses — {datetime.strptime(selected_month, '%Y-%m').strftime('%B %Y')}")
 

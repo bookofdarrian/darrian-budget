@@ -222,7 +222,7 @@ No markdown. No dollar signs."""
 st.subheader("📡 Live News Feed")
 
 days_back = st.slider("Look back (days)", 1, 30, 7, key="news_days")
-news_source = st.radio("News source", ["Finnhub (requires API key)", "Yahoo Finance RSS (free, no key)"], horizontal=True, key="news_source")
+news_source = st.radio("News source", ["Yahoo Finance RSS (free, no key)", "Finnhub (requires API key)"], horizontal=True, key="news_source")
 
 col_fetch, col_ai = st.columns([1, 1])
 with col_fetch:
