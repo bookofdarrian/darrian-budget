@@ -21,24 +21,29 @@ if not st.session_state.get("authenticated"):
     st.stop()
 
 # ── DB init ───────────────────────────────────────────────────────────────────
-conn = get_conn()
-init_re_tables(conn, use_postgres=USE_POSTGRES)
+_init_conn = get_conn()
+init_re_tables(_init_conn, use_postgres=USE_POSTGRES)
+_init_conn.commit()
+_init_conn.close()
 
 # ── DB helpers for persistent saved listings ──────────────────────────────────
-from utils.db import execute as db_exec
+from utils.db import execute as db_exec, get_conn as _get_conn
 
 def _load_saved_from_db() -> list[dict]:
-    """Load all saved listings from the DB."""
+    """Load all saved listings from the DB (opens its own connection)."""
     try:
-        c = db_exec(conn, "SELECT * FROM re_listings WHERE saved = 1 OR status = 'saved'")
+        _conn = _get_conn()
+        c = db_exec(_conn, "SELECT * FROM re_listings WHERE saved = 1 OR status = 'saved'")
         rows = c.fetchall()
         if not rows:
+            _conn.close()
             return []
         if USE_POSTGRES:
             cols = [d[0] for d in c.description]
             results = [dict(zip(cols, r)) for r in rows]
         else:
             results = [dict(r) for r in rows]
+        _conn.close()
         for r in results:
             for field in ("highlights", "red_flags", "price_history"):
                 if isinstance(r.get(field), str):
@@ -47,24 +52,26 @@ def _load_saved_from_db() -> list[dict]:
                     except Exception:
                         r[field] = []
         return results
-    except Exception:
+    except Exception as e:
+        st.error(f"Error loading saved listings: {e}")
         return []
 
 def _save_listing_to_db(listing: dict):
-    """Upsert a listing into re_listings with saved=1."""
+    """Upsert a listing into re_listings with saved=1 (opens its own connection)."""
     import json as _json
     ext_id = str(listing.get("external_id") or listing.get("id") or "")
     source  = listing.get("source", "manual")
-    highlights   = _json.dumps(listing.get("highlights", []) if isinstance(listing.get("highlights"), list) else [])
-    red_flags    = _json.dumps(listing.get("red_flags", []) if isinstance(listing.get("red_flags"), list) else [])
-    price_history= _json.dumps(listing.get("price_history", []) if isinstance(listing.get("price_history"), list) else [])
+    highlights    = _json.dumps(listing.get("highlights", []) if isinstance(listing.get("highlights"), list) else [])
+    red_flags_val = _json.dumps(listing.get("red_flags", []) if isinstance(listing.get("red_flags"), list) else [])
+    price_history = _json.dumps(listing.get("price_history", []) if isinstance(listing.get("price_history"), list) else [])
     try:
-        c = db_exec(conn, "SELECT id FROM re_listings WHERE external_id=? AND source=?", (ext_id, source))
+        _conn = _get_conn()
+        c = db_exec(_conn, "SELECT id FROM re_listings WHERE external_id=? AND source=?", (ext_id, source))
         row = c.fetchone()
         if row:
-            db_exec(conn, "UPDATE re_listings SET saved=1, status='saved' WHERE external_id=? AND source=?", (ext_id, source))
+            db_exec(_conn, "UPDATE re_listings SET saved=1, status='saved' WHERE external_id=? AND source=?", (ext_id, source))
         else:
-            db_exec(conn, """
+            db_exec(_conn, """
                 INSERT INTO re_listings
                 (source, external_id, address, neighborhood, price, beds, baths, sqft,
                  year_built, dom, hoa, condition, invest_atlanta_eligible, score,
@@ -80,21 +87,24 @@ def _save_listing_to_db(listing: dict):
                 1 if listing.get("invest_atlanta_eligible") else 0,
                 listing.get("score",0), "saved",
                 listing.get("tag",""), listing.get("ai_insight",""),
-                highlights, red_flags, price_history,
+                highlights, red_flags_val, price_history,
                 listing.get("img_url",""), listing.get("listing_url",""),
                 listing.get("notes",""),
             ))
-        conn.commit()
-    except Exception:
-        pass
+        _conn.commit()
+        _conn.close()
+    except Exception as e:
+        st.error(f"Error saving listing: {e}")
 
 def _unsave_listing_in_db(ext_id: str, source: str):
-    """Mark a listing as unsaved in the DB."""
+    """Mark a listing as unsaved in the DB (opens its own connection)."""
     try:
-        db_exec(conn, "UPDATE re_listings SET saved=0, status='active' WHERE external_id=? AND source=?", (ext_id, source))
-        conn.commit()
-    except Exception:
-        pass
+        _conn = _get_conn()
+        db_exec(_conn, "UPDATE re_listings SET saved=0, status='active' WHERE external_id=? AND source=?", (ext_id, source))
+        _conn.commit()
+        _conn.close()
+    except Exception as e:
+        st.error(f"Error unsaving listing: {e}")
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def score_color(score: int) -> str:
@@ -196,10 +206,23 @@ if "live_listings" not in st.session_state:
     base = copy.deepcopy(MOCK_LISTINGS)
     # Load any previously saved listings from DB and merge them in
     db_saved = _load_saved_from_db()
-    db_ids = {str(r.get("external_id","")) for r in db_saved}
-    # Keep mock listings that aren't already in DB, then append DB saved ones
-    merged = [l for l in base if str(l.get("external_id","")) not in db_ids]
-    merged.extend(db_saved)
+    # Build a lookup of external_id -> db row for quick status patching
+    db_by_ext_id = {str(r.get("external_id", "")): r for r in db_saved}
+    merged = []
+    for l in base:
+        ext_id = str(l.get("external_id", ""))
+        if ext_id in db_by_ext_id:
+            # Patch the mock listing's status/saved flag from DB
+            db_row = db_by_ext_id[ext_id]
+            l = copy.deepcopy(l)
+            l["status"] = db_row.get("status", l["status"])
+            l["saved"] = bool(db_row.get("saved", 0))
+        merged.append(l)
+    # Append any DB-saved listings that aren't in the mock set (e.g. live search results)
+    mock_ext_ids = {str(l.get("external_id", "")) for l in base}
+    for r in db_saved:
+        if str(r.get("external_id", "")) not in mock_ext_ids:
+            merged.append(r)
     st.session_state["live_listings"] = merged
 
 # ── Tabs ──────────────────────────────────────────────────────────────────────
@@ -311,7 +334,7 @@ with tab_listings:
     else:
         st.caption(f"Showing {len(filtered)} listing(s)")
 
-    for listing in filtered:
+    for idx, listing in enumerate(filtered):
         score = listing.get("score", 0)
         tag = listing.get("tag", "")
         highlights = parse_json_field(listing.get("highlights", []))
@@ -407,10 +430,12 @@ with tab_listings:
 
         listing_key = str(listing.get("id", listing.get("external_id", "")))
         current_status = listing.get("status", "active")
+        # Use idx to guarantee unique widget keys even when listings share the same id/external_id
+        btn_key = f"{idx}_{listing_key}"
 
         with btn2:
             save_label = "✅ Saved" if current_status == "saved" else "⭐ Save"
-            if st.button(save_label, key=f"save_{listing_key}"):
+            if st.button(save_label, key=f"save_{btn_key}"):
                 for l in st.session_state["live_listings"]:
                     if str(l.get("id", l.get("external_id", ""))) == listing_key:
                         l["status"] = "saved"
@@ -421,7 +446,7 @@ with tab_listings:
                 st.rerun()
         with btn3:
             pass_label = "❌ Passed" if current_status == "passed" else "❌ Pass"
-            if st.button(pass_label, key=f"pass_{listing_key}"):
+            if st.button(pass_label, key=f"pass_{btn_key}"):
                 for l in st.session_state["live_listings"]:
                     if str(l.get("id", l.get("external_id", ""))) == listing_key:
                         l["status"] = "passed"
@@ -429,7 +454,7 @@ with tab_listings:
                 st.toast(f"Passed on {listing.get('address', '')}")
                 st.rerun()
         with btn4:
-            if st.button("📋 Schedule Tour", key=f"tour_{listing_key}"):
+            if st.button("📋 Schedule Tour", key=f"tour_{btn_key}"):
                 st.toast("Tour request noted — contact your agent!")
 
         st.divider()
@@ -528,7 +553,7 @@ with tab_saved:
         st.info("No saved listings yet. Star a listing from the Listings tab.")
     else:
         st.caption(f"{len(saved)} saved listing(s)")
-    for l in saved:
+    for sidx, l in enumerate(saved):
         score = l.get("score", 0)
         eff_price = effective_price(l)
         payment = monthly_payment(eff_price)
@@ -577,12 +602,14 @@ with tab_saved:
                 st.info(ai)
 
         lkey = str(l.get("id", l.get("external_id", "")))
+        # Use sidx to guarantee unique widget keys even when saved listings share the same id/external_id
+        saved_btn_key = f"{sidx}_{lkey}"
         sb1, sb2, sb3 = st.columns(3)
         lurl = l.get("listing_url", "")
         if lurl:
             sb1.link_button("🔗 View Listing", lurl)
         with sb2:
-            if st.button("🗑️ Unsave", key=f"unsave_{lkey}"):
+            if st.button("🗑️ Unsave", key=f"unsave_{saved_btn_key}"):
                 _src = l.get("source", "manual")
                 _unsave_listing_in_db(lkey, _src)  # persist to DB
                 for item in st.session_state["live_listings"]:
@@ -592,7 +619,7 @@ with tab_saved:
                         break
                 st.rerun()
         with sb3:
-            if st.button("📋 Schedule Tour", key=f"saved_tour_{lkey}"):
+            if st.button("📋 Schedule Tour", key=f"saved_tour_{saved_btn_key}"):
                 st.toast("Tour request noted — contact your agent!")
 
         st.divider()
