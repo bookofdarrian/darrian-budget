@@ -174,12 +174,13 @@ with st.sidebar:
                            help="Free — no API key needed. Same MLS data, Redfin-labeled.")
 
     st.divider()
-    st.subheader("🔑 Zillow API (optional)")
+    st.subheader("🔑 Zillow / US Real Estate API (optional)")
     zillow_key = st.text_input("RapidAPI key", type="password",
-                               help="Get a free key at rapidapi.com → Zillow API")
-    run_zillow = st.button("🟡 Search Zillow", use_container_width=True,
+                               help="Get a free key at rapidapi.com → search 'US Real Estate' or 'Zillow Com1'")
+    run_zillow = st.button("🟡 Search via RapidAPI", use_container_width=True,
                            disabled=not zillow_key,
-                           help="Requires a RapidAPI key for Zillow.")
+                           help="Requires a RapidAPI key.")
+    st.caption("💡 The free MLS search above works without any key.")
 
 # ── Merge DB-saved listings into session state on first load ──────────────────
 if "live_listings" not in st.session_state:
