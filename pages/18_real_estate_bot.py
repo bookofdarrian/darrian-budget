@@ -78,6 +78,11 @@ with st.sidebar:
     run_search = st.button("🔄 Fetch Live Listings", use_container_width=True,
                            disabled=not zillow_key)
 
+# ── Ensure listings are always stored as a mutable session-state list ─────────
+if "live_listings" not in st.session_state:
+    import copy
+    st.session_state["live_listings"] = copy.deepcopy(MOCK_LISTINGS)
+
 # ── Tabs ──────────────────────────────────────────────────────────────────────
 tab_listings, tab_add, tab_saved, tab_calc, tab_criteria = st.tabs([
     "📋 Listings", "➕ Add Listing", "⭐ Saved", "🧮 Calculator", "📌 Criteria"
@@ -214,14 +219,31 @@ with tab_listings:
         listing_url = listing.get("listing_url", "")
         if listing_url:
             btn1.link_button("🔗 View Listing", listing_url)
+
+        listing_key = str(listing.get("id", listing.get("external_id", "")))
+        current_status = listing.get("status", "active")
+
         with btn2:
-            if st.button("⭐ Save", key=f"save_{listing.get('id',listing.get('external_id',''))}"):
-                st.toast(f"Saved {listing.get('address','')}")
+            save_label = "✅ Saved" if current_status == "saved" else "⭐ Save"
+            if st.button(save_label, key=f"save_{listing_key}"):
+                for l in st.session_state["live_listings"]:
+                    if str(l.get("id", l.get("external_id", ""))) == listing_key:
+                        l["status"] = "saved"
+                        l["saved"] = True
+                        break
+                st.toast(f"⭐ Saved {listing.get('address', '')}")
+                st.rerun()
         with btn3:
-            if st.button("❌ Pass", key=f"pass_{listing.get('id',listing.get('external_id',''))}"):
-                st.toast(f"Passed on {listing.get('address','')}")
+            pass_label = "❌ Passed" if current_status == "passed" else "❌ Pass"
+            if st.button(pass_label, key=f"pass_{listing_key}"):
+                for l in st.session_state["live_listings"]:
+                    if str(l.get("id", l.get("external_id", ""))) == listing_key:
+                        l["status"] = "passed"
+                        break
+                st.toast(f"Passed on {listing.get('address', '')}")
+                st.rerun()
         with btn4:
-            if st.button("📋 Schedule Tour", key=f"tour_{listing.get('id',listing.get('external_id',''))}"):
+            if st.button("📋 Schedule Tour", key=f"tour_{listing_key}"):
                 st.toast("Tour request noted — contact your agent!")
 
         st.divider()
@@ -314,12 +336,78 @@ with tab_add:
 with tab_saved:
     st.subheader("⭐ Saved Listings")
     st.caption("Listings you've starred for follow-up.")
-    saved = [l for l in st.session_state.get("live_listings", MOCK_LISTINGS)
+    saved = [l for l in st.session_state["live_listings"]
              if l.get("status") == "saved" or l.get("saved")]
     if not saved:
         st.info("No saved listings yet. Star a listing from the Listings tab.")
+    else:
+        st.caption(f"{len(saved)} saved listing(s)")
     for l in saved:
-        st.markdown(f"**{l.get('address','')}** — ${l.get('price',0):,} · Score: {l.get('score',0)}/100")
+        score = l.get("score", 0)
+        eff_price = effective_price(l)
+        payment = monthly_payment(eff_price)
+        net_payment = payment - CRITERIA["roommate_income"]
+        highlights = parse_json_field(l.get("highlights", []))
+        red_flags = parse_json_field(l.get("red_flags", []))
+        tag = l.get("tag", "")
+        tag_html = f'<span style="background:#1565c0;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;margin-left:8px">{tag}</span>' if tag else ""
+        score_html = f'<span style="background:{score_color(score)};color:#000;padding:3px 10px;border-radius:12px;font-weight:bold;font-size:14px">{score}/100</span>'
+
+        st.markdown(f"""
+<div style="border:1px solid #FFAB76;border-radius:10px;padding:16px 20px;margin-bottom:16px;background:#1a1a2e">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <div>
+      <span style="font-size:17px;font-weight:bold">⭐ {l.get('address','')}</span>
+      {tag_html}
+      <br><span style="color:#aaa;font-size:13px">{l.get('neighborhood','Atlanta')} · {l.get('condition','Unknown')}</span>
+    </div>
+    <div style="text-align:right">{score_html}</div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+        s1, s2, s3, s4, s5 = st.columns(5)
+        s1.metric("List Price", f"${l.get('price',0):,}")
+        s2.metric("Eff. Price", f"${eff_price:,}")
+        s3.metric("Beds/Baths", f"{l.get('beds',0)}bd/{l.get('baths',0)}ba")
+        s4.metric("Est. Payment", f"${payment:,.0f}/mo")
+        s5.metric("After Roommate", f"${net_payment:,.0f}/mo")
+
+        col_h, col_r = st.columns(2)
+        with col_h:
+            if highlights:
+                st.markdown("**✅ Highlights**")
+                for h in highlights:
+                    st.markdown(f"- {h}")
+        with col_r:
+            if red_flags:
+                st.markdown("**⚠️ Red Flags**")
+                for rf in red_flags:
+                    st.markdown(f"- {rf}")
+
+        ai = l.get("ai_insight", "")
+        if ai:
+            with st.expander("🤖 AI Analysis"):
+                st.info(ai)
+
+        lkey = str(l.get("id", l.get("external_id", "")))
+        sb1, sb2, sb3 = st.columns(3)
+        lurl = l.get("listing_url", "")
+        if lurl:
+            sb1.link_button("🔗 View Listing", lurl)
+        with sb2:
+            if st.button("🗑️ Unsave", key=f"unsave_{lkey}"):
+                for item in st.session_state["live_listings"]:
+                    if str(item.get("id", item.get("external_id", ""))) == lkey:
+                        item["status"] = "active"
+                        item["saved"] = False
+                        break
+                st.rerun()
+        with sb3:
+            if st.button("📋 Schedule Tour", key=f"saved_tour_{lkey}"):
+                st.toast("Tour request noted — contact your agent!")
+
+        st.divider()
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 4 — CALCULATOR
