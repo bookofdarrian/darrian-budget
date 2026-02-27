@@ -97,6 +97,7 @@ seed_income(selected_month)
 
 st.sidebar.markdown("---")
 st.sidebar.page_link("app.py",                    label="Overview",          icon="📊")
+st.sidebar.page_link("pages/18_real_estate_bot.py", label="🏠 Real Estate Bot", icon="🏠")
 st.sidebar.page_link("pages/1_expenses.py",       label="Expenses",          icon="📋")
 st.sidebar.page_link("pages/2_income.py",         label="Income",            icon="💵")
 st.sidebar.page_link("pages/3_business_tracker.py",   label="Business Tracker 🔒", icon="💼")
@@ -113,7 +114,6 @@ st.sidebar.page_link("pages/13_backtesting.py",   label="Strategy Backtest 🔒"
 st.sidebar.page_link("pages/14_trading_bot.py",   label="Paper Trading Bot 🔒", icon="🤖")
 st.sidebar.page_link("pages/15_bills.py",         label="Bill Calendar",        icon="📅")
 st.sidebar.page_link("pages/16_paycheck.py",      label="Paycheck Allocator",   icon="💸")
-st.sidebar.page_link("pages/18_real_estate_bot.py", label="🏠 Real Estate Bot", icon="🏠")
 st.sidebar.page_link("pages/0_pricing.py",        label="⭐ Upgrade to Pro",    icon="⭐")
 
 render_sidebar_user_widget()
