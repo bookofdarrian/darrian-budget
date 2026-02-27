@@ -111,7 +111,10 @@ st.sidebar.page_link("pages/11_portfolio.py",     label="Portfolio Analysis 🔒
 st.sidebar.page_link("pages/12_market_news.py",   label="Market News 🔒",    icon="📰")
 st.sidebar.page_link("pages/13_backtesting.py",   label="Strategy Backtest 🔒", icon="🔬")
 st.sidebar.page_link("pages/14_trading_bot.py",   label="Paper Trading Bot 🔒", icon="🤖")
-st.sidebar.page_link("pages/0_pricing.py",        label="⭐ Upgrade to Pro", icon="⭐")
+st.sidebar.page_link("pages/15_bills.py",         label="Bill Calendar",        icon="📅")
+st.sidebar.page_link("pages/16_paycheck.py",      label="Paycheck Allocator",   icon="💸")
+st.sidebar.page_link("pages/18_real_estate_bot.py", label="🏠 Real Estate Bot", icon="🏠")
+st.sidebar.page_link("pages/0_pricing.py",        label="⭐ Upgrade to Pro",    icon="⭐")
 
 render_sidebar_user_widget()
 
