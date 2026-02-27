@@ -13,7 +13,7 @@ except ImportError:
 from utils.db import init_db, get_setting
 from utils.auth import require_login, require_pro, render_sidebar_brand, render_sidebar_user_widget, inject_css
 
-st.set_page_config(page_title="RSU/ESPP Advisor - Peach State Savings", page_icon="📈", layout="wide")
+st.set_page_config(page_title="RSU/ESPP Advisor - Peach State Savings", page_icon="🍑", layout="wide")
 init_db()
 require_login()
 require_pro("RSU/ESPP Decision Support")

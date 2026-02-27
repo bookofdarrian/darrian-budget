@@ -10,7 +10,8 @@ from utils.real_estate import (
     flag_red_flags, search_zillow, init_re_tables,
 )
 
-st.set_page_config(page_title="🏠 Real Estate Bot", layout="wide")
+st.set_page_config(page_title="🏠 Real Estate Bot",
+    page_icon="🍑", layout="wide")
 
 # ── Auth guard ────────────────────────────────────────────────────────────────
 if not st.session_state.get("authenticated"):

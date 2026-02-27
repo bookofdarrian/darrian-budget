@@ -41,7 +41,7 @@ def _persist_request_id(response: requests.Response):
                        "ts": datetime.now().strftime("%H:%M:%S")})
         st.session_state["alpaca_request_ids"] = ids[:20]
 
-st.set_page_config(page_title="Paper Trading Bot - Peach State Savings", page_icon="🤖", layout="wide")
+st.set_page_config(page_title="Paper Trading Bot - Peach State Savings", page_icon="🍑", layout="wide")
 init_db(); require_login(); require_pro("Alpaca Paper Trading Bot"); inject_css()
 
 render_sidebar_brand()
