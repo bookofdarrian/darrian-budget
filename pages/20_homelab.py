@@ -73,6 +73,7 @@ st.title("🖥️ Homelab Dashboard")
 st.caption("All your self-hosted services — accessible via Tailscale from anywhere")
 
 BASE = "http://100.95.125.112"
+PROXY = f"{BASE}:8090"  # favicon proxy — injects emoji icons into browser tabs
 
 # ── Service definitions ───────────────────────────────────────────────────────
 SERVICES = {
@@ -88,19 +89,19 @@ SERVICES = {
             "icon": "📸",
             "name": "Immich",
             "desc": "Photo library · AI search · Face recognition",
-            "url": f"{BASE}:2283",
+            "url": f"{PROXY}/photos/",
         },
         {
             "icon": "🔐",
             "name": "Vaultwarden",
             "desc": "Password manager · Bitwarden-compatible",
-            "url": f"{BASE}:8888",
+            "url": f"{PROXY}/vault/",
         },
         {
             "icon": "🤖",
             "name": "Open WebUI",
             "desc": "Chat with local AI models",
-            "url": f"{BASE}:3002",
+            "url": f"{PROXY}/ai/",
         },
         {
             "icon": "✅",
@@ -114,7 +115,7 @@ SERVICES = {
             "icon": "💻",
             "name": "code-server",
             "desc": "VS Code in the browser",
-            "url": f"{BASE}:8080",
+            "url": f"{PROXY}/code/",
         },
         {
             "icon": "🦙",
@@ -134,7 +135,7 @@ SERVICES = {
             "icon": "📊",
             "name": "Grafana",
             "desc": "Metrics · Dashboards · Alerts",
-            "url": f"{BASE}:3000",
+            "url": f"https://100.95.125.112:3000",
         },
         {
             "icon": "🔥",
@@ -146,7 +147,7 @@ SERVICES = {
             "icon": "🐳",
             "name": "Portainer",
             "desc": "Docker container management",
-            "url": f"{BASE}:9000",
+            "url": f"{PROXY}/portainer/",
         },
         {
             "icon": "🖥️",
