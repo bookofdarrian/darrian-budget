@@ -98,8 +98,8 @@ SERVICES = [
         "icon": "🔐",
         "name": "Vaultwarden",
         "desc": "Password manager",
-        "url": "http://100.95.125.112:8888",
-        "note": "⚠️ Tailscale required"
+        "url": "https://100.95.125.112:8443",
+        "note": "⚠️ Tailscale required · tap Advanced → Accept cert"
     },
     {
         "icon": "🤖",

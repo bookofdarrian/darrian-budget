@@ -95,7 +95,7 @@ SERVICES = {
             "icon": "🔐",
             "name": "Vaultwarden",
             "desc": "Password manager · Bitwarden-compatible",
-            "url": f"{PROXY}/vault/",
+            "url": f"https://100.95.125.112:8443",
         },
         {
             "icon": "🤖",
