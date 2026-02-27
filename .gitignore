@@ -1,4 +1,8 @@
 .env
+monitoring/.env
+# Gmail OAuth — never commit these
+credentials.json
+token.json
 data/budget.db
 __pycache__/
 *.pyc
@@ -6,3 +10,5 @@ __pycache__/
 venv/
 .venv/
 *.db
+emergency_code.txt
+VAULTWARDEN_CREDENTIALS.md
