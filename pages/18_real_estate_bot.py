@@ -23,6 +23,78 @@ if not st.session_state.get("authenticated"):
 conn = get_conn()
 init_re_tables(conn, use_postgres=USE_POSTGRES)
 
+# ── DB helpers for persistent saved listings ──────────────────────────────────
+from utils.db import execute as db_exec
+
+def _load_saved_from_db() -> list[dict]:
+    """Load all saved listings from the DB."""
+    try:
+        c = db_exec(conn, "SELECT * FROM re_listings WHERE saved = 1 OR status = 'saved'")
+        rows = c.fetchall()
+        if not rows:
+            return []
+        if USE_POSTGRES:
+            cols = [d[0] for d in c.description]
+            results = [dict(zip(cols, r)) for r in rows]
+        else:
+            results = [dict(r) for r in rows]
+        for r in results:
+            for field in ("highlights", "red_flags", "price_history"):
+                if isinstance(r.get(field), str):
+                    try:
+                        r[field] = json.loads(r[field] or "[]")
+                    except Exception:
+                        r[field] = []
+        return results
+    except Exception:
+        return []
+
+def _save_listing_to_db(listing: dict):
+    """Upsert a listing into re_listings with saved=1."""
+    import json as _json
+    ext_id = str(listing.get("external_id") or listing.get("id") or "")
+    source  = listing.get("source", "manual")
+    highlights   = _json.dumps(listing.get("highlights", []) if isinstance(listing.get("highlights"), list) else [])
+    red_flags    = _json.dumps(listing.get("red_flags", []) if isinstance(listing.get("red_flags"), list) else [])
+    price_history= _json.dumps(listing.get("price_history", []) if isinstance(listing.get("price_history"), list) else [])
+    try:
+        c = db_exec(conn, "SELECT id FROM re_listings WHERE external_id=? AND source=?", (ext_id, source))
+        row = c.fetchone()
+        if row:
+            db_exec(conn, "UPDATE re_listings SET saved=1, status='saved' WHERE external_id=? AND source=?", (ext_id, source))
+        else:
+            db_exec(conn, """
+                INSERT INTO re_listings
+                (source, external_id, address, neighborhood, price, beds, baths, sqft,
+                 year_built, dom, hoa, condition, invest_atlanta_eligible, score,
+                 status, tag, ai_insight, highlights, red_flags, price_history,
+                 img_url, listing_url, notes, saved)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)
+            """, (
+                source, ext_id,
+                listing.get("address",""), listing.get("neighborhood",""),
+                listing.get("price",0), listing.get("beds",0), listing.get("baths",0),
+                listing.get("sqft",0), listing.get("year_built",0), listing.get("dom",0),
+                listing.get("hoa",0), listing.get("condition","Unknown"),
+                1 if listing.get("invest_atlanta_eligible") else 0,
+                listing.get("score",0), "saved",
+                listing.get("tag",""), listing.get("ai_insight",""),
+                highlights, red_flags, price_history,
+                listing.get("img_url",""), listing.get("listing_url",""),
+                listing.get("notes",""),
+            ))
+        conn.commit()
+    except Exception:
+        pass
+
+def _unsave_listing_in_db(ext_id: str, source: str):
+    """Mark a listing as unsaved in the DB."""
+    try:
+        db_exec(conn, "UPDATE re_listings SET saved=0, status='active' WHERE external_id=? AND source=?", (ext_id, source))
+        conn.commit()
+    except Exception:
+        pass
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def score_color(score: int) -> str:
     if score >= 85:
@@ -53,20 +125,43 @@ st.title("🏠 Real Estate Bot")
 st.caption("Atlanta home-buying assistant · $245k–$285k · 4+ beds · NW/SW Atlanta")
 
 # ── Sidebar — criteria summary ────────────────────────────────────────────────
+# ── Load editable criteria from session state (falls back to defaults) ────────
+if "criteria" not in st.session_state:
+    import copy
+    st.session_state["criteria"] = copy.deepcopy(CRITERIA)
+C = st.session_state["criteria"]  # shorthand
+
 with st.sidebar:
     st.subheader("🎯 Your Criteria")
+    with st.expander("✏️ Edit Criteria", expanded=False):
+        C["min_price"]          = st.number_input("Min Price ($)", 100_000, 500_000, C["min_price"], 5_000)
+        C["max_price"]          = st.number_input("Max Price ($)", 100_000, 600_000, C["max_price"], 5_000)
+        C["min_beds"]           = st.number_input("Min Beds", 1, 10, C["min_beds"])
+        C["min_baths"]          = st.number_input("Min Baths", 1, 10, C["min_baths"])
+        C["min_sqft"]           = st.number_input("Min Sqft", 500, 5_000, C["min_sqft"], 100)
+        C["max_hoa"]            = st.number_input("Max HOA ($/mo)", 0, 1_000, C["max_hoa"], 25)
+        C["max_commute_min"]    = st.number_input("Max Commute (min)", 5, 120, C["max_commute_min"], 5)
+        C["monthly_payment_max"]= st.number_input("Max Net Payment ($/mo)", 500, 5_000, C["monthly_payment_max"], 100)
+        C["roommate_income"]    = st.number_input("Roommate Income ($/mo)", 0, 3_000, C["roommate_income"], 50)
+        C["invest_atlanta_amount"] = st.number_input("Invest Atlanta DPA ($)", 0, 50_000, C["invest_atlanta_amount"], 1_000)
+        C["georgia_dream_amount"]  = st.number_input("Georgia Dream DPA ($)", 0, 30_000, C["georgia_dream_amount"], 1_000)
+        if st.button("↩️ Reset to Defaults", use_container_width=True):
+            import copy
+            st.session_state["criteria"] = copy.deepcopy(CRITERIA)
+            st.rerun()
+
     st.markdown(f"""
 | | |
 |---|---|
-| **Budget** | ${CRITERIA['min_price']:,} – ${CRITERIA['max_price']:,} |
-| **Beds** | {CRITERIA['min_beds']}+ |
-| **Baths** | {CRITERIA['min_baths']}+ |
-| **Sqft** | {CRITERIA['min_sqft']:,}+ |
-| **Max commute** | {CRITERIA['max_commute_min']} min |
-| **Max HOA** | ${CRITERIA['max_hoa']}/mo |
-| **Invest Atlanta** | ${CRITERIA['invest_atlanta_amount']:,} |
-| **Georgia Dream** | ${CRITERIA['georgia_dream_amount']:,} |
-| **Roommate income** | ${CRITERIA['roommate_income']:,}/mo |
+| **Budget** | ${C['min_price']:,} – ${C['max_price']:,} |
+| **Beds** | {C['min_beds']}+ |
+| **Baths** | {C['min_baths']}+ |
+| **Sqft** | {C['min_sqft']:,}+ |
+| **Max commute** | {C['max_commute_min']} min |
+| **Max HOA** | ${C['max_hoa']}/mo |
+| **Invest Atlanta** | ${C['invest_atlanta_amount']:,} |
+| **Georgia Dream** | ${C['georgia_dream_amount']:,} |
+| **Roommate income** | ${C['roommate_income']:,}/mo |
 """)
     st.divider()
     st.subheader("🔍 Live Search")
@@ -86,10 +181,17 @@ with st.sidebar:
                            disabled=not zillow_key,
                            help="Requires a RapidAPI key for Zillow.")
 
-# ── Ensure listings are always stored as a mutable session-state list ─────────
+# ── Merge DB-saved listings into session state on first load ──────────────────
 if "live_listings" not in st.session_state:
     import copy
-    st.session_state["live_listings"] = copy.deepcopy(MOCK_LISTINGS)
+    base = copy.deepcopy(MOCK_LISTINGS)
+    # Load any previously saved listings from DB and merge them in
+    db_saved = _load_saved_from_db()
+    db_ids = {str(r.get("external_id","")) for r in db_saved}
+    # Keep mock listings that aren't already in DB, then append DB saved ones
+    merged = [l for l in base if str(l.get("external_id","")) not in db_ids]
+    merged.extend(db_saved)
+    st.session_state["live_listings"] = merged
 
 # ── Tabs ──────────────────────────────────────────────────────────────────────
 tab_listings, tab_add, tab_saved, tab_calc, tab_criteria = st.tabs([
@@ -191,6 +293,18 @@ with tab_listings:
         payment = monthly_payment(eff_price)
         net_payment = payment - CRITERIA["roommate_income"]
 
+        # Source badge
+        _src = listing.get("source", "mock")
+        _src_map = {
+            "realtor": ("#1b5e20", "#a5d6a7", "🏠 MLS"),
+            "redfin":  ("#b71c1c", "#ef9a9a", "🔴 Redfin"),
+            "zillow":  ("#e65100", "#ffcc80", "🟡 Zillow"),
+            "manual":  ("#1a237e", "#90caf9", "✏️ Manual"),
+            "mock":    ("#37474f", "#b0bec5", "🔵 Demo"),
+        }
+        _bg, _fg, _label = _src_map.get(_src, ("#37474f", "#b0bec5", _src.title()))
+        source_badge = f'<span style="background:{_bg};color:{_fg};padding:2px 8px;border-radius:4px;font-size:11px;margin-left:6px;border:1px solid {_fg}40">{_label}</span>'
+
         # Card header
         tag_html = f'<span style="background:#1565c0;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;margin-left:8px">{tag}</span>' if tag else ""
         score_html = f'<span style="background:{score_color(score)};color:#000;padding:3px 10px;border-radius:12px;font-weight:bold;font-size:14px">{score}/100</span>'
@@ -200,7 +314,7 @@ with tab_listings:
   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
     <div>
       <span style="font-size:17px;font-weight:bold">🏡 {listing.get('address','')}</span>
-      {tag_html}
+      {source_badge}{tag_html}
       <br><span style="color:#aaa;font-size:13px">{listing.get('neighborhood','Atlanta')} · {listing.get('condition','Unknown')}</span>
     </div>
     <div style="text-align:right">
@@ -269,6 +383,7 @@ with tab_listings:
                     if str(l.get("id", l.get("external_id", ""))) == listing_key:
                         l["status"] = "saved"
                         l["saved"] = True
+                        _save_listing_to_db(l)  # persist to DB
                         break
                 st.toast(f"⭐ Saved {listing.get('address', '')}")
                 st.rerun()
@@ -436,6 +551,8 @@ with tab_saved:
             sb1.link_button("🔗 View Listing", lurl)
         with sb2:
             if st.button("🗑️ Unsave", key=f"unsave_{lkey}"):
+                _src = l.get("source", "manual")
+                _unsave_listing_in_db(lkey, _src)  # persist to DB
                 for item in st.session_state["live_listings"]:
                     if str(item.get("id", item.get("external_id", ""))) == lkey:
                         item["status"] = "active"
