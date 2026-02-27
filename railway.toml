@@ -2,7 +2,7 @@
 rootDirectory = "."
 
 [deploy]
-startCommand = "streamlit run app.py --server.port=$PORT --server.address=0.0.0.0 --server.headless=true"
+startCommand = "sh -c 'unset STREAMLIT_SERVER_PORT && streamlit run app.py --server.port=${PORT:-8501} --server.address=0.0.0.0 --server.headless=true'"
 healthcheckPath = "/_stcore/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
