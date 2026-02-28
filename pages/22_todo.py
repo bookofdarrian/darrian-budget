@@ -4,7 +4,7 @@ Simple task manager backed by the pa_tasks table.
 """
 import streamlit as st
 from datetime import datetime, date
-from utils.db import get_conn, USE_POSTGRES, execute as db_exec
+from utils.db import get_conn, USE_POSTGRES, execute as db_exec, init_db
 from utils.auth import require_login, render_sidebar_brand, render_sidebar_user_widget, inject_css
 
 st.set_page_config(
@@ -13,6 +13,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="auto",
 )
+init_db()
 inject_css()
 require_login()
 
@@ -72,7 +73,12 @@ def _ensure_tasks_table():
 def _load_tasks(status_filter: list[str]) -> list[dict]:
     conn = get_conn()
     placeholders = ",".join(["?" for _ in status_filter])
-    c = db_exec(conn, f"SELECT * FROM pa_tasks WHERE status IN ({placeholders}) ORDER BY due_date ASC NULLS LAST, priority DESC, created_at DESC", tuple(status_filter))
+    # NULLS LAST is PostgreSQL-only; use CASE for SQLite compatibility
+    if USE_POSTGRES:
+        order_clause = "ORDER BY due_date ASC NULLS LAST, priority DESC, created_at DESC"
+    else:
+        order_clause = "ORDER BY CASE WHEN due_date IS NULL THEN 1 ELSE 0 END, due_date ASC, priority DESC, created_at DESC"
+    c = db_exec(conn, f"SELECT * FROM pa_tasks WHERE status IN ({placeholders}) {order_clause}", tuple(status_filter))
     rows = c.fetchall()
     if USE_POSTGRES:
         cols = [d[0] for d in c.description]
