@@ -1,10 +1,10 @@
 """
 Todo App — Page 22
-Simple task manager backed by the pa_tasks table.
+Task manager backed by the pa_tasks table, with Google Calendar sync.
 """
 import streamlit as st
 from datetime import datetime, date
-from utils.db import get_conn, USE_POSTGRES, execute as db_exec, init_db
+from utils.db import get_conn, USE_POSTGRES, execute as db_exec, init_db, get_setting, set_setting
 from utils.auth import require_login, render_sidebar_brand, render_sidebar_user_widget, inject_css
 
 st.set_page_config(
@@ -296,3 +296,224 @@ for task in tasks:
             st.rerun()
 
     st.divider()
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ── Google Calendar Integration ───────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+
+st.markdown("## 📅 Google Calendar")
+
+# ── Load calendar client ──────────────────────────────────────────────────────
+try:
+    from utils.calendar_client import (
+        get_calendar_service,
+        get_calendar_auth_url,
+        exchange_code_for_token,
+        list_upcoming_events,
+        create_event_from_task,
+        delete_event,
+        _has_calendar_scope,
+    )
+    _cal_available = True
+except ImportError as _e:
+    _cal_available = False
+    st.error(f"Calendar client import error: {_e}")
+
+if _cal_available:
+    # ── Try to connect ────────────────────────────────────────────────────────
+    _token_json = get_setting("google_token", "")
+    _cal_service = None
+    _cal_status  = "disconnected"   # disconnected | scope_upgrade | connected
+
+    try:
+        _cal_service, _refreshed_token = get_calendar_service(_token_json or None)
+        if _refreshed_token != _token_json:
+            set_setting("google_token", _refreshed_token)
+        _cal_status = "connected"
+    except RuntimeError as _re:
+        _msg = str(_re)
+        if _msg == "SCOPE_UPGRADE":
+            _cal_status = "scope_upgrade"
+        else:
+            _cal_status = "disconnected"
+    except FileNotFoundError:
+        _cal_status = "no_credentials"
+    except Exception:
+        _cal_status = "disconnected"
+
+    # ── Status banner ─────────────────────────────────────────────────────────
+    if _cal_status == "connected":
+        st.success("✅ **Connected to Google Calendar** — your tasks can be synced as events.")
+
+    elif _cal_status == "scope_upgrade":
+        st.warning(
+            "⚠️ **Google Calendar permission needed.**  \n"
+            "Your existing Google account is connected (Gmail), but Calendar access hasn't been granted yet.  \n"
+            "Click **Connect Google Calendar** below to re-authorize with Calendar permission added."
+        )
+
+    elif _cal_status == "no_credentials":
+        st.error(
+            "❌ **credentials.json not found.**  \n"
+            "1. Go to [console.cloud.google.com](https://console.cloud.google.com)  \n"
+            "2. Enable the **Google Calendar API** on your project  \n"
+            "3. Download your OAuth credentials JSON and save it as `credentials.json` in the project root"
+        )
+
+    else:
+        st.info(
+            "📅 **Google Calendar not connected.**  \n"
+            "Connect your Google account to sync todo tasks as calendar events."
+        )
+
+    # ── Auth / Re-auth flow ───────────────────────────────────────────────────
+    if _cal_status in ("disconnected", "scope_upgrade", "no_credentials") and _cal_status != "no_credentials":
+        with st.expander(
+            "🔗 Connect Google Calendar" if _cal_status == "disconnected" else "🔄 Re-authorize Google Calendar (add Calendar permission)",
+            expanded=(_cal_status == "scope_upgrade"),
+        ):
+            if _cal_status == "scope_upgrade":
+                st.markdown(
+                    "**Why re-authorize?**  \n"
+                    "Your token was created for Gmail only. We need to add `Google Calendar` to the same authorization "
+                    "so tasks can be synced as events. Your Gmail access will continue working normally."
+                )
+
+            if st.button("🚀 Generate Authorization Link", key="cal_gen_auth", type="primary"):
+                try:
+                    _auth_url, _flow = get_calendar_auth_url()
+                    st.session_state["cal_auth_flow"] = _flow
+                    st.session_state["cal_auth_url"]  = _auth_url
+                except FileNotFoundError as _fe:
+                    st.error(str(_fe))
+                except Exception as _ex:
+                    st.error(f"Error generating auth URL: {_ex}")
+
+            if st.session_state.get("cal_auth_url"):
+                st.markdown("**Step 1 — Open this link in your browser:**")
+                st.code(st.session_state["cal_auth_url"], language=None)
+                st.markdown(
+                    "**Step 2 — Sign in with Google, approve both Gmail and Calendar permissions, "
+                    "then copy the authorization code shown.**"
+                )
+                _code_input = st.text_input(
+                    "Step 3 — Paste the authorization code here:",
+                    key="cal_auth_code_input",
+                    placeholder="4/0AX4XfWi...",
+                )
+                if st.button("✅ Connect", key="cal_submit_code", type="primary"):
+                    if _code_input.strip():
+                        try:
+                            _new_token = exchange_code_for_token(
+                                st.session_state["cal_auth_flow"],
+                                _code_input.strip(),
+                            )
+                            set_setting("google_token", _new_token)
+                            # Clear session state
+                            for _k in ("cal_auth_flow", "cal_auth_url", "cal_auth_code_input"):
+                                st.session_state.pop(_k, None)
+                            st.success("🎉 Google Calendar connected! Refreshing...")
+                            st.rerun()
+                        except Exception as _ex:
+                            st.error(f"Authorization failed: {_ex}")
+                    else:
+                        st.warning("Please paste the authorization code first.")
+
+    # ── Calendar panel (only when connected) ─────────────────────────────────
+    if _cal_status == "connected" and _cal_service:
+
+        cal_tab1, cal_tab2 = st.tabs(["📤 Sync Tasks → Calendar", "📆 Upcoming Events"])
+
+        # ── Tab 1: Sync tasks ─────────────────────────────────────────────────
+        with cal_tab1:
+            st.markdown("Push your open tasks (with due dates) to Google Calendar as all-day events.")
+
+            _open_with_due = [t for t in _load_tasks(["open"]) if t.get("due_date")]
+
+            if not _open_with_due:
+                st.info("No open tasks with due dates to sync. Add a due date to a task first!")
+            else:
+                st.caption(f"{len(_open_with_due)} open task(s) with due dates")
+
+                # Sync all button
+                if st.button("📤 Sync All Tasks to Calendar", type="primary", key="cal_sync_all"):
+                    _synced = 0
+                    _failed = 0
+                    with st.spinner("Syncing tasks to Google Calendar..."):
+                        for _t in _open_with_due:
+                            try:
+                                _eid = create_event_from_task(_cal_service, _t)
+                                if _eid:
+                                    _synced += 1
+                                else:
+                                    _failed += 1
+                            except Exception:
+                                _failed += 1
+                    if _synced:
+                        st.success(f"✅ Synced {_synced} task(s) to Google Calendar!")
+                    if _failed:
+                        st.warning(f"⚠️ {_failed} task(s) could not be synced.")
+
+                st.divider()
+
+                # Per-task sync
+                for _t in _open_with_due:
+                    _tc1, _tc2, _tc3 = st.columns([5, 2, 2])
+                    _tc1.markdown(f"**{_t['title']}**")
+                    _tc2.caption(f"📅 {str(_t['due_date'])[:10]}")
+                    if _tc3.button("📤 Add to Cal", key=f"cal_push_{_t['id']}", help="Add this task to Google Calendar"):
+                        try:
+                            _eid = create_event_from_task(_cal_service, _t)
+                            if _eid:
+                                st.toast(f"📅 Added to calendar: {_t['title']}")
+                            else:
+                                st.toast("⚠️ Could not create event (no due date?)")
+                        except Exception as _ex:
+                            st.error(f"Error: {_ex}")
+
+        # ── Tab 2: Upcoming events ────────────────────────────────────────────
+        with cal_tab2:
+            _days_ahead = st.slider("Show events for next N days", 7, 90, 30, key="cal_days_slider")
+
+            if st.button("🔄 Refresh Events", key="cal_refresh"):
+                st.session_state.pop("cal_events_cache", None)
+
+            if "cal_events_cache" not in st.session_state:
+                with st.spinner("Loading calendar events..."):
+                    st.session_state["cal_events_cache"] = list_upcoming_events(
+                        _cal_service, max_results=50, days_ahead=_days_ahead
+                    )
+
+            _events = st.session_state.get("cal_events_cache", [])
+
+            if not _events:
+                st.info(f"No upcoming events in the next {_days_ahead} days.")
+            else:
+                st.caption(f"{len(_events)} upcoming event(s)")
+                for _ev in _events:
+                    _is_task_event = _ev.get("source_app") == "peach_savings_todo"
+                    _badge = " 🍑" if _is_task_event else ""
+                    with st.container():
+                        _ec1, _ec2 = st.columns([6, 2])
+                        _ec1.markdown(f"**{_ev['summary']}{_badge}**")
+                        _ec2.caption(f"📅 {_ev['start']}")
+                        if _ev.get("description"):
+                            st.caption(_ev["description"][:120])
+                        if _ev.get("html_link"):
+                            st.markdown(f"[Open in Google Calendar ↗]({_ev['html_link']})", unsafe_allow_html=False)
+                    st.divider()
+
+        # ── Disconnect button ─────────────────────────────────────────────────
+        with st.expander("⚙️ Calendar Settings"):
+            st.markdown("**Disconnect Google Calendar**")
+            st.caption("This removes the stored token. You can reconnect at any time.")
+            if st.button("🔌 Disconnect Google Account", key="cal_disconnect"):
+                set_setting("google_token", "")
+                import os as _os
+                _tok = "token.json"
+                if _os.path.exists(_tok):
+                    _os.remove(_tok)
+                for _k in ("cal_events_cache", "cal_auth_flow", "cal_auth_url"):
+                    st.session_state.pop(_k, None)
+                st.success("Disconnected. Refreshing...")
+                st.rerun()
