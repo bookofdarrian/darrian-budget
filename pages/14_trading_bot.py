@@ -6,12 +6,48 @@ try:
     from dotenv import load_dotenv; load_dotenv()
 except ImportError: pass
 
-st.set_page_config(page_title="Paper Trading Bot - Peach State Savings", page_icon="🤖", layout="wide")
+# ── Alpaca OAuth2 helpers ─────────────────────────────────────────────────────
+ALPACA_AUTH_URL = "https://authx.alpaca.markets/v1/oauth2/token"
+
+def _get_oauth_token(client_id: str, client_secret: str) -> tuple[str | None, str | None]:
+    """
+    Exchange client_id + client_secret for an OAuth2 bearer token.
+    Returns (access_token, error_message).
+    """
+    try:
+        r = requests.post(
+            ALPACA_AUTH_URL,
+            headers={"accept": "application/json", "content-type": "application/x-www-form-urlencoded"},
+            data={"grant_type": "client_credentials", "client_id": client_id, "client_secret": client_secret},
+            timeout=15,
+        )
+        _persist_request_id(r)
+        if r.status_code == 200:
+            return r.json().get("access_token"), None
+        return None, f"HTTP {r.status_code}: {r.text[:200]}"
+    except Exception as e:
+        return None, str(e)
+
+
+def _persist_request_id(response: requests.Response):
+    """Store the X-Request-ID from any Alpaca response for support/debugging."""
+    rid = response.headers.get("X-Request-ID") or response.headers.get("x-request-id")
+    if rid:
+        if "alpaca_request_ids" not in st.session_state:
+            st.session_state["alpaca_request_ids"] = []
+        ids = st.session_state["alpaca_request_ids"]
+        # Keep last 20 request IDs
+        ids.insert(0, {"id": rid, "url": response.url, "status": response.status_code,
+                       "ts": datetime.now().strftime("%H:%M:%S")})
+        st.session_state["alpaca_request_ids"] = ids[:20]
+
+st.set_page_config(page_title="Paper Trading Bot - Peach State Savings", page_icon="🍑", layout="wide")
 init_db(); require_login(); require_pro("Alpaca Paper Trading Bot"); inject_css()
 
 render_sidebar_brand()
 st.sidebar.markdown("---")
 st.sidebar.page_link("app.py", label="Overview", icon="📊")
+st.sidebar.page_link("pages/18_real_estate_bot.py", label="🏠 Real Estate Bot", icon="🏠")
 st.sidebar.page_link("pages/1_expenses.py", label="Expenses", icon="📋")
 st.sidebar.page_link("pages/2_income.py", label="Income", icon="💵")
 st.sidebar.page_link("pages/3_business_tracker.py", label="Business Tracker", icon="💼")
@@ -32,6 +68,9 @@ render_sidebar_user_widget()
 _ck = os.environ.get("ANTHROPIC_API_KEY", "")
 _ak = os.environ.get("ALPACA_API_KEY", "")
 _as = os.environ.get("ALPACA_SECRET_KEY", "")
+_oci = os.environ.get("ALPACA_CLIENT_ID", "")
+_ocs = os.environ.get("ALPACA_CLIENT_SECRET", "")
+
 if "api_key" not in st.session_state:
     if _ck: st.session_state["api_key"] = _ck
     else:
@@ -43,69 +82,152 @@ if "alpaca_key" not in st.session_state:
 if "alpaca_secret" not in st.session_state:
     s = _as or get_setting("alpaca_secret_key", "")
     if s: st.session_state["alpaca_secret"] = s
+if "alpaca_client_id" not in st.session_state:
+    ci = _oci or get_setting("alpaca_client_id", "")
+    if ci: st.session_state["alpaca_client_id"] = ci
+if "alpaca_client_secret" not in st.session_state:
+    cs = _ocs or get_setting("alpaca_client_secret", "")
+    if cs: st.session_state["alpaca_client_secret"] = cs
+# OAuth2 bearer token (fetched on demand, not persisted to DB)
+if "alpaca_oauth_token" not in st.session_state:
+    st.session_state["alpaca_oauth_token"] = ""
 
 api_key = st.session_state.get("api_key", "")
 alpaca_key = st.session_state.get("alpaca_key", "")
 alpaca_secret = st.session_state.get("alpaca_secret", "")
+alpaca_client_id = st.session_state.get("alpaca_client_id", "")
+alpaca_client_secret = st.session_state.get("alpaca_client_secret", "")
+alpaca_oauth_token = st.session_state.get("alpaca_oauth_token", "")
 BASE = "https://paper-api.alpaca.markets"
+
+# ── Auth mode: prefer OAuth2 bearer if token present, else fall back to API keys ──
+def _auth_headers() -> dict:
+    tok = st.session_state.get("alpaca_oauth_token", "")
+    if tok:
+        return {"Authorization": f"Bearer {tok}"}
+    return {"APCA-API-KEY-ID": alpaca_key, "APCA-API-SECRET-KEY": alpaca_secret}
+
+def _has_auth() -> bool:
+    return bool(st.session_state.get("alpaca_oauth_token")) or bool(alpaca_key and alpaca_secret)
 
 st.title("🤖 Alpaca Paper Trading Bot")
 st.caption("Connect to Alpaca paper trading, run momentum strategies with fake money, and review performance.")
 st.warning("⚠️ Paper trading only. This page connects to Alpaca paper trading sandbox. No real money is used.")
 
-with st.expander("🚀 Setup Guide (5 minutes)", expanded=not (alpaca_key and alpaca_secret)):
-    st.markdown(
-        "Step 1: Sign up free at alpaca.markets (no credit card needed). "
-        "Step 2: Go to Paper Trading > API Keys > Generate New Key. "
-        "Step 3: Paste your API Key ID and Secret Key below. "
-        "Step 4: Pick a strategy, click Run, and watch it trade fake money."
-    )
-    c1, c2 = st.columns(2)
-    with c1:
-        ak_in = st.text_input("Alpaca API Key ID", type="password", value=alpaca_key, placeholder="PKTEST...", key="ak_input")
-    with c2:
-        as_in = st.text_input("Alpaca Secret Key", type="password", value=alpaca_secret, placeholder="...", key="as_input")
-    if st.button("💾 Save Alpaca Keys", type="primary", key="save_alpaca"):
-        if ak_in.strip() and as_in.strip():
-            st.session_state["alpaca_key"] = ak_in.strip()
-            st.session_state["alpaca_secret"] = as_in.strip()
-            set_setting("alpaca_api_key", ak_in.strip())
-            set_setting("alpaca_secret_key", as_in.strip())
-            alpaca_key = ak_in.strip()
-            alpaca_secret = as_in.strip()
-            st.success("✅ Alpaca keys saved!")
-            st.rerun()
+with st.expander("🚀 Setup Guide (5 minutes)", expanded=not _has_auth()):
+    setup_tab_keys, setup_tab_oauth = st.tabs(["🔑 API Key / Secret", "🔐 OAuth2 Client Credentials"])
+
+    with setup_tab_keys:
+        st.markdown(
+            "**Option A — Direct API Keys (simplest for paper trading)**\n\n"
+            "1. Sign up free at [alpaca.markets](https://alpaca.markets) (no credit card needed).\n"
+            "2. Go to **Paper Trading → API Keys → Generate New Key**.\n"
+            "3. Paste your Key ID and Secret below, then click Save."
+        )
+        c1, c2 = st.columns(2)
+        with c1:
+            ak_in = st.text_input("Alpaca API Key ID", type="password", value=alpaca_key, placeholder="PKTEST...", key="ak_input")
+        with c2:
+            as_in = st.text_input("Alpaca Secret Key", type="password", value=alpaca_secret, placeholder="...", key="as_input")
+        if st.button("💾 Save API Keys", type="primary", key="save_alpaca"):
+            if ak_in.strip() and as_in.strip():
+                st.session_state["alpaca_key"] = ak_in.strip()
+                st.session_state["alpaca_secret"] = as_in.strip()
+                # Clear any OAuth token so key-based auth takes over
+                st.session_state["alpaca_oauth_token"] = ""
+                set_setting("alpaca_api_key", ak_in.strip())
+                set_setting("alpaca_secret_key", as_in.strip())
+                alpaca_key = ak_in.strip()
+                alpaca_secret = as_in.strip()
+                st.success("✅ API keys saved!")
+                st.rerun()
+            else:
+                st.warning("Both fields are required.")
+
+    with setup_tab_oauth:
+        st.markdown(
+            "**Option B — OAuth2 Client Credentials (Broker API)**\n\n"
+            "Use this if you have an Alpaca Broker API app with a `client_id` and `client_secret`.\n"
+            "Tokens are fetched via `POST https://authx.alpaca.markets/v1/oauth2/token` "
+            "and used as `Authorization: Bearer <token>` on all requests."
+        )
+        oc1, oc2 = st.columns(2)
+        with oc1:
+            ci_in = st.text_input("Client ID", type="password", value=alpaca_client_id,
+                                  placeholder="20–32 character client ID", key="ci_input")
+        with oc2:
+            cs_in = st.text_input("Client Secret", type="password", value=alpaca_client_secret,
+                                  placeholder="Client secret (≤128 chars)", key="cs_input")
+        col_save, col_fetch = st.columns(2)
+        with col_save:
+            if st.button("💾 Save OAuth2 Credentials", key="save_oauth"):
+                if ci_in.strip() and cs_in.strip():
+                    st.session_state["alpaca_client_id"] = ci_in.strip()
+                    st.session_state["alpaca_client_secret"] = cs_in.strip()
+                    set_setting("alpaca_client_id", ci_in.strip())
+                    set_setting("alpaca_client_secret", cs_in.strip())
+                    alpaca_client_id = ci_in.strip()
+                    alpaca_client_secret = cs_in.strip()
+                    st.success("✅ OAuth2 credentials saved.")
+                else:
+                    st.warning("Both Client ID and Client Secret are required.")
+        with col_fetch:
+            if st.button("🔑 Fetch Token Now", type="primary", key="fetch_token"):
+                cid = ci_in.strip() or alpaca_client_id
+                csc = cs_in.strip() or alpaca_client_secret
+                if not cid or not csc:
+                    st.error("Save your Client ID and Secret first.")
+                else:
+                    with st.spinner("Requesting OAuth2 token from Alpaca..."):
+                        tok, err = _get_oauth_token(cid, csc)
+                    if tok:
+                        st.session_state["alpaca_oauth_token"] = tok
+                        alpaca_oauth_token = tok
+                        st.success("✅ OAuth2 token obtained! All API calls will now use Bearer auth.")
+                        st.rerun()
+                    else:
+                        st.error(f"Token request failed: {err}")
+
+        if alpaca_oauth_token:
+            st.info(f"🟢 Active OAuth2 token: `{alpaca_oauth_token[:12]}...` (session only — not stored to DB)")
+            if st.button("🗑️ Clear Token", key="clear_token"):
+                st.session_state["alpaca_oauth_token"] = ""
+                alpaca_oauth_token = ""
+                st.rerun()
 
 
 def ag(ep):
-    if not alpaca_key or not alpaca_secret: return None
+    if not _has_auth(): return None
     try:
-        r = requests.get(f"{BASE}{ep}", headers={"APCA-API-KEY-ID": alpaca_key, "APCA-API-SECRET-KEY": alpaca_secret}, timeout=10)
+        r = requests.get(f"{BASE}{ep}", headers=_auth_headers(), timeout=10)
+        _persist_request_id(r)
         return r.json() if r.status_code == 200 else None
     except: return None
 
 
 def ap(ep, payload):
-    if not alpaca_key or not alpaca_secret: return None
+    if not _has_auth(): return None
     try:
-        r = requests.post(f"{BASE}{ep}", json=payload, headers={"APCA-API-KEY-ID": alpaca_key, "APCA-API-SECRET-KEY": alpaca_secret}, timeout=10)
+        r = requests.post(f"{BASE}{ep}", json=payload, headers=_auth_headers(), timeout=10)
+        _persist_request_id(r)
         return r.json()
     except Exception as e: return {"error": str(e)}
 
 
 def ad(ep):
-    if not alpaca_key or not alpaca_secret: return False
+    if not _has_auth(): return False
     try:
-        r = requests.delete(f"{BASE}{ep}", headers={"APCA-API-KEY-ID": alpaca_key, "APCA-API-SECRET-KEY": alpaca_secret}, timeout=10)
+        r = requests.delete(f"{BASE}{ep}", headers=_auth_headers(), timeout=10)
+        _persist_request_id(r)
         return r.status_code in (200, 204)
     except: return False
 
 
-if not (alpaca_key and alpaca_secret):
-    st.info("👆 Add your Alpaca paper trading API keys above to get started.")
+if not _has_auth():
+    st.info("👆 Add your Alpaca credentials above to get started.")
     st.stop()
 
-t1, t2, t3, t4, t5 = st.tabs(["💼 Account", "📊 Positions", "📋 Orders", "🤖 Run Strategy", "🧠 AI Analysis"])
+t1, t2, t3, t4, t5, t6 = st.tabs(["💼 Account", "📊 Positions", "📋 Orders", "🤖 Run Strategy", "🧠 AI Analysis", "🔑 Auth & Debug"])
 
 with t1:
     st.subheader("💼 Paper Trading Account")
@@ -300,6 +422,86 @@ with t5:
                         st.caption(f"Cost: USD {cost:.4f} - {usage.input_tokens + usage.output_tokens:,} tokens")
                     except Exception as e:
                         st.error(f"Error: {e}")
+
+with t6:
+    st.subheader("🔑 Authentication Status")
+
+    # ── Current auth mode ────────────────────────────────────────────────────
+    tok = st.session_state.get("alpaca_oauth_token", "")
+    if tok:
+        st.success(f"🟢 **OAuth2 Bearer** — Active token: `{tok[:16]}...`")
+        st.caption("All API calls use `Authorization: Bearer <token>`. Token is session-only and not stored to the database.")
+        if st.button("🗑️ Revoke Token (clear from session)", key="t6_clear_tok"):
+            st.session_state["alpaca_oauth_token"] = ""
+            st.rerun()
+    elif alpaca_key and alpaca_secret:
+        st.success(f"🟡 **API Key / Secret** — Key: `{alpaca_key[:8]}...`")
+        st.caption("All API calls use `APCA-API-KEY-ID` / `APCA-API-SECRET-KEY` headers.")
+    else:
+        st.error("❌ No authentication configured. Use the Setup Guide above.")
+
+    st.markdown("---")
+
+    # ── Re-fetch OAuth2 token ────────────────────────────────────────────────
+    st.subheader("🔐 Re-fetch OAuth2 Token")
+    st.caption("Use your saved Client ID & Secret to get a fresh bearer token at any time.")
+    rf1, rf2 = st.columns(2)
+    with rf1:
+        rf_cid = st.text_input("Client ID", type="password",
+                               value=st.session_state.get("alpaca_client_id", ""),
+                               placeholder="Client ID", key="t6_cid")
+    with rf2:
+        rf_csc = st.text_input("Client Secret", type="password",
+                               value=st.session_state.get("alpaca_client_secret", ""),
+                               placeholder="Client Secret", key="t6_csc")
+    if st.button("🔑 Request New Token", type="primary", key="t6_fetch"):
+        cid = rf_cid.strip() or st.session_state.get("alpaca_client_id", "")
+        csc = rf_csc.strip() or st.session_state.get("alpaca_client_secret", "")
+        if not cid or not csc:
+            st.error("Client ID and Client Secret are required.")
+        else:
+            with st.spinner("Contacting authx.alpaca.markets..."):
+                new_tok, err = _get_oauth_token(cid, csc)
+            if new_tok:
+                st.session_state["alpaca_oauth_token"] = new_tok
+                st.success(f"✅ New token obtained: `{new_tok[:16]}...`")
+                st.rerun()
+            else:
+                st.error(f"Token request failed: {err}")
+
+    st.markdown("---")
+
+    # ── X-Request-ID log ─────────────────────────────────────────────────────
+    st.subheader("📋 X-Request-ID Log")
+    st.caption(
+        "Every Alpaca API response includes an `X-Request-ID` header. "
+        "These IDs are captured automatically and listed here. "
+        "**Include the relevant Request ID in any Alpaca support ticket** to help them trace the call."
+    )
+
+    request_ids = st.session_state.get("alpaca_request_ids", [])
+    if not request_ids:
+        st.info("No request IDs captured yet. Make an API call (e.g. refresh Account) to see IDs here.")
+    else:
+        rid_rows = [{"Time": r["ts"], "Status": r["status"],
+                     "Endpoint": r["url"].replace("https://paper-api.alpaca.markets", "").replace("https://authx.alpaca.markets", "[auth]"),
+                     "X-Request-ID": r["id"]} for r in request_ids]
+        st.dataframe(pd.DataFrame(rid_rows), use_container_width=True, hide_index=True)
+
+        # Copy-friendly text block of just the IDs
+        with st.expander("📋 Copy raw Request IDs"):
+            st.code("\n".join(r["id"] for r in request_ids), language=None)
+
+        if st.button("🗑️ Clear Request ID Log", key="clear_rids"):
+            st.session_state["alpaca_request_ids"] = []
+            st.rerun()
+
+    st.markdown("---")
+    st.caption(
+        "💡 **Tip:** Request IDs cannot be queried via the Alpaca API — they are only available in the response header at call time. "
+        "This log persists for your current browser session only."
+    )
+
 
 st.markdown("---")
 st.caption("⚠️ Paper trading uses simulated money. Past paper performance does not predict live trading results. Never risk money you cannot afford to lose.")

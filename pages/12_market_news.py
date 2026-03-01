@@ -13,7 +13,7 @@ try:
 except ImportError:
     pass
 
-st.set_page_config(page_title="Market News — Peach State Savings", page_icon="📰", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(page_title="Market News — Peach State Savings", page_icon="🍑", layout="wide", initial_sidebar_state="auto")
 init_db()
 require_login()
 require_pro("Market News & Sentiment Analysis")
@@ -22,6 +22,8 @@ inject_css()
 render_sidebar_brand()
 st.sidebar.markdown("---")
 st.sidebar.page_link("app.py",                    label="Overview",          icon="📊")
+st.sidebar.page_link("pages/18_real_estate_bot.py", label="🏠 Real Estate Bot", icon="🏠")
+st.sidebar.page_link("pages/22_todo.py",            label="✅ Todo",             icon="✅")
 st.sidebar.page_link("pages/1_expenses.py",       label="Expenses",          icon="📋")
 st.sidebar.page_link("pages/2_income.py",         label="Income",            icon="💵")
 st.sidebar.page_link("pages/3_business_tracker.py",   label="Business Tracker 🔒", icon="💼")
@@ -222,7 +224,7 @@ No markdown. No dollar signs."""
 st.subheader("📡 Live News Feed")
 
 days_back = st.slider("Look back (days)", 1, 30, 7, key="news_days")
-news_source = st.radio("News source", ["Finnhub (requires API key)", "Yahoo Finance RSS (free, no key)"], horizontal=True, key="news_source")
+news_source = st.radio("News source", ["Yahoo Finance RSS (free, no key)", "Finnhub (requires API key)"], horizontal=True, key="news_source")
 
 col_fetch, col_ai = st.columns([1, 1])
 with col_fetch:

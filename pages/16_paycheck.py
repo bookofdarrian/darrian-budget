@@ -6,7 +6,7 @@ from utils.auth import require_login, render_sidebar_brand, render_sidebar_user_
 
 st.set_page_config(
     page_title="Paycheck Allocator — Peach State Savings",
-    page_icon="💸",
+    page_icon="🍑",
     layout="wide",
     initial_sidebar_state="auto"
 )
@@ -30,6 +30,8 @@ seed_income(selected_month)
 
 st.sidebar.markdown("---")
 st.sidebar.page_link("app.py",                      label="Overview",            icon="📊")
+st.sidebar.page_link("pages/18_real_estate_bot.py", label="🏠 Real Estate Bot", icon="🏠")
+st.sidebar.page_link("pages/22_todo.py",            label="✅ Todo",             icon="✅")
 st.sidebar.page_link("pages/1_expenses.py",         label="Expenses",            icon="📋")
 st.sidebar.page_link("pages/2_income.py",           label="Income",              icon="💵")
 st.sidebar.page_link("pages/3_business_tracker.py", label="Business Tracker 🔒", icon="💼")

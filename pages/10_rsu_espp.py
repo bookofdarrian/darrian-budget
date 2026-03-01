@@ -13,7 +13,7 @@ except ImportError:
 from utils.db import init_db, get_setting
 from utils.auth import require_login, require_pro, render_sidebar_brand, render_sidebar_user_widget, inject_css
 
-st.set_page_config(page_title="RSU/ESPP Advisor - Peach State Savings", page_icon="📈", layout="wide")
+st.set_page_config(page_title="RSU/ESPP Advisor - Peach State Savings", page_icon="🍑", layout="wide")
 init_db()
 require_login()
 require_pro("RSU/ESPP Decision Support")
@@ -22,6 +22,8 @@ inject_css()
 render_sidebar_brand()
 st.sidebar.markdown("---")
 st.sidebar.page_link("app.py",                    label="Overview",              icon="📊")
+st.sidebar.page_link("pages/18_real_estate_bot.py", label="🏠 Real Estate Bot", icon="🏠")
+st.sidebar.page_link("pages/22_todo.py",            label="✅ Todo",             icon="✅")
 st.sidebar.page_link("pages/1_expenses.py",       label="Expenses",              icon="📋")
 st.sidebar.page_link("pages/2_income.py",         label="Income",                icon="💵")
 st.sidebar.page_link("pages/3_business_tracker.py",   label="Business Tracker",      icon="💼")
