@@ -12,3 +12,4 @@ venv/
 *.db
 emergency_code.txt
 VAULTWARDEN_CREDENTIALS.md
+.spotify_token_cache
