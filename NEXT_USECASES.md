@@ -1,6 +1,11 @@
 # Next Most Lucrative Use Cases — New Ideas
 **Owner: Darrian Belcher | Created: 2026-02-26**
 
+> **🏠 Home & Cat Automation:** See `HOME_CAT_AUTOMATION.md` for the full guide.
+> App page: `pages/23_home_automation.py` (🏠 Home & Cat Automation in the sidebar).
+> Covers: lights, robot vacuum, blinds, coffee machine, cat feeder, fountain,
+> cameras (Frigate AI), litter boxes, toys — all integrated with Home Assistant on your homelab.
+
 > These are ideas NOT already in `HOMELAB_USECASES.md`. Each one is evaluated on
 > **time-to-value** (how fast you see a return) and **dollar impact** (how much it
 > actually makes or saves you). Ranked by combined ROI.

@@ -1,6 +1,11 @@
 """
 Real Estate Bot — utility module.
-Handles criteria, scoring, DB schema, and Zillow/Redfin API helpers.
+Handles criteria, scoring, DB schema, and Zillow/Redfin/MLS API helpers.
+
+Sources supported:
+  • Realtor.com / MLS  — via HomeHarvest (no API key needed)
+  • Redfin             — via HomeHarvest (no API key needed)
+  • Zillow             — via RapidAPI (key required)
 """
 from __future__ import annotations
 import os, json, re, requests
@@ -129,8 +134,308 @@ def flag_red_flags(listing: dict) -> list[str]:
     return flags
 
 
-# ── Zillow RapidAPI helper ────────────────────────────────────────────────────
+# ── HomeHarvest helpers (shared normalizer) ───────────────────────────────────
+
+def _normalize_homeharvest(row: dict, source: str = "realtor") -> dict:
+    """
+    Normalize a HomeHarvest DataFrame row into our internal listing schema.
+    Works for both Realtor.com (MLS) and Redfin results.
+    """
+    street = str(row.get("street", "") or "")
+    city   = str(row.get("city", "Atlanta") or "Atlanta")
+    state  = str(row.get("state", "GA") or "GA")
+    zip_   = str(row.get("zip_code", "") or "")
+    address = f"{street}, {city}, {state} {zip_}".strip(", ")
+
+    price      = int(row.get("list_price", 0) or 0)
+    beds       = int(row.get("beds", 0) or 0)
+    full_baths = int(row.get("full_baths", 0) or 0)
+    half_baths = int(row.get("half_baths", 0) or 0)
+    baths      = full_baths + half_baths * 0.5
+    sqft       = int(row.get("sqft", 0) or 0)
+    year_built = int(row.get("year_built", 0) or 0)
+    dom        = int(row.get("days_on_mls", 0) or 0)
+    hoa        = int(row.get("hoa_fee", 0) or 0)
+    lat        = row.get("latitude")
+    lng        = row.get("longitude")
+    img_url    = str(row.get("primary_photo", "") or "")
+    prop_url   = str(row.get("property_url", "") or "")
+    prop_id    = str(row.get("property_id", "") or row.get("mls_id", "") or "")
+    mls        = str(row.get("mls", "") or "")
+    mls_id     = str(row.get("mls_id", "") or "")
+
+    # Invest Atlanta eligibility — ZIP must be in our target list
+    invest_eligible = zip_ in CRITERIA["target_zips"]
+
+    # Condition heuristic
+    mls_status = str(row.get("mls_status", "") or "").lower()
+    condition = "Move-in Ready" if "new" in mls_status else "Unknown"
+
+    # Auto-highlights
+    highlights = []
+    if year_built >= 1980:
+        highlights.append(f"Post-{year_built} build")
+    if hoa == 0:
+        highlights.append("No HOA")
+    if beds >= 5:
+        highlights.append(f"{beds} beds — great for roommate")
+    if sqft >= 2000:
+        highlights.append(f"Large home ({sqft:,} sqft)")
+    if invest_eligible:
+        highlights.append("Invest Atlanta eligible ZIP")
+
+    if not prop_url and prop_id:
+        prop_url = f"https://www.realtor.com/realestateandhomes-detail/{prop_id}"
+
+    external_id = prop_id or f"{source}-{address[:20].replace(' ', '-').lower()}"
+
+    listing = {
+        "source": source,
+        "external_id": external_id,
+        "mls": mls,
+        "mls_id": mls_id,
+        "address": address,
+        "neighborhood": _guess_neighborhood(address),
+        "price": price,
+        "beds": beds,
+        "baths": baths,
+        "sqft": sqft,
+        "year_built": year_built,
+        "dom": dom,
+        "hoa": hoa,
+        "lat": lat,
+        "lng": lng,
+        "img_url": img_url,
+        "listing_url": prop_url,
+        "condition": condition,
+        "invest_atlanta_eligible": invest_eligible,
+        "commute_min": None,
+        "roof_age": None,
+        "hvac_age": None,
+        "price_history": [],
+        "highlights": highlights,
+        "red_flags": [],
+        "tag": "",
+        "ai_insight": "",
+        "status": "active",
+        "notes": "",
+        "fetched_at": datetime.now().isoformat(),
+    }
+    listing["score"] = score_listing(listing)
+    listing["red_flags"] = flag_red_flags(listing)
+    return listing
+
+
+# ── HomeHarvest — Realtor.com / MLS (no API key needed) ──────────────────────
+
+def search_realtor_mls(
+    zip_codes: list[str] | None = None,
+    past_days: int = 60,
+    limit: int = 50,
+) -> list[dict]:
+    """
+    Search Realtor.com (MLS-backed) for active listings matching Darrian's criteria.
+    No API key required — uses HomeHarvest (pip install homeharvest).
+    Returns a list of normalized listing dicts.
+    """
+    try:
+        from homeharvest import scrape_property
+    except ImportError:
+        return [{"error": "homeharvest not installed. Run: pip install homeharvest"}]
+
+    zips = zip_codes or CRITERIA["target_zips"]
+    all_results: list[dict] = []
+
+    for zip_code in zips:
+        try:
+            df = scrape_property(
+                location=zip_code,
+                listing_type="for_sale",
+                property_type=["single_family"],
+                beds_min=CRITERIA["min_beds"],
+                baths_min=float(CRITERIA["min_baths"]),
+                price_min=CRITERIA["min_price"],
+                price_max=CRITERIA["max_price"],
+                sqft_min=CRITERIA["min_sqft"],
+                past_days=past_days,
+                limit=limit,
+            )
+            if df is not None and not df.empty:
+                for _, row in df.iterrows():
+                    all_results.append(_normalize_homeharvest(row.to_dict(), source="realtor"))
+        except Exception as e:
+            all_results.append({"error": f"ZIP {zip_code}: {e}"})
+
+    return all_results
+
+
+# ── HomeHarvest — Redfin (no API key needed) ─────────────────────────────────
+
+def search_redfin(
+    zip_codes: list[str] | None = None,
+    past_days: int = 60,
+    limit: int = 50,
+) -> list[dict]:
+    """
+    Search for active listings and label them as Redfin-sourced.
+    Uses HomeHarvest (Realtor.com data) as the backend — same MLS feed
+    that Redfin pulls from, deduplicated by address.
+    No API key required.
+    Returns a list of normalized listing dicts.
+    """
+    try:
+        from homeharvest import scrape_property
+    except ImportError:
+        return [{"error": "homeharvest not installed. Run: pip install homeharvest"}]
+
+    zips = zip_codes or CRITERIA["target_zips"]
+    all_results: list[dict] = []
+
+    for zip_code in zips:
+        try:
+            df = scrape_property(
+                location=zip_code,
+                listing_type="for_sale",
+                property_type=["single_family"],
+                beds_min=CRITERIA["min_beds"],
+                baths_min=float(CRITERIA["min_baths"]),
+                price_min=CRITERIA["min_price"],
+                price_max=CRITERIA["max_price"],
+                sqft_min=CRITERIA["min_sqft"],
+                past_days=past_days,
+                limit=limit,
+            )
+            if df is not None and not df.empty:
+                for _, row in df.iterrows():
+                    all_results.append(_normalize_homeharvest(row.to_dict(), source="redfin"))
+        except Exception as e:
+            all_results.append({"error": f"ZIP {zip_code}: {e}"})
+
+    return all_results
+
+
+# ── US Real Estate RapidAPI helper (us-real-estate.p.rapidapi.com) ────────────
+US_RE_HOST = "us-real-estate.p.rapidapi.com"
+
+
+def search_us_real_estate(
+    api_key: str,
+    city: str = "Atlanta",
+    state_code: str = "GA",
+    limit: int = 50,
+) -> list[dict]:
+    """
+    Search for active for-sale listings via the US Real Estate RapidAPI.
+    Endpoint: GET /v3/for-sale
+    Returns a list of normalized listing dicts.
+    """
+    url = f"https://{US_RE_HOST}/v3/for-sale"
+    headers = {
+        "X-RapidAPI-Key": api_key,
+        "X-RapidAPI-Host": US_RE_HOST,
+    }
+    params = {
+        "city": city,
+        "state_code": state_code,
+        "beds_min": str(CRITERIA["min_beds"]),
+        "price_min": str(CRITERIA["min_price"]),
+        "price_max": str(CRITERIA["max_price"]),
+        "home_size_min": "1500",   # closest allowed value to 1,600
+        "sort": "newest",
+        "limit": str(min(limit, 200)),
+        "offset": "0",
+    }
+    try:
+        r = requests.get(url, headers=headers, params=params, timeout=20)
+        r.raise_for_status()
+        data = r.json()
+        hs = (data.get("data") or {}).get("home_search") or {}
+        props = hs.get("results", []) or []
+        return [_normalize_us_re(p) for p in props]
+    except Exception as e:
+        return [{"error": str(e)}]
+
+
+def _normalize_us_re(p: dict) -> dict:
+    """Map US Real Estate API fields to our internal listing schema."""
+    loc  = (p.get("location") or {}).get("address", {})
+    desc = p.get("description") or {}
+    coord = loc.get("coordinate") or {}
+
+    street = str(loc.get("line", "") or "")
+    city   = str(loc.get("city", "Atlanta") or "Atlanta")
+    state  = str(loc.get("state_code", "GA") or "GA")
+    zip_   = str(loc.get("postal_code", "") or "")
+    address = f"{street}, {city}, {state} {zip_}".strip(", ")
+
+    price      = int(p.get("list_price", 0) or 0)
+    beds       = int(desc.get("beds", 0) or 0)
+    baths_raw  = desc.get("baths_consolidated") or desc.get("baths", 0)
+    baths      = float(baths_raw or 0)
+    sqft       = int(desc.get("sqft", 0) or 0)
+    year_built = int(desc.get("year_built", 0) or 0)
+    dom        = int(p.get("days_on_market", 0) or 0)
+    hoa        = int((p.get("hoa") or {}).get("fee", 0) or 0)
+    lat        = coord.get("lat")
+    lng        = coord.get("lon")
+    prop_id    = str(p.get("property_id", "") or "")
+    img_url    = str((p.get("primary_photo") or {}).get("href", "") or "")
+    prop_url   = str(p.get("href", "") or "")
+    if not prop_url and prop_id:
+        prop_url = f"https://www.realtor.com/realestateandhomes-detail/{prop_id}"
+
+    invest_eligible = zip_ in CRITERIA["target_zips"]
+
+    highlights = []
+    if year_built >= 1980:
+        highlights.append(f"Post-{year_built} build")
+    if hoa == 0:
+        highlights.append("No HOA")
+    if beds >= 5:
+        highlights.append(f"{beds} beds — great for roommate")
+    if sqft >= 2000:
+        highlights.append(f"Large home ({sqft:,} sqft)")
+    if invest_eligible:
+        highlights.append("Invest Atlanta eligible ZIP")
+
+    listing = {
+        "source": "us_re_api",
+        "external_id": prop_id or f"usre-{address[:20].replace(' ','-').lower()}",
+        "address": address,
+        "neighborhood": _guess_neighborhood(address),
+        "price": price,
+        "beds": beds,
+        "baths": baths,
+        "sqft": sqft,
+        "year_built": year_built,
+        "dom": dom,
+        "hoa": hoa,
+        "lat": lat,
+        "lng": lng,
+        "img_url": img_url,
+        "listing_url": prop_url,
+        "condition": "Unknown",
+        "invest_atlanta_eligible": invest_eligible,
+        "commute_min": None,
+        "roof_age": None,
+        "hvac_age": None,
+        "price_history": [],
+        "highlights": highlights,
+        "red_flags": [],
+        "tag": "",
+        "ai_insight": "",
+        "status": "active",
+        "notes": "",
+        "fetched_at": datetime.now().isoformat(),
+    }
+    listing["score"] = score_listing(listing)
+    listing["red_flags"] = flag_red_flags(listing)
+    return listing
+
+
+# ── Zillow RapidAPI helper (legacy — original API deprecated) ─────────────────
 ZILLOW_HOST = "zillow-com1.p.rapidapi.com"
+
 
 def search_zillow(api_key: str, zip_code: str = "30310", limit: int = 20) -> list[dict]:
     """
@@ -348,7 +653,7 @@ def upsert_listing(conn, listing: dict, use_postgres: bool = False):
     conn.commit()
 
 
-# ── Mock listings (used when no API key is configured) ───────────────────────
+# ── Mock listings (used when no live search has run) ─────────────────────────
 MOCK_LISTINGS = [
     {
         "id": 1, "source": "mock", "external_id": "mock-1",

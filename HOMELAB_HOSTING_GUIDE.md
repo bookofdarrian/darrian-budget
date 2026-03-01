@@ -16,6 +16,9 @@ All phases 1–5 are **complete**. Everything is running on CT100 at `100.117.1.
 | Portainer (Docker UI) | ✅ Live | http://100.117.1.171:9000 |
 | Nginx Proxy Manager | ✅ Live | http://100.117.1.171:81 |
 | **Tailscale VPN** | ✅ **LIVE on CT100** | Tailscale IP: `100.95.125.112` |
+| **Grafana** | ✅ Ready to deploy | http://100.117.1.171:3000 |
+| **Prometheus** | ✅ Ready to deploy | http://100.117.1.171:9090 |
+| **Alertmanager** | ✅ Ready to deploy | http://100.117.1.171:9093 |
 
 > **Tailscale is now live on CT100** (`100.95.125.112`). Install it on your Mac + iPhone to get remote access from anywhere.
 
@@ -158,6 +161,105 @@ AURA_ENABLED=true
 
 ---
 
+## 📊 Phase 6.5 — Server Monitoring (DO THIS NOW — 5 minutes)
+
+> **What this does:** Tracks every metric on your server — CPU, RAM, disk, network, and every container — in beautiful Grafana dashboards. Get instant phone alerts if anything crashes.
+
+### Step 1 — Copy monitoring folder to CT100
+
+```bash
+# From your Mac:
+scp -r /path/to/darrian-budget/monitoring/ root@100.117.1.171:/opt/monitoring
+```
+
+Or SSH into CT100 and pull from git:
+```bash
+ssh root@100.117.1.171
+cd /opt/darrian-budget   # wherever you cloned the repo
+git pull
+```
+
+### Step 2 — Configure phone alerts (Pushover — $5 one-time)
+
+```bash
+cd /opt/monitoring
+cp .env.example .env
+nano .env
+```
+
+Fill in:
+```
+GRAFANA_ADMIN_PASSWORD=your_strong_password
+PUSHOVER_USER_KEY=your_user_key      # from pushover.net
+PUSHOVER_API_TOKEN=your_api_token    # from pushover.net app
+```
+
+> **Pushover setup:** pushover.net → create account → Create Application → get token. Install Pushover app on iPhone. Done.
+
+### Step 3 — Launch the monitoring stack
+
+```bash
+cd /opt/monitoring
+docker-compose up -d
+```
+
+All 5 containers start: Prometheus, Grafana, Node Exporter, cAdvisor, Alertmanager.
+
+### Step 4 — Import Dashboard 1860
+
+1. Open **http://100.117.1.171:3000** → login `admin` / your password
+2. Left sidebar → **Dashboards** → **Import**
+3. Enter ID: **`1860`** → **Load** → select **Prometheus** → **Import**
+
+You now have 30+ panels showing CPU, RAM, disk, network, load average — everything. 🎉
+
+**Other dashboards to import:**
+| ID | What it shows |
+|----|---------------|
+| **1860** | Node Exporter Full — the gold standard |
+| **893** | Docker + system overview |
+| **14282** | cAdvisor — per-container deep dive |
+
+### Step 5 — Verify alerts are working
+
+```bash
+# Test Pushover directly (replace with your real keys):
+curl -s \
+  --form-string "token=YOUR_API_TOKEN" \
+  --form-string "user=YOUR_USER_KEY" \
+  --form-string "title=🧪 Homelab Test" \
+  --form-string "message=Monitoring is live!" \
+  https://api.pushover.net/1/messages.json
+```
+
+You should get a push notification on your iPhone within 2 seconds.
+
+### Monitoring URLs
+
+| Service | Local | Tailscale |
+|---------|-------|-----------|
+| **Grafana** | http://100.117.1.171:3000 | http://100.95.125.112:3000 |
+| Prometheus | http://100.117.1.171:9090 | http://100.95.125.112:9090 |
+| Alertmanager | http://100.117.1.171:9093 | http://100.95.125.112:9093 |
+| cAdvisor | http://100.117.1.171:8080 | http://100.95.125.112:8080 |
+
+### What triggers a phone alert
+
+| Alert | Threshold |
+|-------|-----------|
+| CPU high | > 85% for 5 min |
+| CPU critical | > 95% for 2 min |
+| RAM high | > 85% for 5 min |
+| RAM critical | > 95% for 2 min |
+| Disk warning | > 80% full |
+| Disk critical | > 90% full |
+| Disk filling fast | Full in < 4 hours |
+| Host down | Unreachable for 1 min |
+| Container crashed | Any key container down 2 min |
+| Container restarted | Any restart detected |
+
+---
+
 ## 💾 Phase 7 — TrueNAS Storage (When Drives Arrive)
 
 > **Prerequisite:** 2x WD Red Plus 4TB drives + dual-bay USB enclosure
@@ -271,5 +373,9 @@ Now `https://budget.yourdomain.com` works from anywhere with a real SSL cert. �
 - [ ] **Install Tailscale on iPhone** (App Store → "Tailscale")
 - [ ] **Verify remote access** — turn off phone WiFi, open http://100.95.125.112:8501
 - [ ] Railway updated to use home lab AURA URL (after verifying Tailscale works remotely)
+- [ ] **Deploy monitoring stack** — `cd /opt/monitoring && docker-compose up -d`
+- [ ] **Import Grafana dashboard 1860** — http://100.117.1.171:3000 → Import → 1860
+- [ ] **Set up Pushover** — pushover.net → get keys → fill in monitoring/.env
+- [ ] **Test phone alert** — curl test from README
 - [ ] TrueNAS set up with RAID 1 (when drives arrive)
 - [ ] (Optional) Real domain + SSL configured
