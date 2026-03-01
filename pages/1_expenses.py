@@ -4,7 +4,7 @@ from datetime import datetime
 from utils.db import get_conn, seed_budget, init_db, read_sql, execute
 from utils.auth import require_password
 
-st.set_page_config(page_title="Expenses", page_icon="📋", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(page_title="Expenses", page_icon="🍑", layout="wide", initial_sidebar_state="auto")
 init_db()
 require_password()
 
@@ -22,6 +22,9 @@ seed_budget(selected_month)
 
 st.sidebar.markdown("---")
 st.sidebar.page_link("app.py",                    label="Overview",          icon="📊")
+st.sidebar.page_link("pages/18_real_estate_bot.py", label="🏠 Real Estate Bot", icon="🏠")
+st.sidebar.page_link("pages/22_todo.py",            label="✅ Todo",             icon="✅")
+st.sidebar.page_link("pages/19_budget_intake.py", label="Budget Intake",     icon="📥")
 st.sidebar.page_link("pages/1_expenses.py",       label="Expenses",          icon="📋")
 st.sidebar.page_link("pages/2_income.py",         label="Income",            icon="💵")
 st.sidebar.page_link("pages/3_business_tracker.py",   label="Business Tracker 🔒", icon="💼")
@@ -31,6 +34,8 @@ st.sidebar.page_link("pages/6_receipts.py",       label="Receipts & HSA",    ico
 st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights",       icon="🤖")
 st.sidebar.page_link("pages/8_goals.py",          label="Financial Goals",   icon="🎯")
 st.sidebar.page_link("pages/9_net_worth.py",      label="Net Worth",         icon="💎")
+st.sidebar.page_link("pages/15_bills.py",         label="Bill Calendar",     icon="📅")
+st.sidebar.page_link("pages/16_paycheck.py",      label="Paycheck Allocator",icon="💸")
 
 st.title(f"📋 Expenses — {datetime.strptime(selected_month, '%Y-%m').strftime('%B %Y')}")
 

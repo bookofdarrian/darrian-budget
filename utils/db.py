@@ -127,11 +127,27 @@ def init_db():
         """)
         if not c.fetchone():
             c.execute("ALTER TABLE bank_transactions ADD COLUMN is_debit INTEGER DEFAULT 1")
+
+        # Migration: add due_day to recurring_templates
+        c.execute("""
+            SELECT column_name FROM information_schema.columns
+            WHERE table_name='recurring_templates' AND column_name='due_day'
+        """)
+        if not c.fetchone():
+            c.execute("ALTER TABLE recurring_templates ADD COLUMN due_day INTEGER DEFAULT NULL")
+
+        # Migration: add nfcu_balance to app_settings (stored as key/value — no schema change needed)
     else:
         c.execute("PRAGMA table_info(bank_transactions)")
         cols = [row[1] for row in c.fetchall()]
         if 'is_debit' not in cols:
             c.execute("ALTER TABLE bank_transactions ADD COLUMN is_debit INTEGER DEFAULT 1")
+
+        # Migration: add due_day to recurring_templates
+        c.execute("PRAGMA table_info(recurring_templates)")
+        rt_cols = [row[1] for row in c.fetchall()]
+        if 'due_day' not in rt_cols:
+            c.execute("ALTER TABLE recurring_templates ADD COLUMN due_day INTEGER DEFAULT NULL")
 
     conn.commit()
     conn.close()
@@ -291,6 +307,60 @@ def _init_postgres(c):
         value TEXT
     )''')
 
+    # ── Personal Assistant tables ─────────────────────────────────────────────
+    c.execute('''CREATE TABLE IF NOT EXISTS pa_emails (
+        id SERIAL PRIMARY KEY,
+        gmail_id TEXT UNIQUE NOT NULL,
+        thread_id TEXT DEFAULT '',
+        date TEXT NOT NULL,
+        date_iso TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        sender TEXT NOT NULL,
+        snippet TEXT DEFAULT '',
+        email_type TEXT DEFAULT 'unknown',
+        is_purchase INTEGER DEFAULT 0,
+        is_notification INTEGER DEFAULT 0,
+        is_task INTEGER DEFAULT 0,
+        is_newsletter INTEGER DEFAULT 0,
+        extracted_amount REAL DEFAULT NULL,
+        extracted_merchant TEXT DEFAULT NULL,
+        suggested_category TEXT DEFAULT NULL,
+        suggested_subcategory TEXT DEFAULT NULL,
+        purchase_description TEXT DEFAULT NULL,
+        priority TEXT DEFAULT 'normal',
+        confidence REAL DEFAULT 0,
+        llm_parsed INTEGER DEFAULT 0,
+        expense_logged INTEGER DEFAULT 0,
+        task_created INTEGER DEFAULT 0,
+        is_unread INTEGER DEFAULT 1,
+        fetched_at TEXT DEFAULT (to_char(now(), 'YYYY-MM-DD HH24:MI:SS'))
+    )''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS pa_tasks (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        due_date TEXT DEFAULT NULL,
+        priority TEXT DEFAULT 'normal',
+        status TEXT DEFAULT 'open',
+        source TEXT DEFAULT 'manual',
+        source_email_id TEXT DEFAULT NULL,
+        source_email_subject TEXT DEFAULT NULL,
+        notes TEXT DEFAULT '',
+        created_at TEXT DEFAULT (to_char(now(), 'YYYY-MM-DD HH24:MI:SS')),
+        completed_at TEXT DEFAULT NULL
+    )''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS pa_notification_rules (
+        id SERIAL PRIMARY KEY,
+        rule_name TEXT NOT NULL,
+        match_type TEXT DEFAULT 'sender',
+        match_value TEXT NOT NULL,
+        action TEXT DEFAULT 'label',
+        action_value TEXT DEFAULT '',
+        active INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT (to_char(now(), 'YYYY-MM-DD HH24:MI:SS'))
+    )''')
+
 
 def _init_sqlite(c):
     c.execute('''CREATE TABLE IF NOT EXISTS income (
@@ -444,6 +514,60 @@ def _init_sqlite(c):
     c.execute('''CREATE TABLE IF NOT EXISTS app_settings (
         key TEXT PRIMARY KEY,
         value TEXT
+    )''')
+
+    # ── Personal Assistant tables ─────────────────────────────────────────────
+    c.execute('''CREATE TABLE IF NOT EXISTS pa_emails (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        gmail_id TEXT UNIQUE NOT NULL,
+        thread_id TEXT DEFAULT '',
+        date TEXT NOT NULL,
+        date_iso TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        sender TEXT NOT NULL,
+        snippet TEXT DEFAULT '',
+        email_type TEXT DEFAULT 'unknown',
+        is_purchase INTEGER DEFAULT 0,
+        is_notification INTEGER DEFAULT 0,
+        is_task INTEGER DEFAULT 0,
+        is_newsletter INTEGER DEFAULT 0,
+        extracted_amount REAL DEFAULT NULL,
+        extracted_merchant TEXT DEFAULT NULL,
+        suggested_category TEXT DEFAULT NULL,
+        suggested_subcategory TEXT DEFAULT NULL,
+        purchase_description TEXT DEFAULT NULL,
+        priority TEXT DEFAULT 'normal',
+        confidence REAL DEFAULT 0,
+        llm_parsed INTEGER DEFAULT 0,
+        expense_logged INTEGER DEFAULT 0,
+        task_created INTEGER DEFAULT 0,
+        is_unread INTEGER DEFAULT 1,
+        fetched_at TEXT DEFAULT (datetime('now'))
+    )''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS pa_tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        due_date TEXT DEFAULT NULL,
+        priority TEXT DEFAULT 'normal',
+        status TEXT DEFAULT 'open',
+        source TEXT DEFAULT 'manual',
+        source_email_id TEXT DEFAULT NULL,
+        source_email_subject TEXT DEFAULT NULL,
+        notes TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now')),
+        completed_at TEXT DEFAULT NULL
+    )''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS pa_notification_rules (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        rule_name TEXT NOT NULL,
+        match_type TEXT DEFAULT 'sender',
+        match_value TEXT NOT NULL,
+        action TEXT DEFAULT 'label',
+        action_value TEXT DEFAULT '',
+        active INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT (datetime('now'))
     )''')
 
 
