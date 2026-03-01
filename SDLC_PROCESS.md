@@ -38,7 +38,7 @@ No feature or fix can skip stages or jump directly to production. This ensures r
 
 | Branch | Purpose | Deployment | Approval | Auto-Deploy |
 |--------|---------|-----------|----------|-------------|
-| `main` | **PRODUCTION** | Railway (peachstatesavings.com) | Manual (you) | After manual trigger |
+| `main` | **PRODUCTION** | Self-Hosted Home Lab (peachstatesavings.com) | Manual (you) | After manual trigger |
 | `staging` | **STAGING** | Separate environment or secondary instance | Auto (if tests pass) | Yes |
 | `qa` | **QA** | Dedicated QA test environment | Auto (if tests pass) | Yes |
 | `dev` | **DEV** | Home lab (CT100 @ 100.95.125.112) | Auto (if tests pass) | Yes |
@@ -237,11 +237,12 @@ git push origin main
 
 ---
 
-## Stage 5: PRODUCTION (Railway)
+## Stage 5: PRODUCTION (Self-Hosted Home Lab)
 
 **Purpose:** Live application serving real users
 
-**Website:** https://www.peachstatesavings.com
+**Website:** https://www.peachstatesavings.com  
+**Host:** CT100 @ 100.95.125.112 (Beelink home lab, via Tailscale + Nginx)
 
 **Deployment Process:**
 
@@ -254,20 +255,22 @@ git push origin main
 
 2. **GitHub Actions triggers production workflow**
    - Pre-flight checks run (is this really from main? Is commit signed?)
-   - Docker image built and pushed
-   - **Waits for you to approve in GitHub Actions UI**
+   - Release tag created automatically
+   - Connects to home lab via Tailscale + SSH
+   - `git pull origin main` on CT100
+   - Streamlit restarts with new code
 
-3. **Manual Approval Step:**
+3. **Manual Approval Step (if GitHub environment configured):**
    - Go to: https://github.com/bookofdarrian/darrian-budget/actions
    - Click the workflow run for your commit
    - Click **Approve and Deploy** (or **Skip** if there's an issue)
    - ⚠️ Only you can approve
 
 4. **Deployment happens:**
-   - Railway pulls the new image
-   - App restarts with new code
-   - Release tag created: `v2026.02.27-143015`
-   - Release notes posted to GitHub releases
+   - SSH deploy script pulls latest `main` on CT100
+   - `pip install -r requirements.txt` runs
+   - Streamlit restarts on port 8501
+   - Release tag + release notes posted to GitHub releases
 
 5. **Verification:**
    - App should be live in ~30-60 seconds
@@ -326,7 +329,7 @@ All workflows are in `.github/workflows/`:
 | `deploy-dev.yml` | Push to `dev` | Deploy to home lab |
 | `deploy-qa.yml` | Push to `qa` | Deploy to QA environment |
 | `deploy-staging.yml` | Push to `staging` | Performance tests, deploy to staging |
-| `deploy-prod.yml` | Push to `main` | Requires manual approval, deploy to Railway |
+| `deploy-prod.yml` | Push to `main` | Requires manual approval, SSH deploy to home lab |
 
 **Check workflow status:**
 ```bash
@@ -348,8 +351,9 @@ Store sensitive data in GitHub Secrets (not in code):
 
 **Required Secrets:**
 ```
-RAILWAY_TOKEN           # Railroad deploy token
-DEV_SSH_KEY            # SSH key for home lab (100.95.125.112)
+TAILSCALE_AUTHKEY      # Tailscale auth key for GitHub Actions → Home Lab tunnel
+PROD_SSH_KEY           # SSH key for production home lab (100.95.125.112)
+DEV_SSH_KEY            # SSH key for dev home lab (100.95.125.112)
 QA_HOST                # QA environment hostname/IP
 QA_SSH_KEY             # SSH key for QA environment
 STAGING_HOST           # Staging environment hostname/IP
@@ -360,7 +364,8 @@ GITHUB_TOKEN           # (auto-created by GitHub)
 **To add a secret:**
 ```bash
 # Via GitHub CLI
-gh secret set RAILWAY_TOKEN --body "your-token-here"
+gh secret set TAILSCALE_AUTHKEY --body "tskey-auth-..."
+gh secret set PROD_SSH_KEY < ~/.ssh/id_ed25519
 
 # Or on the web: github.com/bookofdarrian/darrian-budget → Settings → Secrets
 ```
@@ -479,10 +484,13 @@ git push origin main
 - **URL:** https://github.com/bookofdarrian/darrian-budget/actions
 - **View:** All workflow runs, logs, deployment status
 
-### Railway Dashboard
-- **URL:** https://railway.app
-- **Project:** darrian-budget
-- **View:** Production logs, metrics, environment variables
+### Production App Logs (Home Lab)
+```bash
+ssh root@100.95.125.112
+tail -f /var/log/budget-app.log
+# or if running in Docker:
+docker logs -f budget-app
+```
 
 ### Database Logs
 ```bash

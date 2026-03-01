@@ -1,4 +1,4 @@
-name: Deploy to PRODUCTION
+name: Deploy to PRODUCTION (Self-Hosted)
 
 on:
   push:
@@ -11,8 +11,8 @@ on:
         required: true
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/budget-app
+  PROD_HOST: 100.95.125.112
+  PROD_PORT: 8501
 
 jobs:
   pre-prod-checks:
@@ -46,48 +46,22 @@ jobs:
           echo "Deployment version: $TAG"
 
   production-deploy:
-    name: Deploy to Production (Railway)
+    name: Deploy to Production (Self-Hosted Home Lab)
     runs-on: ubuntu-latest
     needs: pre-prod-checks
     environment: production
     permissions:
       contents: write
-      packages: write
     steps:
       - uses: actions/checkout@v4
       
-      - name: Manual Approval Check
+      - name: Deployment Info
         run: |
-          echo "⚠️  === PRODUCTION DEPLOYMENT ===" 
+          echo "🚀 === PRODUCTION DEPLOYMENT ==="
           echo "Deploying to: https://www.peachstatesavings.com"
+          echo "Host: ${{ env.PROD_HOST }}:${{ env.PROD_PORT }} (via Tailscale)"
           echo "Commit: ${{ github.sha }}"
           echo "Branch: main"
-          echo ""
-          echo "This requires manual approval in GitHub Actions!"
-          echo "Access: https://github.com/${{ github.repository }}/actions"
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      
-      - name: Log in to Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:prod
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:prod-${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
       
       - name: Create Release Tag
         run: |
@@ -98,20 +72,91 @@ jobs:
           git tag -a $TAG -m "Production release from ${{ github.sha }}"
           git push origin $TAG || true
       
-      - name: Deploy to Railway
+      - name: Connect to Tailscale
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
         run: |
-          npm install -g @railway/cli
-          echo "Railway CLI version:"
-          railway --version || true
-          # RAILWAY_TOKEN env var is used automatically by Railway CLI v3+
-          railway up --detach --service budget-app || railway up --detach
+          if [ -z "$TAILSCALE_AUTHKEY" ]; then
+            echo "ℹ️  TAILSCALE_AUTHKEY not set — skipping Tailscale + SSH deploy."
+            echo "To enable: add TAILSCALE_AUTHKEY secret"
+            exit 0
+          fi
+          curl -fsSL https://tailscale.com/install.sh | sh
+          sudo tailscale up --authkey="$TAILSCALE_AUTHKEY" --hostname=github-actions-prod --accept-routes
+          echo "Tailscale connected. Waiting for network..."
+          sleep 5
+          tailscale status
       
-      - name: Verify Production Deployment
+      - name: Deploy to Production Server via SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.PROD_SSH_KEY }}
+          TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          sleep 30
-          curl -f https://www.peachstatesavings.com || echo "Production site may still be starting..."
+          if [ -z "$TAILSCALE_AUTHKEY" ]; then
+            echo "ℹ️  Skipping SSH deploy (TAILSCALE_AUTHKEY not configured)."
+            exit 0
+          fi
+          if [ -z "$SSH_PRIVATE_KEY" ]; then
+            echo "ℹ️  PROD_SSH_KEY not configured — skipping SSH deploy."
+            exit 0
+          fi
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ env.PROD_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          cat > /tmp/deploy_prod.sh << 'SCRIPTEOF'
+          #!/bin/bash
+          set -e
+          GH_TOKEN="__GH_TOKEN__"
+          REPO_URL="https://x-access-token:${GH_TOKEN}@github.com/bookofdarrian/darrian-budget.git"
+
+          if [ ! -d /opt/darrian-budget/.git ]; then
+            echo "Cloning repo for first time..."
+            git clone "$REPO_URL" /opt/darrian-budget
+          else
+            cd /opt/darrian-budget
+            git remote set-url origin "$REPO_URL"
+            git fetch origin
+            git checkout main
+            git pull origin main
+          fi
+
+          cd /opt/darrian-budget
+
+          if [ -f requirements.txt ]; then
+            pip3 install -q -r requirements.txt 2>&1 | tail -5 || true
+          fi
+
+          pkill -f "streamlit run" 2>/dev/null || true
+          sleep 2
+          nohup streamlit run app.py \
+            --server.port=8501 \
+            --server.address=0.0.0.0 \
+            --server.headless=true \
+            > /var/log/budget-app.log 2>&1 &
+          sleep 3
+          pgrep -f "streamlit run" && echo "✅ Production app started" || echo "⚠️ App may have failed to start"
+          SCRIPTEOF
+
+          sed -i "s/__GH_TOKEN__/${GH_TOKEN}/g" /tmp/deploy_prod.sh
+          chmod +x /tmp/deploy_prod.sh
+          scp -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no /tmp/deploy_prod.sh root@${{ env.PROD_HOST }}:/tmp/deploy_prod.sh
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o ConnectTimeout=30 root@${{ env.PROD_HOST }} "bash /tmp/deploy_prod.sh && rm /tmp/deploy_prod.sh"
+      
+      - name: Health Check
+        env:
+          TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
+        run: |
+          if [ -z "$TAILSCALE_AUTHKEY" ]; then
+            echo "ℹ️  Skipping health check (Tailscale not connected)"
+            exit 0
+          fi
+          sleep 15
+          curl -sf http://${{ env.PROD_HOST }}:${{ env.PROD_PORT }} > /dev/null \
+            && echo "✅ Production app is up at http://${{ env.PROD_HOST }}:${{ env.PROD_PORT }}" \
+            || echo "ℹ️  App not reachable yet (may still be starting)"
         continue-on-error: true
       
       - name: Create Release Notes
@@ -123,22 +168,19 @@ jobs:
           release_name: Production Release ${{ env.RELEASE_TAG }}
           body: |
             Deployed to production at https://www.peachstatesavings.com
+            Self-hosted on home lab (100.95.125.112) via Tailscale.
             
             Commit: ${{ github.sha }}
             Author: ${{ github.actor }}
             Timestamp: ${{ github.event.head_commit.timestamp }}
-            
-            ## Deployment Info
-            - **Image**: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.RELEASE_TAG }}
-            - **Duration**: Started at ${{ github.event.head_commit.timestamp }}
           draft: false
           prerelease: false
         continue-on-error: true
       
-      - name: Slack Notification (Optional)
+      - name: Summary
         if: always()
         run: |
-          echo "🚀 Production deployment complete!"
+          echo "✅ Production deployment complete!"
           echo "Release: ${{ env.RELEASE_TAG }}"
           echo "Site: https://www.peachstatesavings.com"
-          # Add Slack webhook if desired: secrets.SLACK_WEBHOOK_URL
+          echo "Host: http://${{ env.PROD_HOST }}:${{ env.PROD_PORT }} (via Tailscale)"
