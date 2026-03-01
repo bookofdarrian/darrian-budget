@@ -1,0 +1,66 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Alertmanager Configuration
+#
+# Currently: alerts go to "default" (no-op) receiver so Alertmanager starts.
+#
+# To add Pushover phone alerts:
+#   1. Sign up at pushover.net → get User Key + API Token
+#   2. Install Pushover app on iPhone
+#   3. Replace the receivers section below with the pushover_configs block
+#      (see the commented example at the bottom of this file)
+#   4. Restart: docker compose restart alertmanager
+#
+# To add Telegram (free):
+#   1. @BotFather → /newbot → get BOT_TOKEN
+#   2. curl https://api.telegram.org/bot<TOKEN>/getUpdates → get CHAT_ID
+#   3. Use the webhook_configs example below
+# ─────────────────────────────────────────────────────────────────────────────
+
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: default
+  group_by: [alertname, instance, severity]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    - match:
+        severity: critical
+      receiver: default
+      group_wait: 10s
+      repeat_interval: 1h
+
+inhibit_rules:
+  - source_match:
+      severity: critical
+    target_match:
+      severity: warning
+    equal: [alertname, instance]
+
+receivers:
+  - name: default
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PUSHOVER EXAMPLE — replace "default" receiver above with this:
+#
+# receivers:
+#   - name: default
+#     pushover_configs:
+#       - user_key: YOUR_PUSHOVER_USER_KEY
+#         token: YOUR_PUSHOVER_API_TOKEN
+#         priority: 1
+#         title: "🚨 Homelab Alert"
+#         message: "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ end }}"
+#         url: "http://100.117.1.171:3000"
+#         url_title: "Open Grafana"
+#
+# TELEGRAM EXAMPLE:
+#
+# receivers:
+#   - name: default
+#     webhook_configs:
+#       - url: "https://api.telegram.org/botYOUR_BOT_TOKEN/sendMessage?chat_id=YOUR_CHAT_ID&text={{ range .Alerts }}{{ .Annotations.summary }}%0A{{ end }}"
+#         send_resolved: true
+# ─────────────────────────────────────────────────────────────────────────────
