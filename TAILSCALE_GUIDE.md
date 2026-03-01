@@ -38,14 +38,14 @@ Your personal finance app — expenses, income, investments, goals, etc.
 
 | Where | URL | Works Without Tailscale? |
 |-------|-----|--------------------------|
-| Public (Railway) | https://www.peachstatesavings.com | ✅ Yes — anyone can access |
+| Public (Self-Hosted) | https://www.peachstatesavings.com | ✅ Yes — anyone can access |
 | Home Lab (local) | http://100.117.1.171:8501 | ❌ Home network only |
 | Home Lab (Tailscale) | http://100.95.125.112:8501 | ✅ Yes — from anywhere with Tailscale on |
 
 **When to use which:**
 - At home on WiFi → any of the three work
 - Away from home (phone on cellular) → use `peachstatesavings.com` OR turn on Tailscale and use `100.95.125.112:8501`
-- Want to avoid Railway costs → use Tailscale URL
+- Prefer the home lab direct connection → use Tailscale URL
 
 ---
 
@@ -109,7 +109,7 @@ The main control panel for your Beelink server — manage VMs and containers.
 
 ### Access the Budget App WITHOUT Tailscale
 Just go to: **https://www.peachstatesavings.com**
-This always works — no Tailscale needed. It's hosted on Railway 24/7.
+This always works — no Tailscale needed. It's self-hosted on your home lab, running 24/7.
 
 ---
 
@@ -159,8 +159,8 @@ Install **Termius** (free, App Store) — it's a terminal/SSH app.
 → Check that CT100 is running: SSH into Proxmox → `pct status 100`
 
 **"Budget app won't load"**
-→ Try the Railway URL first: `peachstatesavings.com`
-→ If that works but home lab doesn't, CT100 may need a restart
+→ Try `peachstatesavings.com` first (Nginx routes to home lab)
+→ If the site loads but CT100 can't be reached directly, CT100 may need a restart
 
 **"Tailscale says disconnected"**
 → On Mac: click menu bar icon → Connect

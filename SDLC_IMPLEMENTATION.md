@@ -13,7 +13,7 @@ Your repository now has a complete **Fortune 500-style software delivery pipelin
 ```
 ┌─────────────┐    ┌─────┐    ┌────┐    ┌─────────┐    ┌──────────┐
 │   Feature   │───▶│ DEV │───▶│ QA │───▶│ STAGING │───▶│   PROD   │
-│  Branches   │    │     │    │    │    │         │    │ (Railway)│
+│  Branches   │    │     │    │    │    │         │    │(Self-Host)│
 └─────────────┘    └─────┘    └────┘    └─────────┘    └──────────┘
    (your Mac)    (Home Lab)   (Test)   (Performance)   (Live Users)
    ✓ Lint      ✓ Deploy    ✓ Tests  ✓ Load Test    ✓ Manual Auth
@@ -32,7 +32,7 @@ Your repository now has a complete **Fortune 500-style software delivery pipelin
 | `deploy-dev.yml` | Deploy to home lab (100.95.125.112) on push to `dev` |
 | `deploy-qa.yml` | Deploy to QA environment on push to `qa` |
 | `deploy-staging.yml` | Performance tests + deploy to staging on push to `staging` |
-| `deploy-prod.yml` | Manual approval + deploy to Railway on push to `main` |
+| `deploy-prod.yml` | Manual approval + SSH deploy to home lab on push to `main` |
 
 ### Quality Gate Configurations
 | File | Purpose |
@@ -135,7 +135,7 @@ git checkout main && git merge staging && git push origin main
 # Manual approval required! 🔐
 # → GitHub Actions asks you to confirm
 # → You click "Approve and Deploy"
-# → Deploys to Railway: peachstatesavings.com
+# → Deploys to home lab: peachstatesavings.com
 ```
 
 ---
@@ -154,15 +154,17 @@ STAGING_SSH_KEY          # For staging environment
 QA_HOST                  # IP or hostname of QA environment
 STAGING_HOST             # IP or hostname of staging environment
 
-# Deployment
-RAILWAY_TOKEN            # Railway.app deployment token
+# Deployment (via Tailscale SSH)
+TAILSCALE_AUTHKEY        # Tailscale auth key for GitHub Actions tunnel
+PROD_SSH_KEY             # SSH key for production home lab
 GITHUB_TOKEN             # (auto-created by GitHub)
 ```
 
 **How to add secrets:**
 ```bash
 # Via GitHub CLI:
-gh secret set RAILWAY_TOKEN --body "your-token"
+gh secret set TAILSCALE_AUTHKEY --body "tskey-auth-..."
+gh secret set PROD_SSH_KEY < ~/.ssh/id_ed25519
 
 # Or on web:
 # Settings → Secrets and variables → Actions → New repository secret
@@ -200,10 +202,11 @@ Follow [BRANCH_PROTECTION_SETUP.md](BRANCH_PROTECTION_SETUP.md)
 
 ### 3️⃣ **Add GitHub Secrets** (5 min)
 ```bash
-# Get Railway token from: https://railway.app → Account → Tokens
-gh secret set RAILWAY_TOKEN --body "your-token"
+# Add Tailscale auth key (from https://login.tailscale.com/admin/settings/keys)
+gh secret set TAILSCALE_AUTHKEY --body "tskey-auth-..."
 
-# For other environments (QA, Staging), add SSH keys
+# Add SSH keys for each environment
+gh secret set PROD_SSH_KEY < ~/.ssh/id_ed25519
 gh secret set DEV_SSH_KEY --body "$(cat ~/.ssh/id_ed25519)"
 gh secret set QA_SSH_KEY --body "..."
 gh secret set STAGING_SSH_KEY --body "..."
@@ -267,7 +270,7 @@ Define your release schedule:
 | DEV (Home Lab) | http://100.95.125.112:8501 | Yes | (automatic) |
 | QA | http://qa-host:8501 | Yes | (automatic) |
 | STAGING | http://staging-host:8501 | Yes | (automatic) |
-| **PROD (Railway)** | **https://peachstatesavings.com** | **After Approval** | **You only** |
+| **PROD (Self-Hosted)** | **https://peachstatesavings.com** | **After Approval** | **You only** |
 
 ---
 
@@ -451,7 +454,7 @@ pytest tests/ -v --cov=.
 - feature → dev (auto deploy to home lab)
 - dev → qa (auto deploy to QA test environment)
 - qa → staging (auto deploy + performance testing)
-- staging → prod (manual approval required, deploy to Railway)
+- staging → prod (manual approval required, SSH deploy to self-hosted home lab)
 
 ✅ **You can now:**
 - Create features on branches
