@@ -6,6 +6,7 @@ import streamlit as st
 from datetime import datetime, date
 from utils.db import get_conn, USE_POSTGRES, execute as db_exec, init_db, get_setting, set_setting
 from utils.auth import require_login, render_sidebar_brand, render_sidebar_user_widget, inject_css
+from utils.voice_input import render_voice_input
 
 st.set_page_config(
     page_title="✅ Todo — Peach State Savings",
@@ -172,9 +173,19 @@ st.caption("Your personal task manager — synced to the database, always availa
 
 # ── Add task form ─────────────────────────────────────────────────────────────
 with st.expander("➕ Add New Task", expanded=st.session_state.get("todo_add_open", False)):
+    # Voice input — speak a task title
+    spoken_task = render_voice_input(
+        label="🎤 Speak your task",
+        key="todo_voice_input",
+    )
+    if spoken_task:
+        st.session_state["todo_voice_prefill"] = spoken_task
+
+    voice_prefill = st.session_state.pop("todo_voice_prefill", "")
+
     with st.form("add_task_form", clear_on_submit=True):
         t1, t2, t3 = st.columns([3, 1, 1])
-        new_title    = t1.text_input("Task *", placeholder="What needs to be done?")
+        new_title    = t1.text_input("Task *", value=voice_prefill, placeholder="What needs to be done?")
         new_due      = t2.date_input("Due date (optional)", value=None)
         new_priority = t3.selectbox("Priority", ["normal", "high", "low"])
         new_notes    = st.text_area("Notes (optional)", height=60)
