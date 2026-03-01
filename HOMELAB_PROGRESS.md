@@ -3,6 +3,26 @@
 
 ---
 
+## Confirmed Server Details (2026-02-26) ✅
+
+| Property | Value |
+|----------|-------|
+| **Hostname** | `pue` |
+| **Kernel** | `6.8.12-1-pve` (Proxmox patched) |
+| **Proxmox UI** | https://100.117.1.50:8006 |
+| **Physical NIC** | `enp2s0` / `enx78553607ea20` (MAC: `78:55:36:07:ea:20`) |
+| **Bridge name** | `umbro` (non-default, but works fine) |
+| **Host IP** | `100.117.1.50/24` on `umbro` |
+| **WiFi** | `wlp3s0` — DOWN, not used |
+| **Networking** | Verified stable after `systemctl restart networking` |
+
+> **Setup files created 2026-02-26:**
+> - `proxmox_setup.sh` — post-install config script (run on Proxmox host)
+> - `proxmox_network.conf` — correct `/etc/network/interfaces` for `umbro` bridge
+> - `PVE_SETUP.md` — full step-by-step configuration guide
+
+---
+
 ## Hardware Purchased ✅
 
 | Item | Status | Notes |
@@ -59,6 +79,7 @@ which is connected to your home router (172.17.84.x network).
 | Portainer (Docker UI) | ✅ **LIVE** | http://100.117.1.171:9000 |
 | Nginx Proxy Manager | ✅ **LIVE** | http://100.117.1.171:81 |
 | TrueNAS Scale | ⏳ Waiting for drives | — |
+| Immich (Photo AI) | ⏳ Ready to deploy | http://100.117.1.171:2283 |
 | code-server (VS Code) | ✅ **LIVE** | http://100.117.1.171:8080 |
 | **Tailscale VPN** | ✅ **LIVE on CT100** | `100.95.125.112` (Tailscale IP) |
 
@@ -152,6 +173,17 @@ AURA_ENABLED=true
 - [ ] **Step 32** — Add SSL cert in NPM (Let's Encrypt, free)
 - [ ] **Step 33** — Access budget app at `https://budget.yourdomain.com` from anywhere
 
+### 📸 Phase 9 — Immich (Self-Hosted Google Photos + AI Search)
+> **Guide:** `immich/IMMICH_SETUP.md` | **Files ready:** `immich/docker-compose.yml` + `immich/.env`
+- [ ] **Step 34** — SSH into CT100: `ssh root@100.95.125.112`
+- [ ] **Step 35** — Create `/opt/immich` directory and copy compose files from repo
+- [ ] **Step 36** — Edit `.env` — change `DB_PASSWORD` to something real
+- [ ] **Step 37** — Run `docker compose up -d` in `/opt/immich`
+- [ ] **Step 38** — Create admin account at `http://100.95.125.112:2283`
+- [ ] **Step 39** — Install Immich iPhone app → connect to `http://100.95.125.112:2283` → enable auto-backup
+- [ ] **Step 40** — Trigger AI jobs: Administration → Jobs → Smart Search + Face Detection
+- [ ] **Step 41** — (After TrueNAS) Update `UPLOAD_LOCATION=/mnt/truenas/photos` in `.env` → restart
+
 ---
 
 ## AURA — Already Built in This Repo
@@ -232,6 +264,7 @@ curl http://localhost:8000/health
 | Nginx Proxy Manager | http://100.117.1.171:81 |
 | code-server (VS Code) | http://100.117.1.171:8080 |
 | TrueNAS | ⏳ Not yet (waiting for drives) |
+| Immich (Photo AI) | ⏳ Not yet deployed — http://100.117.1.171:2283 |
 
 ### ✅ Via Tailscale (Remote Access — From Anywhere)
 | Service | URL |
@@ -250,3 +283,28 @@ curl http://localhost:8000/health
 |---------|-----|
 | Budget App (primary) | https://www.peachstatesavings.com |
 | Budget App (mirror) | https://darrian-todo-production.up.railway.app |
+
+---
+
+## 🗑️ Railway Migration — COMPLETE (2026-02-27)
+
+### What Was Done
+- ✅ **Database migrated off Railway** — all 21 tables, 645 bank transactions dumped from Railway Postgres and restored to local `budget-postgres` container on CT100
+- ✅ **budget-postgres container** running on CT100 at `172.17.0.3:5432` (volume: `budget_pgdata`)
+- ✅ **budget-app restarted** with `DATABASE_URL=postgresql://budget:budget2026secure@budget-postgres:5432/budget`
+- ✅ **budget-app verified healthy** — HTTP 200 at `http://100.95.125.112:8501`
+- ✅ **DB backup saved** at `/opt/db-backups/railway_backup.sql` on CT100
+- ⏳ **Delete Railway projects** — do manually in browser (see below)
+
+### Railway Projects to Delete (Do in Browser)
+1. Go to https://railway.app → log in
+2. Delete **darrian-todo** project (Settings → Danger Zone → Delete Project)
+3. Delete **handsome-freedom** project (check what it is first, then delete)
+4. Delete **darrian-budget** project (Settings → Danger Zone → Delete Project)
+
+### Config Files Created on CT100
+| File | Purpose |
+|------|---------|
+| `/opt/budget/.env` | All env vars for budget-app (local DB, AURA, Stripe, Anthropic) |
+| `/opt/budget/docker-compose.yml` | Compose file for budget-app + budget-postgres |
+| `/opt/db-backups/railway_backup.sql` | Full Railway Postgres dump (98KB) |
