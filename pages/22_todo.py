@@ -331,13 +331,18 @@ except ImportError as _e:
     st.error(f"Calendar client import error: {_e}")
 
 if _cal_available:
-    # ── Try to connect ────────────────────────────────────────────────────────
+    # ── Load credentials + token from DB ──────────────────────────────────────
     _token_json = get_setting("google_token", "")
+    _creds_json = get_setting("google_credentials", "")   # OAuth client credentials
     _cal_service = None
-    _cal_status  = "disconnected"   # disconnected | scope_upgrade | connected
+    # statuses: no_credentials | disconnected | scope_upgrade | connected
+    _cal_status  = "disconnected"
 
     try:
-        _cal_service, _refreshed_token = get_calendar_service(_token_json or None)
+        _cal_service, _refreshed_token = get_calendar_service(
+            token_json=_token_json or None,
+            credentials_json=_creds_json or None,
+        )
         if _refreshed_token != _token_json:
             set_setting("google_token", _refreshed_token)
         _cal_status = "connected"
@@ -352,7 +357,76 @@ if _cal_available:
     except Exception:
         _cal_status = "disconnected"
 
-    # ── Status banner ─────────────────────────────────────────────────────────
+    # ── Step 0: Credentials upload (shown when credentials missing) ───────────
+    if _cal_status == "no_credentials":
+        st.warning("⚠️ **Google Calendar not set up yet.**")
+
+        st.markdown("""
+**How to connect Google Calendar** (5 minutes, one-time setup):
+
+**Step 1 — Create a Google Cloud project:**
+- Go to [console.cloud.google.com](https://console.cloud.google.com)
+- Click **"Select a project"** → **"New Project"** → name it `"AI Todo"` → Create
+
+**Step 2 — Enable the Calendar API:**
+- In your project, go to **APIs & Services → Library**
+- Search for **"Google Calendar API"** → click it → **Enable**
+
+**Step 3 — Create credentials:**
+- Go to **APIs & Services → Credentials**
+- Click **"+ Create Credentials"** → **"OAuth client ID"**
+- If prompted, configure the **OAuth consent screen** first (External, add your Gmail as test user)
+- Application type: **Desktop app** → name it `"AI Todo"` → Create
+- Click **Download JSON** → save the file
+
+**Step 4 — Upload the credentials below** *(no file placement needed — it saves to the database)*:
+""")
+
+        _creds_tab1, _creds_tab2 = st.tabs(["📁 Upload credentials.json", "📋 Paste JSON"])
+
+        with _creds_tab1:
+            _uploaded = st.file_uploader(
+                "Upload your credentials.json file",
+                type=["json"],
+                key="cal_creds_upload",
+            )
+            if _uploaded is not None:
+                try:
+                    _creds_content = _uploaded.read().decode("utf-8")
+                    _parsed = __import__("json").loads(_creds_content)
+                    # Validate it looks like a credentials file
+                    if "installed" not in _parsed and "web" not in _parsed:
+                        st.error("❌ This doesn't look like a valid Google OAuth credentials file. Make sure you downloaded the right JSON.")
+                    else:
+                        if st.button("💾 Save Credentials", key="cal_save_upload", type="primary"):
+                            set_setting("google_credentials", _creds_content)
+                            st.success("✅ Credentials saved to database! Refreshing...")
+                            st.rerun()
+                except Exception as _ex:
+                    st.error(f"Could not read file: {_ex}")
+
+        with _creds_tab2:
+            st.caption("Open your downloaded credentials.json in a text editor and paste the entire contents below.")
+            _pasted = st.text_area(
+                "Paste credentials.json content here:",
+                height=150,
+                key="cal_creds_paste",
+                placeholder='{"installed":{"client_id":"...","client_secret":"...",...}}',
+            )
+            if _pasted.strip():
+                try:
+                    _parsed = __import__("json").loads(_pasted)
+                    if "installed" not in _parsed and "web" not in _parsed:
+                        st.error("❌ This doesn't look like a valid Google OAuth credentials file.")
+                    else:
+                        if st.button("💾 Save Credentials", key="cal_save_paste", type="primary"):
+                            set_setting("google_credentials", _pasted.strip())
+                            st.success("✅ Credentials saved to database! Refreshing...")
+                            st.rerun()
+                except __import__("json").JSONDecodeError:
+                    st.error("❌ Invalid JSON — please check the content and try again.")
+
+    # ── Status banner (when credentials exist) ────────────────────────────────
     if _cal_status == "connected":
         st.success("✅ **Connected to Google Calendar** — your tasks can be synced as events.")
 
@@ -360,27 +434,20 @@ if _cal_available:
         st.warning(
             "⚠️ **Google Calendar permission needed.**  \n"
             "Your existing Google account is connected (Gmail), but Calendar access hasn't been granted yet.  \n"
-            "Click **Connect Google Calendar** below to re-authorize with Calendar permission added."
+            "Click **Re-authorize Google Calendar** below to add Calendar permission."
         )
 
-    elif _cal_status == "no_credentials":
-        st.error(
-            "❌ **credentials.json not found.**  \n"
-            "1. Go to [console.cloud.google.com](https://console.cloud.google.com)  \n"
-            "2. Enable the **Google Calendar API** on your project  \n"
-            "3. Download your OAuth credentials JSON and save it as `credentials.json` in the project root"
-        )
-
-    else:
+    elif _cal_status == "disconnected":
         st.info(
             "📅 **Google Calendar not connected.**  \n"
             "Connect your Google account to sync todo tasks as calendar events."
         )
 
     # ── Auth / Re-auth flow ───────────────────────────────────────────────────
-    if _cal_status in ("disconnected", "scope_upgrade", "no_credentials") and _cal_status != "no_credentials":
+    if _cal_status in ("disconnected", "scope_upgrade"):
         with st.expander(
-            "🔗 Connect Google Calendar" if _cal_status == "disconnected" else "🔄 Re-authorize Google Calendar (add Calendar permission)",
+            "🔗 Connect Google Calendar" if _cal_status == "disconnected"
+            else "🔄 Re-authorize Google Calendar (add Calendar permission)",
             expanded=(_cal_status == "scope_upgrade"),
         ):
             if _cal_status == "scope_upgrade":
@@ -392,7 +459,7 @@ if _cal_available:
 
             if st.button("🚀 Generate Authorization Link", key="cal_gen_auth", type="primary"):
                 try:
-                    _auth_url, _flow = get_calendar_auth_url()
+                    _auth_url, _flow = get_calendar_auth_url(credentials_json=_creds_json or None)
                     st.session_state["cal_auth_flow"] = _flow
                     st.session_state["cal_auth_url"]  = _auth_url
                 except FileNotFoundError as _fe:
@@ -514,7 +581,7 @@ if _cal_available:
                             st.markdown(f"[Open in Google Calendar ↗]({_ev['html_link']})", unsafe_allow_html=False)
                     st.divider()
 
-        # ── Disconnect button ─────────────────────────────────────────────────
+        # ── Settings (disconnect + remove credentials) ────────────────────────
         with st.expander("⚙️ Calendar Settings"):
             st.markdown("**Disconnect Google Calendar**")
             st.caption("This removes the stored token. You can reconnect at any time.")
@@ -527,4 +594,14 @@ if _cal_available:
                 for _k in ("cal_events_cache", "cal_auth_flow", "cal_auth_url"):
                     st.session_state.pop(_k, None)
                 st.success("Disconnected. Refreshing...")
+                st.rerun()
+
+    # ── Credentials management (shown when credentials exist) ─────────────────
+    if _cal_status != "no_credentials" and _creds_json:
+        with st.expander("🔑 Manage Google Credentials"):
+            st.caption("Your OAuth credentials are stored in the database.")
+            if st.button("🗑️ Remove Saved Credentials", key="cal_remove_creds"):
+                set_setting("google_credentials", "")
+                set_setting("google_token", "")
+                st.success("Credentials removed. Refreshing...")
                 st.rerun()

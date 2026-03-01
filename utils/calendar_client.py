@@ -4,7 +4,7 @@ Google Calendar Client
 Handles all Google Calendar API interactions for the Todo integration.
 
 Capabilities:
-  - OAuth2 authentication (shared credentials.json, token stored in DB/disk)
+  - OAuth2 authentication (credentials stored in DB, token stored in DB)
   - List upcoming events from Google Calendar
   - Create calendar events from todo tasks
   - Delete / update calendar events
@@ -14,10 +14,17 @@ Scopes:
   This module uses COMBINED_SCOPES which includes both Gmail and Calendar.
   If the existing token only has Gmail scopes, the user must re-authorize.
 
-Setup (same project as Gmail):
+Setup — DB-first approach (works in Docker / production):
   1. Go to console.cloud.google.com → your existing project
   2. Enable Google Calendar API
   3. The same credentials.json works — just re-authorize with the new scope
+  4. In the Todo page, paste/upload your credentials.json content → it is saved
+     to the DB under app_settings key "google_credentials" so it survives
+     container restarts and is never committed to git.
+
+File fallback:
+  If "google_credentials" is not in the DB, the code falls back to reading
+  CREDENTIALS_FILE (env: GMAIL_CREDENTIALS_FILE, default: credentials.json).
 """
 
 import os
@@ -42,6 +49,37 @@ COMBINED_SCOPES = [
 CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar"
 
 
+# ── Credentials helpers ───────────────────────────────────────────────────────
+
+def _load_credentials_config(credentials_json_str: Optional[str] = None) -> dict:
+    """
+    Return the parsed credentials config dict.
+
+    Priority:
+      1. credentials_json_str  — JSON string passed in (from DB setting)
+      2. CREDENTIALS_FILE      — file on disk (local dev fallback)
+
+    Raises FileNotFoundError if neither source is available.
+    """
+    # 1. From DB / passed-in string
+    if credentials_json_str:
+        try:
+            return json.loads(credentials_json_str)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid credentials JSON: {e}")
+
+    # 2. From file on disk
+    if os.path.exists(CREDENTIALS_FILE):
+        with open(CREDENTIALS_FILE) as f:
+            return json.load(f)
+
+    raise FileNotFoundError(
+        f"Google credentials not found. "
+        f"Upload your credentials.json via the Calendar Setup section, "
+        f"or place the file at '{CREDENTIALS_FILE}'."
+    )
+
+
 def _has_calendar_scope(token_json: str) -> bool:
     """Check if a token JSON string includes the Calendar scope."""
     try:
@@ -52,19 +90,26 @@ def _has_calendar_scope(token_json: str) -> bool:
         return False
 
 
-def get_calendar_service(token_json: Optional[str] = None):
+def get_calendar_service(
+    token_json: Optional[str] = None,
+    credentials_json: Optional[str] = None,
+):
     """
     Build and return an authenticated Google Calendar API service object.
 
-    token_json: JSON string of the stored OAuth token (from DB or disk).
+    Args:
+        token_json:       JSON string of the stored OAuth token (from DB).
+        credentials_json: JSON string of the OAuth client credentials (from DB).
+                          Falls back to credentials.json on disk if not provided.
 
-    Returns (service, token_json_str) where token_json_str is the
-    (possibly refreshed) token to save back to the DB.
+    Returns:
+        (service, token_json_str) — token_json_str may be refreshed; save it back to DB.
 
     Raises:
-        FileNotFoundError  — credentials.json not found
-        RuntimeError("AUTH_REQUIRED")   — first-time setup needed
-        RuntimeError("SCOPE_UPGRADE")   — token exists but lacks Calendar scope
+        FileNotFoundError              — credentials not found anywhere
+        ValueError                     — credentials JSON is malformed
+        RuntimeError("AUTH_REQUIRED")  — first-time setup needed
+        RuntimeError("SCOPE_UPGRADE")  — token exists but lacks Calendar scope
     """
     try:
         from google.oauth2.credentials import Credentials
@@ -108,11 +153,8 @@ def get_calendar_service(token_json: Optional[str] = None):
 
     # 5. If still no valid creds, we need the auth flow
     if not creds or not creds.valid:
-        if not os.path.exists(CREDENTIALS_FILE):
-            raise FileNotFoundError(
-                f"credentials.json not found at '{CREDENTIALS_FILE}'. "
-                "Download it from Google Cloud Console → APIs & Services → Credentials."
-            )
+        # Validate that credentials are available (raises FileNotFoundError if not)
+        _load_credentials_config(credentials_json)
         raise RuntimeError("AUTH_REQUIRED")
 
     token_str = creds.to_json()
@@ -120,24 +162,30 @@ def get_calendar_service(token_json: Optional[str] = None):
     return service, token_str
 
 
-def get_calendar_auth_url(state: str = "") -> tuple[str, object]:
+def get_calendar_auth_url(
+    state: str = "",
+    credentials_json: Optional[str] = None,
+) -> tuple:
     """
     Generate the OAuth2 authorization URL for Calendar + Gmail combined scopes.
-    Returns (auth_url, flow) — store flow in session_state to exchange code later.
+
+    Args:
+        state:            Optional state string for OAuth flow.
+        credentials_json: JSON string of the OAuth client credentials (from DB).
+                          Falls back to credentials.json on disk if not provided.
+
+    Returns:
+        (auth_url, flow) — store flow in session_state to exchange code later.
     """
     try:
         from google_auth_oauthlib.flow import Flow
     except ImportError:
         raise ImportError("Run: pip install google-auth-oauthlib")
 
-    if not os.path.exists(CREDENTIALS_FILE):
-        raise FileNotFoundError(
-            f"credentials.json not found at '{CREDENTIALS_FILE}'. "
-            "Download it from Google Cloud Console."
-        )
+    config = _load_credentials_config(credentials_json)  # raises if not found
 
-    flow = Flow.from_client_secrets_file(
-        CREDENTIALS_FILE,
+    flow = Flow.from_client_config(
+        config,
         scopes=COMBINED_SCOPES,
         redirect_uri="urn:ietf:wg:oauth:2.0:oob",
     )
@@ -159,14 +207,17 @@ def exchange_code_for_token(flow, code: str) -> str:
     creds = flow.credentials
     token_str = creds.to_json()
     # Save to disk as fallback (overwrites old Gmail-only token)
-    with open(TOKEN_FILE, "w") as f:
-        f.write(token_str)
+    try:
+        with open(TOKEN_FILE, "w") as f:
+            f.write(token_str)
+    except Exception as e:
+        logger.warning(f"Could not save token.json to disk: {e}")
     return token_str
 
 
 # ── Calendar event helpers ────────────────────────────────────────────────────
 
-def list_upcoming_events(service, max_results: int = 20, days_ahead: int = 30) -> list[dict]:
+def list_upcoming_events(service, max_results: int = 20, days_ahead: int = 30) -> list:
     """
     Fetch upcoming events from the primary Google Calendar.
     Returns list of event dicts.

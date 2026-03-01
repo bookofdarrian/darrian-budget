@@ -4,19 +4,25 @@ Gmail Client — Personal Assistant Integration
 Handles all Gmail API interactions for the Personal Assistant feature.
 
 Capabilities:
-  - OAuth2 authentication (token stored in DB, not on disk)
+  - OAuth2 authentication (credentials stored in DB, token stored in DB)
   - Fetch recent emails by label/query
   - Parse purchase/receipt emails into structured data
   - Detect notification/alert emails for smart filtering
   - Extract tasks and action items from emails
 
-Setup:
+Setup — DB-first approach (works in Docker / production):
   1. Go to console.cloud.google.com → New Project → "Peach Savings Assistant"
   2. Enable Gmail API
   3. OAuth consent screen → External → add your Gmail as test user
   4. Credentials → OAuth 2.0 Client ID → Desktop App → download JSON
-  5. Save as credentials.json in project root (gitignored)
+  5. In the Personal Assistant page, paste/upload credentials.json content →
+     saved to DB under "google_credentials" key (survives container restarts,
+     never committed to git)
   6. First run: click the auth link, approve, token saved to DB automatically
+
+File fallback:
+  If "google_credentials" is not in the DB, the code falls back to reading
+  CREDENTIALS_FILE (env: GMAIL_CREDENTIALS_FILE, default: credentials.json).
 
 Environment variables (optional overrides):
   GMAIL_CREDENTIALS_FILE  — path to credentials.json (default: ./credentials.json)
@@ -99,20 +105,57 @@ TASK_PATTERNS = [
 ]
 
 
+# ── Credentials helper ────────────────────────────────────────────────────────
+
+def _load_credentials_config(credentials_json_str: Optional[str] = None) -> dict:
+    """
+    Return the parsed credentials config dict.
+
+    Priority:
+      1. credentials_json_str  — JSON string passed in (from DB setting)
+      2. CREDENTIALS_FILE      — file on disk (local dev fallback)
+
+    Raises FileNotFoundError if neither source is available.
+    """
+    # 1. From DB / passed-in string
+    if credentials_json_str:
+        try:
+            return json.loads(credentials_json_str)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid credentials JSON: {e}")
+
+    # 2. From file on disk
+    if os.path.exists(CREDENTIALS_FILE):
+        with open(CREDENTIALS_FILE) as f:
+            return json.load(f)
+
+    raise FileNotFoundError(
+        f"Google credentials not found. "
+        f"Upload your credentials.json via the setup section, "
+        f"or place the file at '{CREDENTIALS_FILE}'."
+    )
+
+
 # ── Gmail service factory ─────────────────────────────────────────────────────
 
-def get_gmail_service(token_json: Optional[str] = None):
+def get_gmail_service(
+    token_json: Optional[str] = None,
+    credentials_json: Optional[str] = None,
+):
     """
     Build and return an authenticated Gmail API service object.
 
-    token_json: JSON string of the stored OAuth token (from DB).
-                If None, falls back to TOKEN_FILE on disk.
+    Args:
+        token_json:       JSON string of the stored OAuth token (from DB).
+                          If None, falls back to TOKEN_FILE on disk.
+        credentials_json: JSON string of the OAuth client credentials (from DB).
+                          Falls back to credentials.json on disk if not provided.
 
-    Returns (service, token_json_str) where token_json_str is the
-    (possibly refreshed) token to save back to the DB.
+    Returns:
+        (service, token_json_str) — token_json_str may be refreshed; save it back to DB.
 
     Raises:
-        FileNotFoundError  — credentials.json not found
+        FileNotFoundError  — credentials not found anywhere
         RuntimeError       — auth flow needed (first-time setup)
     """
     try:
@@ -152,11 +195,8 @@ def get_gmail_service(token_json: Optional[str] = None):
 
     # 4. If still no valid creds, we need the auth flow
     if not creds or not creds.valid:
-        if not os.path.exists(CREDENTIALS_FILE):
-            raise FileNotFoundError(
-                f"credentials.json not found at '{CREDENTIALS_FILE}'. "
-                "Download it from Google Cloud Console → APIs & Services → Credentials."
-            )
+        # Validate credentials are available (raises FileNotFoundError if not)
+        _load_credentials_config(credentials_json)
         raise RuntimeError("AUTH_REQUIRED")
 
     # Serialize token back (may have been refreshed)
@@ -166,24 +206,30 @@ def get_gmail_service(token_json: Optional[str] = None):
     return service, token_str
 
 
-def get_auth_url(state: str = "") -> tuple[str, object]:
+def get_auth_url(
+    state: str = "",
+    credentials_json: Optional[str] = None,
+) -> tuple:
     """
     Generate the OAuth2 authorization URL for first-time setup.
-    Returns (auth_url, flow) — store flow in session_state to exchange code later.
+
+    Args:
+        state:            Optional OAuth state string.
+        credentials_json: JSON string of the OAuth client credentials (from DB).
+                          Falls back to credentials.json on disk if not provided.
+
+    Returns:
+        (auth_url, flow) — store flow in session_state to exchange code later.
     """
     try:
         from google_auth_oauthlib.flow import Flow
     except ImportError:
         raise ImportError("Run: pip install google-auth-oauthlib")
 
-    if not os.path.exists(CREDENTIALS_FILE):
-        raise FileNotFoundError(
-            f"credentials.json not found at '{CREDENTIALS_FILE}'. "
-            "Download it from Google Cloud Console."
-        )
+    config = _load_credentials_config(credentials_json)  # raises if not found
 
-    flow = Flow.from_client_secrets_file(
-        CREDENTIALS_FILE,
+    flow = Flow.from_client_config(
+        config,
         scopes=SCOPES,
         redirect_uri="urn:ietf:wg:oauth:2.0:oob",  # Desktop/OOB flow — user copies code
     )
@@ -203,10 +249,14 @@ def exchange_code_for_token(flow, code: str) -> str:
     """
     flow.fetch_token(code=code)
     creds = flow.credentials
+    token_str = creds.to_json()
     # Also save to disk as fallback
-    with open(TOKEN_FILE, "w") as f:
-        f.write(creds.to_json())
-    return creds.to_json()
+    try:
+        with open(TOKEN_FILE, "w") as f:
+            f.write(token_str)
+    except Exception as e:
+        logger.warning(f"Could not save token.json to disk: {e}")
+    return token_str
 
 
 # ── Email fetching ────────────────────────────────────────────────────────────
@@ -216,7 +266,7 @@ def fetch_emails(
     query: str = "",
     max_results: int = 50,
     label_ids: Optional[list] = None,
-) -> list[dict]:
+) -> list:
     """
     Fetch emails matching a Gmail search query.
     Returns list of parsed email dicts.
@@ -358,16 +408,16 @@ def classify_email(email: dict) -> dict:
     combined      = f"{subject_lower} {sender_lower} {body_lower}"
 
     result = {
-        "type":           "unknown",
-        "confidence":     0.0,
-        "extracted_amount": None,
+        "type":               "unknown",
+        "confidence":         0.0,
+        "extracted_amount":   None,
         "extracted_merchant": None,
-        "is_purchase":    False,
-        "is_notification": False,
-        "is_task":        False,
-        "is_newsletter":  False,
+        "is_purchase":        False,
+        "is_notification":    False,
+        "is_task":            False,
+        "is_newsletter":      False,
         "suggested_category": None,
-        "priority":       "normal",
+        "priority":           "normal",
     }
 
     scores = {"purchase": 0, "notification": 0, "task": 0, "newsletter": 0}
@@ -501,7 +551,7 @@ def _suggest_category(sender: str, subject: str, body: str) -> str:
 
 # ── Amount extraction helper ──────────────────────────────────────────────────
 
-def extract_amounts_from_body(body: str) -> list[float]:
+def extract_amounts_from_body(body: str) -> list:
     """Extract all dollar amounts from email body text."""
     amounts = []
     for pattern in AMOUNT_PATTERNS:
@@ -650,13 +700,13 @@ Return this exact JSON structure:
 # ── Batch processing ──────────────────────────────────────────────────────────
 
 def process_emails_batch(
-    emails: list[dict],
+    emails: list,
     api_key: str = "",
     use_llm: bool = True,
     use_ollama: bool = False,
     ollama_url: str = "",
     max_llm_calls: int = 20,
-) -> list[dict]:
+) -> list:
     """
     Process a batch of emails: classify, extract data, optionally use LLM.
 
