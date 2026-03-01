@@ -1,0 +1,27 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Grafana Alerting Provisioning — Connect to Alertmanager
+# Grafana will forward its own alerts to Alertmanager for routing to phone.
+# ─────────────────────────────────────────────────────────────────────────────
+
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: Alertmanager
+    receivers:
+      - uid: alertmanager
+        type: prometheus-alertmanager
+        settings:
+          url: http://alertmanager:9093
+          basicAuthUser: ""
+        disableResolveMessage: false
+
+policies:
+  - orgId: 1
+    receiver: Alertmanager
+    group_by:
+      - alertname
+      - instance
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h

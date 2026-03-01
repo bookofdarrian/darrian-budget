@@ -1,0 +1,215 @@
+groups:
+
+  # ── Host-Level Alerts (Node Exporter) ────────────────────────────────────────
+  - name: host_alerts
+    rules:
+
+      # CPU > 85% for 5 minutes
+      - alert: HighCPUUsage
+        expr: |
+          100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 5m
+        labels:
+          severity: warning
+          team: homelab
+        annotations:
+          summary: "🔥 High CPU on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value | printf \"%.1f\" }}% (threshold: 85%) on {{ $labels.instance }}. Has been above threshold for 5 minutes."
+
+      # CPU > 95% for 2 minutes — critical
+      - alert: CriticalCPUUsage
+        expr: |
+          100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 95
+        for: 2m
+        labels:
+          severity: critical
+          team: homelab
+        annotations:
+          summary: "🚨 CRITICAL CPU on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value | printf \"%.1f\" }}% (threshold: 95%) on {{ $labels.instance }}."
+
+      # RAM > 85% used
+      - alert: HighMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          team: homelab
+        annotations:
+          summary: "🧠 High RAM usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value | printf \"%.1f\" }}% on {{ $labels.instance }}. Available: {{ with query \"node_memory_MemAvailable_bytes\" }}{{ . | first | value | humanize1024 }}B{{ end }}"
+
+      # RAM > 95% used — critical
+      - alert: CriticalMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+          team: homelab
+        annotations:
+          summary: "🚨 CRITICAL RAM on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value | printf \"%.1f\" }}% on {{ $labels.instance }}. Server may OOM soon."
+
+      # Disk > 80% full
+      - alert: DiskSpaceWarning
+        expr: |
+          (1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay|squashfs"})) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: homelab
+        annotations:
+          summary: "💾 Disk space warning on {{ $labels.instance }}"
+          description: "Filesystem {{ $labels.mountpoint }} is {{ $value | printf \"%.1f\" }}% full on {{ $labels.instance }}."
+
+      # Disk > 90% full — critical
+      - alert: DiskSpaceCritical
+        expr: |
+          (1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay|squashfs"})) * 100 > 90
+        for: 2m
+        labels:
+          severity: critical
+          team: homelab
+        annotations:
+          summary: "🚨 CRITICAL disk space on {{ $labels.instance }}"
+          description: "Filesystem {{ $labels.mountpoint }} is {{ $value | printf \"%.1f\" }}% full on {{ $labels.instance }}. Take action NOW."
+
+      # Disk filling fast — will be full in < 4 hours
+      - alert: DiskFillingSoon
+        expr: |
+          predict_linear(node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"}[1h], 4 * 3600) < 0
+        for: 10m
+        labels:
+          severity: warning
+          team: homelab
+        annotations:
+          summary: "📈 Disk filling fast on {{ $labels.instance }}"
+          description: "Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} is predicted to be full in less than 4 hours."
+
+      # Host unreachable / down
+      - alert: HostDown
+        expr: up{job="node-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: homelab
+        annotations:
+          summary: "💀 Host DOWN: {{ $labels.instance }}"
+          description: "Node Exporter on {{ $labels.instance }} has been unreachable for 1 minute. The server may be down."
+
+      # High network receive (> 100 MB/s)
+      - alert: HighNetworkReceive
+        expr: |
+          rate(node_network_receive_bytes_total{device!~"lo|docker.*|veth.*|br.*"}[5m]) > 100 * 1024 * 1024
+        for: 5m
+        labels:
+          severity: warning
+          team: homelab
+        annotations:
+          summary: "🌐 High inbound network on {{ $labels.instance }}"
+          description: "Interface {{ $labels.device }} receiving {{ $value | humanize }}B/s on {{ $labels.instance }}."
+
+      # High network transmit (> 100 MB/s)
+      - alert: HighNetworkTransmit
+        expr: |
+          rate(node_network_transmit_bytes_total{device!~"lo|docker.*|veth.*|br.*"}[5m]) > 100 * 1024 * 1024
+        for: 5m
+        labels:
+          severity: warning
+          team: homelab
+        annotations:
+          summary: "🌐 High outbound network on {{ $labels.instance }}"
+          description: "Interface {{ $labels.device }} transmitting {{ $value | humanize }}B/s on {{ $labels.instance }}."
+
+      # System load > number of CPUs * 2
+      - alert: HighSystemLoad
+        expr: |
+          node_load15 > count by(instance) (node_cpu_seconds_total{mode="idle"}) * 2
+        for: 10m
+        labels:
+          severity: warning
+          team: homelab
+        annotations:
+          summary: "⚡ High system load on {{ $labels.instance }}"
+          description: "15-minute load average is {{ $value | printf \"%.2f\" }} on {{ $labels.instance }}."
+
+      # Swap usage > 80%
+      - alert: HighSwapUsage
+        expr: |
+          (1 - (node_memory_SwapFree_bytes / node_memory_SwapTotal_bytes)) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: homelab
+        annotations:
+          summary: "🔄 High swap usage on {{ $labels.instance }}"
+          description: "Swap is {{ $value | printf \"%.1f\" }}% used on {{ $labels.instance }}. RAM pressure is high."
+
+  # ── Container Alerts (cAdvisor) ───────────────────────────────────────────────
+  - name: container_alerts
+    rules:
+
+      # Container has restarted in the last 5 minutes
+      - alert: ContainerRestarted
+        expr: |
+          increase(container_start_time_seconds{name!=""}[5m]) > 0
+          and on(name) container_last_seen{name!=""} > 0
+        for: 0m
+        labels:
+          severity: warning
+          team: homelab
+        annotations:
+          summary: "🔁 Container restarted: {{ $labels.name }}"
+          description: "Container {{ $labels.name }} has restarted. Check logs: docker logs {{ $labels.name }}"
+
+      # Container is down / not running
+      - alert: ContainerDown
+        expr: |
+          absent(container_last_seen{name=~"budget-app|aura-compression|vikunja|portainer|nginx-proxy-manager|prometheus|grafana|alertmanager"})
+        for: 2m
+        labels:
+          severity: critical
+          team: homelab
+        annotations:
+          summary: "💀 Container DOWN: {{ $labels.name }}"
+          description: "Container {{ $labels.name }} has not been seen for 2 minutes. It may have crashed."
+
+      # Container CPU > 80%
+      - alert: ContainerHighCPU
+        expr: |
+          (rate(container_cpu_usage_seconds_total{name!="",name!~"POD"}[5m]) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: homelab
+        annotations:
+          summary: "🔥 Container high CPU: {{ $labels.name }}"
+          description: "Container {{ $labels.name }} is using {{ $value | printf \"%.1f\" }}% CPU."
+
+      # Container RAM > 90% of its limit
+      - alert: ContainerHighMemory
+        expr: |
+          (container_memory_usage_bytes{name!="",name!~"POD"} / container_spec_memory_limit_bytes{name!="",name!~"POD"}) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          team: homelab
+        annotations:
+          summary: "🧠 Container near memory limit: {{ $labels.name }}"
+          description: "Container {{ $labels.name }} is using {{ $value | printf \"%.1f\" }}% of its memory limit."
+
+      # Container OOM killed
+      - alert: ContainerOOMKilled
+        expr: |
+          kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1
+          or
+          container_oom_events_total > 0
+        for: 0m
+        labels:
+          severity: critical
+          team: homelab
+        annotations:
+          summary: "💥 Container OOM killed: {{ $labels.name }}"
+          description: "Container {{ $labels.name }} was killed due to out-of-memory. Increase its mem_limit."

@@ -1,5 +1,6 @@
 streamlit>=1.32.0
 pandas>=2.0.0
+openpyxl>=3.1.0
 pdfplumber>=0.11.0
 anthropic>=0.82.0
 psycopg2-binary>=2.9.0
@@ -8,4 +9,14 @@ bcrypt>=4.1.0
 stripe>=8.0.0
 yfinance>=0.2.40
 feedparser>=6.0.0
-# build: 2026-02-25-invest-features
+# Gmail / Personal Assistant
+google-auth>=2.28.0
+google-auth-oauthlib>=1.2.0
+google-auth-httplib2>=0.2.0
+google-api-python-client>=2.120.0
+# Real estate scraping (MLS + Redfin via Realtor.com, no API key needed)
+homeharvest>=0.8.18
+# Spotify integration (Media Library)
+spotipy>=2.23.0
+# build: 2026-02-28-media-spotify
+

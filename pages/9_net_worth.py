@@ -4,7 +4,7 @@ from datetime import datetime, date
 from utils.db import get_conn, init_db, read_sql, execute, fetchone, load_investment_context
 from utils.auth import require_login, require_pro, render_sidebar_brand, render_sidebar_user_widget, inject_css
 
-st.set_page_config(page_title="Net Worth — Peach State Savings", page_icon="💎", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(page_title="Net Worth — Peach State Savings", page_icon="🍑", layout="wide", initial_sidebar_state="auto")
 init_db()
 require_login()
 require_pro("Net Worth Tracker")
@@ -14,6 +14,8 @@ inject_css()
 render_sidebar_brand()
 st.sidebar.markdown("---")
 st.sidebar.page_link("app.py",                    label="Overview",          icon="📊")
+st.sidebar.page_link("pages/18_real_estate_bot.py", label="🏠 Real Estate Bot", icon="🏠")
+st.sidebar.page_link("pages/22_todo.py",            label="✅ Todo",             icon="✅")
 st.sidebar.page_link("pages/1_expenses.py",       label="Expenses",          icon="📋")
 st.sidebar.page_link("pages/2_income.py",         label="Income",            icon="💵")
 st.sidebar.page_link("pages/3_business_tracker.py",   label="Business Tracker 🔒", icon="💼")
