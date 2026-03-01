@@ -103,12 +103,10 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           npm install -g @railway/cli
-          
-          # Deploy to the darrian-budget project
-          railway --token $RAILWAY_TOKEN up \
-            --deployment-trigger push \
-            --service budget-app \
-            --project darrian-budget
+          echo "Railway CLI version:"
+          railway --version || true
+          # RAILWAY_TOKEN env var is used automatically by Railway CLI v3+
+          railway up --detach --service budget-app || railway up --detach
       
       - name: Verify Production Deployment
         run: |
