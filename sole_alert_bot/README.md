@@ -61,7 +61,7 @@ nano /etc/environment
 
 Add these lines (fill in your real values):
 ```bash
-DATABASE_URL=postgres://user:password@host.railway.app:5432/railway
+DATABASE_URL=postgres://user:password@localhost:5432/sole_bot
 TELEGRAM_BOT_TOKEN=7123456789:AAFxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 TELEGRAM_CHAT_ID=123456789
 EBAY_CLIENT_ID=DarrianB-404Sole-PRD-xxxxxxxxxxxx-xxxxxxxx

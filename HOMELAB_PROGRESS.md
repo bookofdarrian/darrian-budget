@@ -113,12 +113,12 @@ which is connected to your home router (172.17.84.x network).
 3. Toggle VPN on
 4. Open Safari → `http://100.95.125.112:8501` — budget app should load on cellular
 
-**After iPhone:** Optionally point Railway AURA at your home lab to cut Claude API costs:
+**After iPhone:** Optionally point AURA at your home lab to cut Claude API costs:
 ```
 AURA_BASE_URL=http://100.95.125.112:8000
 AURA_ENABLED=true
 ```
-(Set in Railway dashboard → `darrian-budget` project → Variables)
+(Set in `.env` on CT100 or via `save_api_key.py`)
 
 ---
 
@@ -141,7 +141,7 @@ AURA_ENABLED=true
 - [x] **Step 10** — Clone repo into container
 
 ### 🌐 Phase 4 — Deploy Your Websites
-- [x] **Step 11** — Create `.env` with Railway env vars
+- [x] **Step 11** — Create `.env` with app env vars
 - [x] **Step 12** — Create `docker-compose.yml`
 - [x] **Step 13** — Create `Dockerfile` for budget app
 - [x] **Step 14** — Launch all containers ✅ All running
@@ -158,7 +158,7 @@ AURA_ENABLED=true
 - [x] **Step 21** — Install Tailscale on Mac (`100.74.143.69`) ✅
 - [ ] **Step 22** — Install Tailscale on iPhone (App Store → "Tailscale" → sign in with dbelcher003@)
 - [x] **Step 23** — Verify remote access ✅ All 5 services confirmed healthy via Tailscale
-- [ ] **Step 24** — (Optional) Update Railway env vars: `AURA_BASE_URL=http://100.95.125.112:8000`
+- [ ] **Step 24** — (Optional) Update AURA env vars in `.env`: `AURA_BASE_URL=http://100.95.125.112:8000`
 
 ### 💾 Phase 7 — TrueNAS Storage (When Drives Arrive)
 - [ ] **Step 25** — Connect dual-bay enclosure with 2x WD Red 4TB drives
@@ -242,9 +242,8 @@ curl http://localhost:8000/health
 
 - **Daily driver:** 2016 MacBook Pro (Intel, 2x Thunderbolt 3 USB-C ports)
 - **Home lab server:** Beelink SER Mini PC (AMD Ryzen 7, 32GB RAM, 500GB NVMe)
-- **Budget app (primary):** https://www.peachstatesavings.com (darrian-budget Railway project)
-- **Budget app (mirror):** https://darrian-todo-production.up.railway.app (darrian-todo Railway project — todo app replaced with budget app 2026-02-25)
-- **Goal:** Run AURA on home lab to cut Claude API costs, host budget app locally
+- **Budget app:** https://www.peachstatesavings.com (CT100 home lab, self-hosted)
+- **Goal:** Run AURA on home lab to cut Claude API costs — ✅ COMPLETE
 - **Plugable dock:** USBC-7IN1 — 1 HDMI only, no ethernet — used for MacBook peripherals
 - **3-monitor setup:** Dock HDMI → Monitor 1, MacBook USB-C port 2 → Monitor 2, MacBook screen → Monitor 3
 - **Network:** Mac on 172.17.84.x (WiFi), Beelink on 100.117.1.x (different subnet — fix via TP-Link switch)
@@ -278,11 +277,10 @@ curl http://localhost:8000/health
 | Nginx Proxy Manager | http://100.95.125.112:81 |
 | Mac (SSH) | ssh darrianbelcher@100.74.143.69 |
 
-### Railway (Public Internet — Always On)
+### 🌐 Public Internet (Self-Hosted)
 | Service | URL |
 |---------|-----|
-| Budget App (primary) | https://www.peachstatesavings.com |
-| Budget App (mirror) | https://darrian-todo-production.up.railway.app |
+| Budget App | https://www.peachstatesavings.com (CT100 @ 100.95.125.112, via Nginx) |
 
 ---
 

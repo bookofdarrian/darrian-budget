@@ -5,7 +5,7 @@
 
 ## Overview — What You're Doing
 
-You're moving your websites OFF Railway (cloud, costs money) and onto your **Beelink home lab server** (you own it, runs 24/7, free after hardware cost).
+Your websites are now hosted on your **Beelink home lab server** (you own it, runs 24/7, free after hardware cost).
 
 **Sites you're hosting:**
 | Site | Stack | Port |
@@ -106,8 +106,8 @@ Create a `.env` file in the homelab directory:
 mkdir -p /root/homelab
 cat > /root/homelab/.env << 'EOF'
 # ── Database ──────────────────────────────────────────────────────────────
-# Copy your DATABASE_URL from Railway dashboard → Variables
-DATABASE_URL=postgresql://user:password@host:5432/dbname
+# Your local PostgreSQL connection string
+DATABASE_URL=postgresql://budget:your_password@localhost:5432/budget
 
 # ── AURA (internal Docker network — use service name, not IP) ─────────────
 AURA_BASE_URL=http://aura:8000
@@ -128,9 +128,7 @@ EOF
 nano /root/homelab/.env
 ```
 
-**Where to get your Railway env vars:**
-1. Go to https://railway.app → your project
-2. Click **Variables** tab
+**Your env vars are set locally** in `.env` on CT100 or via `save_api_key.py`.
 3. Copy each value into the `.env` file above
 
 ---
@@ -412,18 +410,18 @@ https://100.x.x.x:8006  ← Proxmox Web UI
 
 ---
 
-## Step 12 — Update Railway to Use Your Home Lab AURA
+## Step 12 — AURA is Running on Your Home Lab
 
-Your budget app on Railway can now use your home lab AURA server instead of running without it.
+Your budget app already uses your home lab AURA server on CT100.
 
-In Railway dashboard → your project → **Variables** tab:
+In `.env` on CT100:
 ```
 AURA_BASE_URL=http://100.x.x.x:8000    ← your Tailscale IP
 AURA_ENABLED=true
 ```
 
 This means:
-- Railway hosts the budget app (public URL, SSL, always on)
+- Home lab (CT100) hosts the budget app (public URL via Nginx, SSL via Let's Encrypt, always on)
 - Your home lab runs AURA (saves Claude API tokens)
 - Best of both worlds until you're ready to fully self-host
 

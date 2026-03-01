@@ -293,11 +293,10 @@ Beelink Mini PC — eth: enp2s0 → bridge: umbro @ 100.117.1.50
 | code-server | http://100.95.125.112:8080 |
 | Grafana | http://100.95.125.112:3000 |
 
-### Public Internet (Railway)
+### Public Internet (Self-Hosted)
 | Service | URL |
 |---------|-----|
-| Budget App (primary) | https://www.peachstatesavings.com |
-| Budget App (mirror) | https://darrian-todo-production.up.railway.app |
+| Budget App | https://www.peachstatesavings.com (CT100, Nginx) |
 
 ---
 

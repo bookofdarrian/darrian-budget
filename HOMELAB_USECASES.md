@@ -151,7 +151,7 @@ Access Grafana at `http://100.95.125.112:3000` → import dashboard ID `1860`
 ---
 
 ### 4. 🔐 Vaultwarden — Self-Hosted Password Manager
-**Why it's #4 for you:** You have financial accounts, Railway, Proxmox, Tailscale,
+**Why it's #4 for you:** You have financial accounts, Proxmox, Tailscale,
 Postgres, Stripe — that's a lot of passwords. Vaultwarden is a self-hosted
 Bitwarden-compatible server. Your passwords stay on YOUR hardware.
 
@@ -184,11 +184,10 @@ app on Mac + iPhone → point it at your server URL.
 ---
 
 ### 5. 📦 Automated Postgres Backups to TrueNAS
-**Why:** Your budget app uses Postgres on Railway. If Railway has an outage or you
-exceed the free tier, you lose data. A nightly backup to your local NAS is insurance.
+**Why:** Your budget app uses Postgres on CT100. A nightly backup to your NAS is insurance against drive failure.
 
 **What you get:**
-- Nightly `pg_dump` of your Railway Postgres database
+- Nightly `pg_dump` of your local Postgres database on CT100
 - Stored on your RAID 1 NAS (survives a drive failure)
 - 30-day retention — restore any day's data
 - Completely automated — set it and forget it
@@ -343,11 +342,10 @@ Option C: Build a new Streamlit page (you already know how)
 ---
 
 ### 9. 🌐 Public Domain + Real SSL (peachstatesavings.com → Homelab)
-**Why:** Right now Railway hosts your public site. Once you're confident in your
-homelab's uptime, you can cut Railway costs entirely and host at home.
+**Why:** Your site is now self-hosted. This use case is COMPLETE — Nginx on CT100 serves peachstatesavings.com directly.
 
 **What you get:**
-- No Railway hosting fees
+- No hosting fees — you own the hardware
 - Full control over your stack
 - Real SSL cert (Let's Encrypt, free) via NPM
 - Custom domain pointing to your homelab via Cloudflare Tunnel (no port forwarding)
@@ -356,28 +354,27 @@ homelab's uptime, you can cut Railway costs entirely and host at home.
 ```
 Cloudflare → Add domain → Create Tunnel → point to CT100:8501
 NPM → Add SSL cert → Force HTTPS
-Railway → Remove budget app (keep Postgres for now or migrate to local)
+# Migration complete — Railway is no longer used
 ```
 
-**Effort:** Medium (2-3 hours) | **Value:** Saves Railway costs, full ownership
+**Effort:** ✅ DONE | **Value:** Full ownership, no hosting fees
 
 ---
 
 ### 10. 🧪 Dev/Staging Environment — Test Before You Break Prod
-**Why it's relevant to you:** You've been making changes directly to the Railway
-production app. One bad deploy = peachstatesavings.com is down.
+**Why it's relevant to you:** Deploying directly to the self-hosted production
 
 **What you get:**
 - A staging CT (CT101) that mirrors production
-- Test new budget app features locally before pushing to Railway
+- Test new budget app features locally before pushing to production
 - Break things safely — prod is untouched
-- Git workflow: `main` → Railway (prod), `dev` → homelab (staging)
+- Git workflow: `main` → home lab prod (Nginx), `dev` → home lab staging (port 8502)
 
 **How to set it up:**
 ```
 Proxmox → Clone CT100 → CT101 (staging)
 CT101 runs budget app on port 8502
-Test at http://100.95.125.112:8502 before pushing to Railway
+Test at http://100.95.125.112:8502 before pushing to prod
 ```
 
 **Effort:** Low (1 hour) | **Value:** High — protects your production app
@@ -390,7 +387,7 @@ mind), Uptime Kuma gives you a beautiful status page and sends alerts when anyth
 goes down.
 
 **What you get:**
-- Monitor all your services (budget app, AURA, Railway, etc.)
+- Monitor all your services (budget app, AURA, Nginx, Postgres, etc.)
 - Phone/email alerts when something goes down
 - Public status page: `status.yourdomain.com`
 - Tracks response time history
@@ -442,7 +439,7 @@ THIS MONTH:
   9. Set up staging environment (CT101)
 
 WHEN READY:
-  10. Migrate off Railway → host at home with Cloudflare Tunnel
+  10. ✅ Migrated off Railway → now hosting at home with Nginx
   11. Add Uptime Kuma status page
   12. (Eventually) Second Proxmox node
 ```
@@ -456,7 +453,7 @@ WHEN READY:
 | Ollama (local AI) | $0 | ~$5-20 in Claude API costs |
 | Immich (vs iCloud 200GB) | $0 | $2.99/mo |
 | Vaultwarden (vs 1Password) | $0 | $3-5/mo |
-| Self-hosted vs Railway | $0 | $5-20/mo (when ready) |
+| Self-hosted (done) | $0 | $5-20/mo saved |
 | TrueNAS backups | $0 | Priceless (data protection) |
 | **Total potential savings** | | **~$16-48/month** |
 

@@ -1,7 +1,7 @@
 """
 One-time fix: Add missing second paycheck to February 2026 income
 and rename the existing single paycheck entry to "Paycheck 1".
-Run with: railway run python fix_feb_income.py
+Run with: python fix_feb_income.py
 """
 import os
 try:
