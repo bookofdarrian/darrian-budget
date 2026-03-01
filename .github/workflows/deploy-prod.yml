@@ -51,7 +51,7 @@ jobs:
     needs: pre-prod-checks
     environment: production
     permissions:
-      contents: read
+      contents: write
       packages: write
     steps:
       - uses: actions/checkout@v4
@@ -91,6 +91,8 @@ jobs:
       
       - name: Create Release Tag
         run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
           TAG="v$(date +%Y.%m.%d-%H%M%S)"
           echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
           git tag -a $TAG -m "Production release from ${{ github.sha }}"
