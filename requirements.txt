@@ -16,5 +16,7 @@ google-auth-httplib2>=0.2.0
 google-api-python-client>=2.120.0
 # Real estate scraping (MLS + Redfin via Realtor.com, no API key needed)
 homeharvest>=0.8.18
-# build: 2026-02-25-invest-features
+# Spotify integration (Media Library)
+spotipy>=2.23.0
+# build: 2026-02-28-media-spotify
 
