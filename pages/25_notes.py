@@ -7,6 +7,7 @@ import streamlit as st
 from datetime import datetime
 from utils.db import get_conn, USE_POSTGRES, execute as db_exec, init_db, get_setting, set_setting
 from utils.auth import require_login, render_sidebar_brand, render_sidebar_user_widget, inject_css
+from utils.voice_input import render_voice_input
 
 st.set_page_config(
     page_title="📝 Notes — Peach State Savings",
@@ -474,9 +475,25 @@ with tab_ai:
     # ── Quick capture ──────────────────────────────────────────────────────────
     st.divider()
     st.markdown("### ⚡ Quick Capture")
-    st.caption("Capture a thought fast — no formatting required. Just type and save.")
+    st.caption("Capture a thought fast — speak it or type it.")
+
+    # Voice capture
+    voice_text = render_voice_input(
+        label="🎤 Speak your note",
+        key="notes_quick_voice",
+    )
+    if voice_text and "notes_voice_prefill" not in st.session_state:
+        st.session_state["notes_voice_prefill"] = voice_text
+
+    voice_prefill = st.session_state.pop("notes_voice_prefill", "")
+
     with st.form("quick_capture", clear_on_submit=True):
-        qc_text = st.text_area("What's on your mind?", height=120, placeholder="Brain dump here...")
+        qc_text = st.text_area(
+            "What's on your mind?",
+            value=voice_prefill,
+            height=120,
+            placeholder="Brain dump here... or use the mic above.",
+        )
         qc_title = st.text_input("Title (optional)", placeholder="Auto-generated if blank")
         qc_cat   = st.selectbox("Category", CATEGORIES, index=0)
         if st.form_submit_button("⚡ Capture", type="primary", use_container_width=True):

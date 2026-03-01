@@ -3,6 +3,8 @@ import pandas as pd
 from datetime import datetime, date
 from utils.db import get_conn, init_db, execute, get_setting, set_setting
 from utils.auth import require_login, render_sidebar_brand, render_sidebar_user_widget, inject_css
+from utils.voice_input import render_voice_input
+from aura.jarvis import ask_jarvis
 
 st.set_page_config(
     page_title="Personal Assistant — Peach State Savings",
@@ -970,13 +972,14 @@ if connected:
             st.success("Gmail disconnected.")
             st.rerun()
 
-tab_setup, tab_inbox, tab_purchases, tab_tasks, tab_rules, tab_ai = st.tabs([
+tab_setup, tab_inbox, tab_purchases, tab_tasks, tab_rules, tab_ai, tab_jarvis = st.tabs([
     "📧 Gmail Setup",
     "📬 Inbox",
     "🛒 Purchase Log",
     "✅ Tasks",
     "🔔 Rules",
     "🧠 AI Assistant",
+    "🎤 Jarvis",
 ])
 
 with tab_setup:
@@ -1000,3 +1003,100 @@ with tab_rules:
 
 with tab_ai:
     _render_ai_tab()
+
+with tab_jarvis:
+    st.subheader("🎤 Talk to Jarvis")
+    st.caption("Your personal AI — voice or text. Powered by Claude claude-opus-4-5 with Jarvis personality.")
+
+    # Initialize chat history
+    if "jarvis_history" not in st.session_state:
+        st.session_state["jarvis_history"] = []
+
+    # ── Voice input ────────────────────────────────────────────────────────────
+    st.markdown("**Speak or type below:**")
+    voice_text = render_voice_input(
+        label="🎤 Hold to speak to Jarvis",
+        key="jarvis_voice_input",
+    )
+
+    # Text fallback
+    typed_text = st.text_input(
+        "Or type your message",
+        placeholder="Ask Jarvis anything...",
+        key="jarvis_text_input",
+        label_visibility="collapsed",
+    )
+
+    col_send, col_clear = st.columns([3, 1])
+    send_pressed  = col_send.button("▶️ Send", type="primary", use_container_width=True, key="jarvis_send")
+    clear_pressed = col_clear.button("🗑️ Clear", use_container_width=True, key="jarvis_clear")
+
+    if clear_pressed:
+        st.session_state["jarvis_history"] = []
+        st.rerun()
+
+    # Determine query (voice takes priority over typed)
+    query = voice_text or (typed_text.strip() if send_pressed else "")
+
+    if query:
+        with st.spinner("Jarvis is thinking..."):
+            response = ask_jarvis(query)
+
+        # Append to history
+        st.session_state["jarvis_history"].append(
+            {"role": "you", "text": query}
+        )
+        st.session_state["jarvis_history"].append(
+            {"role": "jarvis", "text": response}
+        )
+        st.rerun()
+
+    # ── Chat history ───────────────────────────────────────────────────────────
+    history = st.session_state.get("jarvis_history", [])
+    if not history:
+        st.markdown(
+            "<div style='color:#666;font-size:13px;margin-top:24px;text-align:center'>"
+            "🤖 Jarvis is standing by. Speak or type to begin."
+            "</div>",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.divider()
+        for msg in reversed(history):
+            if msg["role"] == "jarvis":
+                st.markdown(
+                    f"<div style='background:#1a2a1a;border-left:3px solid #4caf50;"
+                    f"padding:10px 14px;border-radius:6px;margin-bottom:8px'>"
+                    f"<span style='color:#4caf50;font-size:11px;font-weight:bold'>JARVIS</span><br>"
+                    f"<span style='color:#e0e0e0'>{msg['text']}</span></div>",
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    f"<div style='background:#1a1a2a;border-left:3px solid #5c6bc0;"
+                    f"padding:10px 14px;border-radius:6px;margin-bottom:8px'>"
+                    f"<span style='color:#5c6bc0;font-size:11px;font-weight:bold'>YOU</span><br>"
+                    f"<span style='color:#e0e0e0'>{msg['text']}</span></div>",
+                    unsafe_allow_html=True,
+                )
+
+    # ── Quick prompts ──────────────────────────────────────────────────────────
+    st.divider()
+    st.markdown("**Quick prompts:**")
+    qp_cols = st.columns(3)
+    quick_prompts = [
+        "What should I focus on today?",
+        "Remind me what my cats need",
+        "Give me a productivity tip",
+        "What's a good money habit to build?",
+        "Motivate me to work on my homelab",
+        "Give me a content idea for my channel",
+    ]
+    for i, prompt in enumerate(quick_prompts):
+        with qp_cols[i % 3]:
+            if st.button(prompt, key=f"qp_{i}", use_container_width=True):
+                with st.spinner("Jarvis..."):
+                    resp = ask_jarvis(prompt)
+                st.session_state["jarvis_history"].append({"role": "you", "text": prompt})
+                st.session_state["jarvis_history"].append({"role": "jarvis", "text": resp})
+                st.rerun()
