@@ -147,11 +147,11 @@ Replace `100.117.1.171` with your Beelink's **Tailscale IP** (the `100.64.x.x` f
 **The real test:** Turn off your phone's WiFi (use cellular only) and open `http://100.64.x.x:8501`.
 If the budget app loads → Tailscale is working perfectly. 🎉
 
-### Step 5 — (Optional) Point Railway AURA at Your Home Lab
+### Step 5 — (Optional) Point AURA at Your Home Lab
 
-Once Tailscale is confirmed working, you can cut Claude API costs by routing your Railway-hosted budget app through your home lab AURA server:
+Once Tailscale is confirmed working, you can cut Claude API costs by routing your budget app through your home lab AURA server:
 
-In Railway dashboard → `darrian-budget` project → **Variables**:
+In `.env` on CT100 or via `save_api_key.py`:
 ```
 AURA_BASE_URL=http://100.64.x.x:8000
 AURA_ENABLED=true
@@ -304,8 +304,8 @@ In TrueNAS web UI:
 
 ## 🌍 Phase 8 — (Optional) Public Domain + Real SSL
 
-> **Do you need this?** Only if you want to replace Railway entirely and host at your own domain.
-> Your Railway apps at `peachstatesavings.com` already handle this for free.
+> **Do you need this?** Your app is already self-hosted.
+> This is now complete — your app at `peachstatesavings.com` is fully self-hosted via Nginx + Let's Encrypt on CT100.
 
 ### Step 1 — Get a Domain
 - **Free:** [duckdns.org](https://www.duckdns.org) — gives you `yourname.duckdns.org`
@@ -349,11 +349,10 @@ Now `https://budget.yourdomain.com` works from anywhere with a real SSL cert. �
 | Portainer | http://100.95.125.112:9000 |
 | Nginx Proxy Manager | http://100.95.125.112:81 |
 
-### 🌐 Railway (Public Internet — Always On)
+### 🌐 Public Internet (Self-Hosted)
 | Service | URL |
 |---------|-----|
-| Budget App (primary) | https://www.peachstatesavings.com |
-| Budget App (mirror) | https://darrian-todo-production.up.railway.app |
+| Budget App | https://www.peachstatesavings.com (CT100, Nginx proxy) |
 
 ---
 
@@ -372,7 +371,7 @@ Now `https://budget.yourdomain.com` works from anywhere with a real SSL cert. �
 - [ ] **Install Tailscale on Mac** (downloading from tailscale.com/download/macos)
 - [ ] **Install Tailscale on iPhone** (App Store → "Tailscale")
 - [ ] **Verify remote access** — turn off phone WiFi, open http://100.95.125.112:8501
-- [ ] Railway updated to use home lab AURA URL (after verifying Tailscale works remotely)
+- [x] AURA running on home lab (http://100.95.125.112:8000)
 - [ ] **Deploy monitoring stack** — `cd /opt/monitoring && docker-compose up -d`
 - [ ] **Import Grafana dashboard 1860** — http://100.117.1.171:3000 → Import → 1860
 - [ ] **Set up Pushover** — pushover.net → get keys → fill in monitoring/.env

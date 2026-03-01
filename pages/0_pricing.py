@@ -220,12 +220,12 @@ with col_pro:
                 if sandbox:
                     st.warning(
                         "⚙️ Test keys not configured. Add `STRIPE_TEST_SECRET_KEY` and "
-                        "`STRIPE_TEST_PRICE_ID` to your Railway environment variables."
+                        "`STRIPE_TEST_PRICE_ID` to your `.env` on CT100."
                     )
                 else:
                     st.warning(
                         "⚙️ Stripe not configured yet. Add `STRIPE_SECRET_KEY` and "
-                        "`STRIPE_PRICE_ID` to your Railway environment variables."
+                        "`STRIPE_PRICE_ID` to your `.env` on CT100."
                     )
         footer = "🧪 Test mode — no real charge" if sandbox else "Secure payment via Stripe · Cancel anytime"
         st.markdown(
@@ -286,7 +286,7 @@ with st.expander("Is my financial data secure and confidential?"):
 
         - 🔐 **Passwords** are hashed with **bcrypt** (industry-standard one-way hashing with a unique salt per user). We never store your plain-text password — not even we can read it.
         - 🛡️ **All traffic** between your browser and the server is encrypted via **HTTPS / TLS 1.3**, so your data is protected in transit.
-        - 🗄️ **Your financial data** (expenses, income, goals, net worth) is stored in a **private PostgreSQL database** hosted on Railway's secure infrastructure. Each user's data is isolated by account.
+        - 🗄️ **Your financial data** (expenses, income, goals, net worth) is stored in a **private PostgreSQL database** on our self-hosted server. Each user's data is isolated by account.
         - 📄 **Bank PDFs** are parsed in memory and immediately discarded — the raw file is never written to disk or stored in the database.
         - 🚫 **We never sell, share, or monetize your data.** Your financial information is used solely to power your personal dashboard.
         - 🤖 **AI features** (Claude): only the specific data you request analysis on is sent to Anthropic's API. No data is stored by Anthropic beyond their standard API request logs.

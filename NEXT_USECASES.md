@@ -627,12 +627,12 @@ for the business = **$1,340 tax deduction** = ~$360 in actual tax savings.
 ### 11. 🌐 Cloudflare Worker + Edge Cache for Budget App
 **New idea — not in the existing list**
 
-**The problem:** Your budget app on Railway cold-starts when it hasn't been
-accessed in a while. Users (including you) wait 10–15 seconds for the first load.
+**The problem:** Your self-hosted budget app may have slow first-load times when Streamlit hasn't been
+accessed when it reinitializes. Users may wait a few seconds on cold start.
 
 **What this does:**
-- Deploy a Cloudflare Worker (free tier: 100,000 requests/day) in front of Railway
-- Worker serves a "loading" page instantly while Railway warms up
+- Deploy a Cloudflare Worker (free tier: 100,000 requests/day) in front of your Nginx server
+- Worker serves a "loading" page instantly while Streamlit starts
 - Caches static assets (CSS, JS) at the edge — subsequent loads are instant
 - Adds DDoS protection and rate limiting for free
 - Bonus: Cloudflare Analytics shows you real traffic data

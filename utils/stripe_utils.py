@@ -5,7 +5,7 @@ Environment variables required:
   STRIPE_SECRET_KEY        — sk_live_... (production)
   STRIPE_PRICE_ID          — price_...   (live $4.99/month recurring price)
   STRIPE_WEBHOOK_SECRET    — whsec_...   (from Stripe dashboard → Webhooks)
-  APP_URL                  — https://your-app.railway.app (no trailing slash)
+  APP_URL                  — https://peachstatesavings.com (no trailing slash)
 
 Optional — sandbox/test mode (used automatically for TEST_MODE_EMAILS):
   STRIPE_TEST_SECRET_KEY   — sk_test_...
@@ -98,7 +98,7 @@ def create_checkout_session(user_email: str, user_id: int) -> str | None:
         if _is_sandbox(user_email):
             st.error(
                 "⚙️ Sandbox config incomplete — `STRIPE_TEST_PRICE_ID` is not set. "
-                "Add it to your Railway environment variables and redeploy."
+                "Add it to your `.env` on CT100 and restart the app."
             )
         return None
 

@@ -196,8 +196,8 @@ python3 aura/server.py &
 
 ### Step 3: Point Budget App at Home Lab
 ```bash
-# In Railway environment variables (or .env for local):
-AURA_BASE_URL=http://192.168.1.51:8000   # home lab IP
+# In .env on CT100 (or any environment):
+AURA_BASE_URL=http://100.95.125.112:8000   # home lab Tailscale IP
 # OR with Tailscale VPN:
 AURA_BASE_URL=http://100.x.x.x:8000     # Tailscale IP (works from anywhere)
 ```

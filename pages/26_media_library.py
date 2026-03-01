@@ -683,7 +683,7 @@ with tab_spotify:
             "**How to get your Spotify API credentials (free, 5 minutes):**\n\n"
             "1. Go to [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard)\n"
             "2. Click **Create App** → fill in any name/description\n"
-            "3. Set **Redirect URI** to `http://localhost:8501` (for local) or your Railway URL\n"
+            "3. Set **Redirect URI** to `http://localhost:8501` (for local) or your production URL\n"
             "4. Copy your **Client ID** and **Client Secret** below\n"
             "5. Under App Settings → **Redirect URIs**, add the same URL you enter below"
         )
