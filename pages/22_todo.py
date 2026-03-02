@@ -623,3 +623,204 @@ if _cal_available:
                 set_setting("google_token", "")
                 st.success("Credentials removed. Refreshing...")
                 st.rerun()
+
+
+# ── Agent Dev Queue ───────────────────────────────────────────────────────────
+import subprocess as _sp
+from pathlib import Path as _Path
+import json as _json
+
+st.divider()
+st.subheader("🤖 Agent Dev Queue")
+st.caption("Track agent progress, claim features for yourself, and monitor the SDLC pipeline — live.")
+
+BACKLOG_FILE = _Path(__file__).parent.parent / "BACKLOG.md"
+REPO_ROOT    = _Path(__file__).parent.parent
+
+
+def _run_git(cmd: str) -> str:
+    try:
+        r = _sp.run(cmd, shell=True, capture_output=True, text=True, cwd=str(REPO_ROOT))
+        return r.stdout.strip()
+    except Exception:
+        return ""
+
+
+def _parse_backlog():
+    if not BACKLOG_FILE.exists():
+        return [], [], []
+    text = BACKLOG_FILE.read_text()
+    yours, agent_q, done = [], [], []
+    priority = "MEDIUM"
+    for line in text.split("\n"):
+        upper = line.upper()
+        if "HIGH PRIORITY" in upper:
+            priority = "HIGH"
+        elif "MEDIUM PRIORITY" in upper:
+            priority = "MEDIUM"
+        elif "LOW PRIORITY" in upper:
+            priority = "LOW"
+        elif "COMPLETED" in upper:
+            priority = "DONE"
+
+        if line.startswith("- [x]"):
+            done.append(line[6:].strip())
+        elif line.startswith("- [ ]"):
+            task = line[6:].strip()
+            if "[YOU]" in task:
+                yours.append((task.replace("[YOU]", "").strip(), priority))
+            else:
+                agent_q.append((task, priority))
+    return yours, agent_q, done
+
+
+def _claim_feature(task_text: str):
+    if not BACKLOG_FILE.exists():
+        return
+    content = BACKLOG_FILE.read_text()
+    old_line = f"- [ ] {task_text}"
+    new_line = f"- [ ] [YOU] {task_text}"
+    if old_line in content:
+        BACKLOG_FILE.write_text(content.replace(old_line, new_line, 1))
+
+
+def _unclaim_feature(task_text: str):
+    if not BACKLOG_FILE.exists():
+        return
+    content = BACKLOG_FILE.read_text()
+    old_line = f"- [ ] [YOU] {task_text}"
+    new_line = f"- [ ] {task_text}"
+    if old_line in content:
+        BACKLOG_FILE.write_text(content.replace(old_line, new_line, 1))
+
+
+yours, agent_q, done = _parse_backlog()
+total = len(yours) + len(agent_q) + len(done)
+pct   = int(len(done) / total * 100) if total else 0
+
+# ── Summary metrics ───────────────────────────────────────────────────────────
+mc1, mc2, mc3, mc4 = st.columns(4)
+mc1.metric("✅ Completed",    len(done),    help="Features shipped to production")
+mc2.metric("🔒 Yours",        len(yours),   help="Features you claimed")
+mc3.metric("🤖 Agent Queue",  len(agent_q), help="Features agents will auto-build")
+mc4.metric("📊 Progress",     f"{pct}%",    help="Overall completion")
+
+if total > 0:
+    st.progress(pct / 100)
+
+aq1, aq2 = st.columns(2)
+
+# ── Your claimed features ─────────────────────────────────────────────────────
+with aq1:
+    st.markdown("**🔒 Your Claimed Features**")
+    st.caption("Agents skip these. Unclaim to return them to the queue.")
+    if yours:
+        for task, priority in yours:
+            col_a, col_b = st.columns([4, 1])
+            badge = {"HIGH": "🔴", "MEDIUM": "🟡", "LOW": "⚪"}.get(priority, "⚪")
+            col_a.markdown(f"{badge} {task[:60]}")
+            if col_b.button("↩", key=f"unclaim_{hash(task)}", help="Unclaim", use_container_width=True):
+                _unclaim_feature(task)
+                st.rerun()
+    else:
+        st.info("Nothing claimed. Claim features from the Agent Queue →")
+
+# ── Agent queue ───────────────────────────────────────────────────────────────
+with aq2:
+    st.markdown("**🤖 Agent Queue** — Agents pick from top at 11 PM nightly")
+    st.caption("Click 🔒 to take ownership and work on it yourself.")
+    if agent_q:
+        for i, (task, priority) in enumerate(agent_q[:8]):
+            col_a, col_b = st.columns([4, 1])
+            badge = {"HIGH": "🔴", "MEDIUM": "🟡", "LOW": "⚪"}.get(priority, "⚪")
+            next_tag = "  🎯 **NEXT TONIGHT**" if i == 0 else ""
+            col_a.markdown(f"{badge} {task[:55]}{next_tag}")
+            if col_b.button("🔒", key=f"claim_{hash(task)}", help="Claim this feature", use_container_width=True):
+                _claim_feature(task)
+                st.rerun()
+        if len(agent_q) > 8:
+            st.caption(f"... and {len(agent_q) - 8} more in queue")
+    else:
+        st.success("🎉 All features completed or claimed!")
+
+# ── Active branches ───────────────────────────────────────────────────────────
+branches_raw = _run_git("git branch -r --format='%(refname:short)'")
+feature_branches = [
+    b.replace("origin/", "").strip()
+    for b in branches_raw.split("\n")
+    if "feature/" in b
+]
+
+if feature_branches:
+    st.markdown("**🌿 Active Feature Branches**")
+    num_cols = min(3, len(feature_branches))
+    branch_cols = st.columns(num_cols)
+    for i, b in enumerate(feature_branches[:9]):
+        is_yours = any(
+            b.lower().replace("feature/", "").replace("-", "") in
+            t.lower().replace(" ", "").replace("-", "")
+            for t, _ in yours
+        )
+        tag = "🔵 YOU" if is_yours else "🟢 AGENT"
+        branch_cols[i % num_cols].markdown(f"`{tag}` `{b}`")
+
+# ── Recent commits ─────────────────────────────────────────────────────────────
+with st.expander("📝 Recent Commits"):
+    log = _run_git('git log --oneline -10 --format="%h|%s|%cr"')
+    if log:
+        for line in log.split("\n"):
+            if "|" in line:
+                parts = line.split("|", 2)
+                if len(parts) == 3:
+                    sha, msg, when = parts
+                    is_agent = "overnight ai" in msg.lower() or "auto-built" in msg.lower()
+                    tag = "🟢 AGENT" if is_agent else "🔵 DARRIAN"
+                    st.markdown(f"`{sha}` **{tag}** — {msg[:65]}  _{when}_")
+    else:
+        st.caption("No git history found.")
+
+# ── Open PRs ──────────────────────────────────────────────────────────────────
+with st.expander("📬 Open PRs Waiting Your Approval"):
+    pr_raw = _run_git("gh pr list --state open --json number,title,headRefName --limit 10")
+    if pr_raw and pr_raw != "[]":
+        try:
+            prs = _json.loads(pr_raw)
+            if prs:
+                for pr in prs:
+                    is_agent = "overnight" in pr.get("title", "").lower()
+                    tag = "🟢 AGENT" if is_agent else "🔵 DARRIAN"
+                    pr_num = pr["number"]
+                    st.markdown(
+                        f"{tag} **PR #{pr_num}** — {pr['title'][:60]}  "
+                        f"[→ Approve](https://github.com/bookofdarrian/darrian-budget/pull/{pr_num})"
+                    )
+            else:
+                st.info("No open PRs — nothing waiting for approval.")
+        except Exception:
+            st.caption("Could not load PRs. Run `gh auth login` on CT100.")
+    else:
+        st.info("No open PRs — nothing waiting for approval.")
+
+# ── How it works ──────────────────────────────────────────────────────────────
+with st.expander("ℹ️ How the Agent System Works"):
+    st.markdown("""
+**Nightly agent run (11 PM, CT100):**
+1. Orchestrator wakes up, reads `BACKLOG.md`
+2. Skips anything tagged `[YOU]` or already checked off
+3. Picks the `🎯 NEXT TONIGHT` item at the top of the queue
+4. Agents build it: Planner → Backend → UI → Tests → QA → Git
+5. Feature merges: `feature/` → `dev` → `qa` → `staging` (automated)
+6. A PR to `main` is opened — **you approve it here or on GitHub (1 click)**
+
+**Claiming a feature (coding it yourself):**
+- Click 🔒 on any queue item above to take ownership
+- Work on it in VS Code + Cline on your Mac; agents skip it automatically
+- Click ↩ to unclaim and return it to the agent queue
+
+**Terminal status board:**
+```
+cd ~/Downloads/darrian-budget && python3 status.py
+```
+
+**Cost:** ~$1/night in Claude API tokens · AURA compression reduces it 40%
+    """)
