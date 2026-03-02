@@ -22,12 +22,9 @@ render_sidebar_brand()
 st.sidebar.markdown("---")
 st.sidebar.page_link("app.py",                          label="Overview",            icon="📊")
 st.sidebar.page_link("pages/22_todo.py",                label="✅ Todo",             icon="✅")
-st.sidebar.page_link("pages/18_real_estate_bot.py",     label="🏠 Real Estate Bot",  icon="🏠")
-st.sidebar.page_link("pages/1_expenses.py",             label="Expenses",            icon="📋")
-st.sidebar.page_link("pages/2_income.py",               label="Income",              icon="💵")
-st.sidebar.page_link("pages/4_trends.py",               label="Monthly Trends",      icon="📈")
-st.sidebar.page_link("pages/8_goals.py",                label="Financial Goals",     icon="🎯")
-st.sidebar.page_link("pages/15_bills.py",               label="Bill Calendar",       icon="📅")
+st.sidebar.page_link("pages/24_creator_companion.py",   label="🎬 Creator",          icon="🎬")
+st.sidebar.page_link("pages/25_notes.py",               label="📝 Notes",            icon="📝")
+st.sidebar.page_link("pages/26_media_library.py",       label="🎵 Media Library",    icon="🎵")
 st.sidebar.page_link("pages/17_personal_assistant.py",  label="Personal Assistant",  icon="🤖")
 render_sidebar_user_widget()
 
@@ -334,7 +331,23 @@ if _cal_available:
     # ── Load credentials + token from DB ──────────────────────────────────────
     _token_json = get_setting("google_token", "")
     _creds_json = get_setting("google_credentials", "")   # OAuth client credentials
+
+    # ── Auto-save credentials.json from disk → DB (one-time migration) ────────
+    if not _creds_json:
+        import os as _os
+        _creds_file = _os.environ.get("GMAIL_CREDENTIALS_FILE", "credentials.json")
+        if _os.path.exists(_creds_file):
+            try:
+                with open(_creds_file) as _f:
+                    _disk_creds = _f.read()
+                set_setting("google_credentials", _disk_creds)
+                _creds_json = _disk_creds
+                st.toast("🔑 Saved credentials.json to database for production use.")
+            except Exception as _ce:
+                pass  # silently ignore — will still work from disk
+
     _cal_service = None
+    _cal_error   = ""
     # statuses: no_credentials | disconnected | scope_upgrade | connected
     _cal_status  = "disconnected"
 
@@ -352,10 +365,12 @@ if _cal_available:
             _cal_status = "scope_upgrade"
         else:
             _cal_status = "disconnected"
+            _cal_error = _msg
     except FileNotFoundError:
         _cal_status = "no_credentials"
-    except Exception:
+    except Exception as _cal_ex:
         _cal_status = "disconnected"
+        _cal_error = str(_cal_ex)
 
     # ── Step 0: Credentials upload (shown when credentials missing) ───────────
     if _cal_status == "no_credentials":
@@ -442,6 +457,9 @@ if _cal_available:
             "📅 **Google Calendar not connected.**  \n"
             "Connect your Google account to sync todo tasks as calendar events."
         )
+        if _cal_error:
+            with st.expander("🔍 Show connection error details"):
+                st.code(_cal_error, language=None)
 
     # ── Auth / Re-auth flow ───────────────────────────────────────────────────
     if _cal_status in ("disconnected", "scope_upgrade"):
