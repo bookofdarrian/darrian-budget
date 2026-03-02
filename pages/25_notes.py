@@ -1,7 +1,8 @@
 """
 AI-Powered Notes — Page 25
 A unified, intelligent notes system to replace Apple Notes, Google Docs,
-Microsoft Word, and Notion. Full search, AI summarization, tags, and rich text.
+Microsoft Word, and Notion. Full search, AI summarization, tags, rich text,
+Notebooks, Templates, Apple Notes XML import, and export.
 """
 import streamlit as st
 from datetime import datetime
@@ -62,6 +63,33 @@ def _ensure_tables():
             saved_at TEXT {ts}
         )
     """)
+    db_exec(conn, f"""
+        CREATE TABLE IF NOT EXISTS notebooks (
+            id {ai},
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            icon TEXT DEFAULT '📓',
+            color TEXT DEFAULT '#1565c0',
+            created_at TEXT {ts}
+        )
+    """)
+    db_exec(conn, f"""
+        CREATE TABLE IF NOT EXISTS note_templates (
+            id {ai},
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            category TEXT DEFAULT 'General',
+            content TEXT DEFAULT '',
+            icon TEXT DEFAULT '📄',
+            created_at TEXT {ts}
+        )
+    """)
+    # Add notebook_id column to notes if missing (migration-safe)
+    try:
+        db_exec(conn, "ALTER TABLE notes ADD COLUMN notebook_id INTEGER DEFAULT NULL")
+        conn.commit()
+    except Exception:
+        pass  # Column already exists
     conn.commit()
     conn.close()
 
@@ -194,6 +222,255 @@ def _get_all_tags():
                 tags.add(tag)
     return sorted(tags)
 
+# ── Notebook Helpers ───────────────────────────────────────────────────────────
+def _load_notebooks():
+    conn = get_conn()
+    c = db_exec(conn, "SELECT * FROM notebooks ORDER BY name ASC")
+    rows = c.fetchall()
+    cols = [d[0] for d in c.description]
+    conn.close()
+    return [dict(zip(cols, r)) for r in rows]
+
+def _create_notebook(name: str, description: str, icon: str, color: str) -> int:
+    conn = get_conn()
+    c = db_exec(conn,
+        "INSERT INTO notebooks (name, description, icon, color) VALUES (?,?,?,?)",
+        (name.strip(), description.strip(), icon, color))
+    nb_id = c.fetchone()[0] if USE_POSTGRES else c.lastrowid
+    conn.commit(); conn.close()
+    return nb_id
+
+def _delete_notebook(nb_id: int):
+    conn = get_conn()
+    # Unassign notes from this notebook
+    db_exec(conn, "UPDATE notes SET notebook_id=NULL WHERE notebook_id=?", (nb_id,))
+    db_exec(conn, "DELETE FROM notebooks WHERE id=?", (nb_id,))
+    conn.commit(); conn.close()
+
+def _assign_note_to_notebook(note_id: int, notebook_id):
+    conn = get_conn()
+    db_exec(conn, "UPDATE notes SET notebook_id=? WHERE id=?", (notebook_id, note_id))
+    conn.commit(); conn.close()
+
+def _load_notes_in_notebook(notebook_id: int):
+    conn = get_conn()
+    c = db_exec(conn,
+        "SELECT * FROM notes WHERE notebook_id=? AND archived=0 ORDER BY updated_at DESC",
+        (notebook_id,))
+    rows = c.fetchall()
+    cols = [d[0] for d in c.description]
+    conn.close()
+    return [dict(zip(cols, r)) for r in rows]
+
+# ── Template Helpers ───────────────────────────────────────────────────────────
+BUILTIN_TEMPLATES = [
+    {
+        "name": "Meeting Notes",
+        "description": "Structure for capturing meeting decisions and action items",
+        "category": "Business",
+        "icon": "🤝",
+        "content": (
+            "# Meeting Notes\n\n"
+            "**Date:** \n"
+            "**Attendees:** \n"
+            "**Purpose:** \n\n"
+            "---\n\n"
+            "## Agenda\n"
+            "1. \n"
+            "2. \n\n"
+            "## Discussion\n\n\n"
+            "## Decisions Made\n"
+            "- \n\n"
+            "## Action Items\n"
+            "- [ ] \n"
+            "- [ ] \n\n"
+            "## Next Meeting\n"
+            "**Date:** \n"
+        ),
+    },
+    {
+        "name": "Daily Journal",
+        "description": "Daily reflection and gratitude journaling",
+        "category": "Journal",
+        "icon": "📔",
+        "content": (
+            "# Daily Journal — {date}\n\n"
+            "## Morning Intentions\n"
+            "Today I intend to...\n\n"
+            "## Gratitude\n"
+            "1. \n"
+            "2. \n"
+            "3. \n\n"
+            "## Top 3 Priorities\n"
+            "1. [ ] \n"
+            "2. [ ] \n"
+            "3. [ ] \n\n"
+            "## Notes & Thoughts\n\n\n"
+            "## Evening Reflection\n"
+            "What went well today?\n\n"
+            "What could be improved?\n\n"
+            "Energy level: /10\n"
+        ),
+    },
+    {
+        "name": "Project Plan",
+        "description": "Project overview with goals, tasks, and timeline",
+        "category": "Business",
+        "icon": "📋",
+        "content": (
+            "# Project: \n\n"
+            "**Owner:** \n"
+            "**Start Date:** \n"
+            "**Target Date:** \n"
+            "**Status:** Planning\n\n"
+            "---\n\n"
+            "## Objective\n\n\n"
+            "## Key Results / Success Metrics\n"
+            "- \n\n"
+            "## Tasks\n"
+            "- [ ] \n"
+            "- [ ] \n"
+            "- [ ] \n\n"
+            "## Resources Needed\n"
+            "- \n\n"
+            "## Risks & Blockers\n"
+            "- \n\n"
+            "## Notes\n\n"
+        ),
+    },
+    {
+        "name": "Idea Capture",
+        "description": "Quick idea exploration and brainstorm",
+        "category": "Ideas",
+        "icon": "💡",
+        "content": (
+            "# Idea: \n\n"
+            "**Captured:** {date}\n\n"
+            "## The Core Idea\n\n\n"
+            "## Why This Matters\n\n\n"
+            "## Potential Use Cases\n"
+            "- \n\n"
+            "## Next Steps to Explore\n"
+            "- [ ] \n\n"
+            "## Related Ideas / Resources\n"
+            "- \n"
+        ),
+    },
+    {
+        "name": "Research Notes",
+        "description": "Structured research and learning notes",
+        "category": "Research",
+        "icon": "🔬",
+        "content": (
+            "# Research: \n\n"
+            "**Topic:** \n"
+            "**Date:** {date}\n"
+            "**Sources:** \n\n"
+            "---\n\n"
+            "## Key Findings\n\n\n"
+            "## Important Quotes\n"
+            "> \n\n"
+            "## My Analysis\n\n\n"
+            "## Questions Still Unanswered\n"
+            "- \n\n"
+            "## References\n"
+            "1. \n"
+        ),
+    },
+    {
+        "name": "Goal Setting",
+        "description": "SMART goal planning template",
+        "category": "Goals",
+        "icon": "🎯",
+        "content": (
+            "# Goal: \n\n"
+            "**Timeframe:** \n"
+            "**Category:** \n\n"
+            "## SMART Definition\n"
+            "- **Specific:** \n"
+            "- **Measurable:** \n"
+            "- **Achievable:** \n"
+            "- **Relevant:** \n"
+            "- **Time-bound:** \n\n"
+            "## Why This Goal Matters\n\n\n"
+            "## Milestones\n"
+            "- [ ] \n"
+            "- [ ] \n"
+            "- [ ] \n\n"
+            "## Potential Obstacles\n"
+            "- \n\n"
+            "## Progress Notes\n\n"
+        ),
+    },
+]
+
+def _load_templates():
+    conn = get_conn()
+    c = db_exec(conn, "SELECT * FROM note_templates ORDER BY name ASC")
+    rows = c.fetchall()
+    cols = [d[0] for d in c.description]
+    conn.close()
+    return [dict(zip(cols, r)) for r in rows]
+
+def _create_template(name: str, description: str, category: str, content: str, icon: str) -> int:
+    conn = get_conn()
+    c = db_exec(conn,
+        "INSERT INTO note_templates (name, description, category, content, icon) VALUES (?,?,?,?,?)",
+        (name.strip(), description.strip(), category, content, icon))
+    t_id = c.fetchone()[0] if USE_POSTGRES else c.lastrowid
+    conn.commit(); conn.close()
+    return t_id
+
+def _delete_template(t_id: int):
+    conn = get_conn()
+    db_exec(conn, "DELETE FROM note_templates WHERE id=?", (t_id,))
+    conn.commit(); conn.close()
+
+# ── Import Helpers ─────────────────────────────────────────────────────────────
+def _import_apple_notes_xml(xml_bytes: bytes) -> list:
+    """Parse an Apple Notes / iTunes XML export (plist format) and return a list of note dicts."""
+    import plistlib
+    try:
+        plist = plistlib.loads(xml_bytes)
+    except Exception as e:
+        return [], f"Failed to parse plist: {e}"
+
+    notes = []
+    # Apple Notes exports as a flat plist dict; handle both array and dict structures
+    if isinstance(plist, list):
+        items = plist
+    elif isinstance(plist, dict):
+        # Try common keys
+        items = plist.get("notes", plist.get("Notes", [plist]))
+    else:
+        items = []
+
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        title   = item.get("title", item.get("Title", item.get("ZTitle", "Imported Note")))
+        body    = item.get("body",  item.get("Body",  item.get("ZText", item.get("content", ""))))
+        created = item.get("creation date", item.get("ZCreationDate", ""))
+        notes.append({
+            "title":   str(title).strip() or "Imported Note",
+            "content": str(body).strip(),
+            "created": str(created)[:10] if created else "",
+        })
+    return notes, None
+
+def _export_notes_markdown(notes: list) -> str:
+    """Export a list of note dicts as a combined Markdown string."""
+    lines = []
+    for n in notes:
+        lines.append(f"# {n.get('title','Untitled')}")
+        lines.append(f"*Category: {n.get('category','General')} | Tags: {n.get('tags','')} | Updated: {str(n.get('updated_at',''))[:10]}*")
+        lines.append("")
+        lines.append(n.get("content",""))
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+    return "\n".join(lines)
+
 # ══════════════════════════════════════════════════════════════════════════════
 # PAGE HEADER
 # ══════════════════════════════════════════════════════════════════════════════
@@ -214,7 +491,10 @@ m4.metric("Tags",         len(all_tags))
 st.divider()
 
 # ── Main tabs ──────────────────────────────────────────────────────────────────
-tab_browse, tab_editor, tab_ai = st.tabs(["📚 All Notes", "✍️ Editor", "🤖 AI Tools"])
+tab_browse, tab_editor, tab_ai, tab_notebooks, tab_templates, tab_import = st.tabs([
+    "📚 All Notes", "✍️ Editor", "🤖 AI Tools",
+    "📓 Notebooks", "📄 Templates", "📥 Import / Export"
+])
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 1 — BROWSE
@@ -501,3 +781,290 @@ with tab_ai:
                 title = qc_title.strip() or f"Quick Note — {datetime.now().strftime('%b %d %Y %H:%M')}"
                 _create_note(title, qc_text.strip(), qc_cat, "quick-capture", "#1e1e1e")
                 st.success(f"✅ Captured: '{title}'")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TAB 4 — NOTEBOOKS
+# ══════════════════════════════════════════════════════════════════════════════
+with tab_notebooks:
+    st.markdown("### 📓 Notebooks")
+    st.caption("Organize notes into notebooks — like folders in Apple Notes or spaces in Notion.")
+
+    notebooks = _load_notebooks()
+    nb_col1, nb_col2 = st.columns([2, 1])
+
+    with nb_col2:
+        st.markdown("#### ➕ New Notebook")
+        with st.form("new_notebook_form", clear_on_submit=True):
+            nb_name  = st.text_input("Notebook Name", placeholder="e.g. Work, Personal, Ideas…")
+            nb_desc  = st.text_input("Description (optional)")
+            nb_icon  = st.selectbox("Icon", ["📓", "📒", "📔", "📕", "📗", "📘", "📙", "🗂️", "📁", "🏠", "💼", "🎯"])
+            nb_color = st.selectbox("Color", list(NOTE_COLORS.keys()))
+            if st.form_submit_button("Create Notebook", type="primary"):
+                if nb_name.strip():
+                    _create_notebook(nb_name, nb_desc, nb_icon, NOTE_COLORS[nb_color])
+                    st.success(f"✅ Notebook '{nb_name}' created!")
+                    st.rerun()
+                else:
+                    st.error("Name is required.")
+
+    with nb_col1:
+        if not notebooks:
+            st.info("No notebooks yet. Create one to organize your notes.")
+        else:
+            for nb in notebooks:
+                nb_notes = _load_notes_in_notebook(nb["id"])
+                with st.expander(
+                    f"{nb.get('icon','📓')} **{nb['name']}** — {len(nb_notes)} notes",
+                    expanded=False
+                ):
+                    st.caption(nb.get("description",""))
+                    if nb_notes:
+                        for nn in nb_notes:
+                            nc1, nc2 = st.columns([4, 1])
+                            nc1.markdown(f"**{nn['title']}** · *{nn.get('category','')}* · {str(nn.get('updated_at',''))[:10]}")
+                            if nc2.button("✏️", key=f"nb_edit_{nn['id']}"):
+                                st.session_state["editing_note_id"] = nn["id"]
+                                st.info("Switch to the **✍️ Editor** tab to edit.")
+                    else:
+                        st.caption("No notes in this notebook yet.")
+
+                    # Assign a note to this notebook
+                    all_unassigned = [n for n in _load_notes() if not n.get("notebook_id")]
+                    if all_unassigned:
+                        st.markdown("---")
+                        assign_options = {n["id"]: n["title"] for n in all_unassigned}
+                        assign_id = st.selectbox(
+                            "Add a note to this notebook",
+                            options=list(assign_options.keys()),
+                            format_func=lambda x: assign_options[x],
+                            key=f"assign_sel_{nb['id']}",
+                        )
+                        if st.button("➕ Add to Notebook", key=f"assign_btn_{nb['id']}"):
+                            _assign_note_to_notebook(assign_id, nb["id"])
+                            st.success("Note added!")
+                            st.rerun()
+
+                    if st.button("🗑️ Delete Notebook", key=f"del_nb_{nb['id']}"):
+                        _delete_notebook(nb["id"])
+                        st.toast(f"Notebook '{nb['name']}' deleted.")
+                        st.rerun()
+
+    # ── Unassigned notes ───────────────────────────────────────────────────────
+    st.divider()
+    st.markdown("#### 📄 Notes Without a Notebook")
+    unassigned = [n for n in _load_notes() if not n.get("notebook_id")]
+    if unassigned:
+        st.caption(f"{len(unassigned)} unassigned note(s)")
+        for un in unassigned[:10]:
+            uc1, uc2 = st.columns([5, 1])
+            uc1.markdown(f"**{un['title']}** · *{un.get('category','')}* · {str(un.get('updated_at',''))[:10]}")
+            if uc2.button("✏️ Edit", key=f"unedit_{un['id']}"):
+                st.session_state["editing_note_id"] = un["id"]
+    else:
+        st.info("All notes are assigned to notebooks!")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TAB 5 — TEMPLATES
+# ══════════════════════════════════════════════════════════════════════════════
+with tab_templates:
+    st.markdown("### 📄 Note Templates")
+    st.caption("Start a new note from a pre-built or custom template.")
+
+    today_str = datetime.now().strftime("%B %d, %Y")
+
+    # ── Built-in templates ─────────────────────────────────────────────────────
+    st.markdown("#### 🏗️ Built-in Templates")
+    bt_cols = st.columns(3)
+    for bi, tmpl in enumerate(BUILTIN_TEMPLATES):
+        with bt_cols[bi % 3]:
+            st.markdown(
+                f'<div style="border:1px solid #333;border-radius:8px;padding:12px;margin-bottom:8px;background:#111">'
+                f'<b>{tmpl["icon"]} {tmpl["name"]}</b><br>'
+                f'<span style="color:#aaa;font-size:12px">{tmpl["category"]}</span><br>'
+                f'<span style="color:#888;font-size:11px">{tmpl["description"]}</span>'
+                f'</div>',
+                unsafe_allow_html=True
+            )
+            if st.button(f"Use Template", key=f"use_builtin_{bi}"):
+                # Replace {date} placeholder
+                filled = tmpl["content"].replace("{date}", today_str)
+                st.session_state["template_prefill"] = {
+                    "title": tmpl["name"],
+                    "content": filled,
+                    "category": tmpl["category"],
+                }
+                st.session_state["editing_note_id"] = "new"
+                st.success(f"✅ Template loaded! Go to the **✍️ Editor** tab.")
+
+    # Apply prefill from template if set
+    if "template_prefill" in st.session_state:
+        pf = st.session_state.pop("template_prefill")
+        st.info(
+            f"Template **{pf['title']}** is ready in the Editor tab with pre-filled content."
+        )
+
+    st.divider()
+
+    # ── Custom templates (saved to DB) ─────────────────────────────────────────
+    st.markdown("#### 📝 My Custom Templates")
+    custom_templates = _load_templates()
+
+    if not custom_templates:
+        st.info("No custom templates yet. Create one below!")
+    else:
+        ct_cols = st.columns(3)
+        for ci, ct in enumerate(custom_templates):
+            with ct_cols[ci % 3]:
+                st.markdown(
+                    f'<div style="border:1px solid #444;border-radius:8px;padding:12px;margin-bottom:8px;background:#111">'
+                    f'<b>{ct.get("icon","📄")} {ct["name"]}</b><br>'
+                    f'<span style="color:#aaa;font-size:12px">{ct.get("category","General")}</span><br>'
+                    f'<span style="color:#888;font-size:11px">{ct.get("description","")}</span>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+                cu1, cu2 = st.columns(2)
+                if cu1.button("Use", key=f"use_custom_{ct['id']}"):
+                    filled = ct["content"].replace("{date}", today_str)
+                    st.session_state["editing_note_id"] = "new"
+                    st.session_state["template_prefill"] = {
+                        "title": ct["name"],
+                        "content": filled,
+                        "category": ct.get("category","General"),
+                    }
+                    st.success("Template loaded! Go to the **✍️ Editor** tab.")
+                if cu2.button("🗑️", key=f"del_tmpl_{ct['id']}"):
+                    _delete_template(ct["id"])
+                    st.toast("Template deleted.")
+                    st.rerun()
+
+    st.divider()
+    st.markdown("#### ➕ Save Current Note as Template")
+    with st.form("save_as_template_form", clear_on_submit=True):
+        tmpl_name = st.text_input("Template Name", placeholder="e.g. Weekly Review")
+        tmpl_desc = st.text_input("Description")
+        tmpl_cat  = st.selectbox("Category", CATEGORIES)
+        tmpl_icon = st.selectbox("Icon", ["📄", "📝", "🤝", "📔", "📋", "💡", "🔬", "🎯", "📊", "🗒️"])
+        tmpl_body = st.text_area("Template Content", height=200,
+                                  placeholder="Write your template here. Use {date} for today's date.")
+        if st.form_submit_button("💾 Save as Template", type="primary"):
+            if tmpl_name.strip() and tmpl_body.strip():
+                _create_template(tmpl_name, tmpl_desc, tmpl_cat, tmpl_body, tmpl_icon)
+                st.success(f"✅ Template '{tmpl_name}' saved!")
+                st.rerun()
+            else:
+                st.error("Name and content are required.")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TAB 6 — IMPORT / EXPORT
+# ══════════════════════════════════════════════════════════════════════════════
+with tab_import:
+    st.markdown("### 📥 Import / Export Notes")
+
+    imp_col, exp_col = st.columns(2)
+
+    # ── IMPORT ─────────────────────────────────────────────────────────────────
+    with imp_col:
+        st.markdown("#### 📥 Import")
+
+        import_mode = st.radio(
+            "Import from",
+            ["Apple Notes XML (plist)", "Plain Text / Markdown file"],
+            horizontal=True,
+        )
+
+        if import_mode == "Apple Notes XML (plist)":
+            st.caption(
+                "**How to export from Apple Notes:**\n"
+                "Open Notes app → File → Export as PDF won't work; instead, "
+                "use **File → Export to XML** if available, or use a third-party "
+                "tool to export your notes library to plist/XML format, then upload it here."
+            )
+            uploaded_xml = st.file_uploader(
+                "Upload Apple Notes .xml / .plist file",
+                type=["xml", "plist"],
+                key="apple_notes_upload",
+            )
+            if uploaded_xml:
+                xml_bytes = uploaded_xml.read()
+                parsed, err = _import_apple_notes_xml(xml_bytes)
+                if err:
+                    st.error(f"Parse error: {err}")
+                elif not parsed:
+                    st.warning("No notes found in the file. Check that it's a valid Apple Notes export.")
+                else:
+                    st.success(f"Found {len(parsed)} note(s) to import.")
+                    import_cat = st.selectbox("Assign Category", CATEGORIES, key="import_cat_xml")
+                    if st.button("⬇️ Import All Notes", type="primary", key="do_import_xml"):
+                        for pn in parsed:
+                            title   = pn["title"] or "Imported Note"
+                            content = pn["content"]
+                            tags    = "apple-notes,imported"
+                            _create_note(title, content, import_cat, tags, "#1565c0")
+                        st.success(f"✅ Imported {len(parsed)} notes!")
+                        st.rerun()
+
+        else:  # Plain text / Markdown
+            st.caption(
+                "Upload a `.txt` or `.md` file. Each file becomes one note. "
+                "The filename (without extension) will be used as the note title."
+            )
+            uploaded_txt = st.file_uploader(
+                "Upload .txt or .md file(s)",
+                type=["txt", "md"],
+                accept_multiple_files=True,
+                key="plain_text_upload",
+            )
+            if uploaded_txt:
+                txt_cat = st.selectbox("Category for imported notes", CATEGORIES, key="import_cat_txt")
+                if st.button("⬇️ Import Files", type="primary", key="do_import_txt"):
+                    count = 0
+                    for f in uploaded_txt:
+                        try:
+                            content = f.read().decode("utf-8", errors="replace")
+                            title   = f.name.rsplit(".", 1)[0].replace("_", " ").replace("-", " ").title()
+                            _create_note(title, content, txt_cat, "imported,text", "#1e1e1e")
+                            count += 1
+                        except Exception as ex:
+                            st.warning(f"Skipped {f.name}: {ex}")
+                    st.success(f"✅ Imported {count} file(s) as notes!")
+                    st.rerun()
+
+    # ── EXPORT ─────────────────────────────────────────────────────────────────
+    with exp_col:
+        st.markdown("#### 📤 Export")
+
+        export_scope = st.radio(
+            "Export scope",
+            ["All notes", "By category", "By tag"],
+            horizontal=True,
+        )
+
+        export_notes_list = []
+        if export_scope == "All notes":
+            export_notes_list = _load_notes()
+        elif export_scope == "By category":
+            exp_cat = st.selectbox("Select category", CATEGORIES, key="exp_cat")
+            export_notes_list = _load_notes(category=exp_cat)
+        else:
+            exp_tag = st.text_input("Tag to export", placeholder="e.g. work")
+            if exp_tag.strip():
+                export_notes_list = _load_notes(tag=exp_tag.strip())
+
+        st.caption(f"{len(export_notes_list)} note(s) selected for export.")
+
+        export_fmt = st.radio("Export format", ["Markdown (.md)", "Plain text (.txt)"], horizontal=True)
+
+        if st.button("📤 Generate Export", type="primary", key="do_export") and export_notes_list:
+            md_content = _export_notes_markdown(export_notes_list)
+            ext = "md" if "Markdown" in export_fmt else "txt"
+            fname = f"notes_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}"
+            st.download_button(
+                label=f"⬇️ Download {fname}",
+                data=md_content.encode("utf-8"),
+                file_name=fname,
+                mime="text/plain",
+                key="download_export",
+            )
+        elif not export_notes_list:
+            st.info("No notes match the selected scope.")
