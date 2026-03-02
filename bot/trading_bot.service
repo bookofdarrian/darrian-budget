@@ -1,0 +1,15 @@
+[Unit]
+Description=Peach State Savings AI Trading Bot
+After=network.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/darrian-budget
+ExecStart=/opt/darrian-budget/venv/bin/python3 /opt/darrian-budget/bot/trading_bot.py
+StandardOutput=append:/var/log/trading_bot.log
+StandardError=append:/var/log/trading_bot.log
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
