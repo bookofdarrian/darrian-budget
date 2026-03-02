@@ -2,7 +2,7 @@ import os
 
 # ── Repo root ─────────────────────────────────────────────────────────────────
 ROOT      = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-PAGE_PATH = os.path.join(ROOT, "pages/52_hsa_receipt_auto_categorizer.py")
+PAGE_PATH = os.path.join(ROOT, "pages/59_hsa_receipt_auto_categorizer.py")
 
 
 def _source() -> str:
