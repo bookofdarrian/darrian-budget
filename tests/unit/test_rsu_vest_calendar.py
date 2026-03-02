@@ -2,7 +2,7 @@ import os
 
 # ── Repo root ─────────────────────────────────────────────────────────────────
 ROOT      = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-PAGE_PATH = os.path.join(ROOT, "pages/35_rsu_vest_calendar.py")
+PAGE_PATH = os.path.join(ROOT, "pages/47_rsu_vest_calendar.py")
 
 
 def _source() -> str:
