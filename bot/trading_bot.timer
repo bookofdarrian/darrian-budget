@@ -1,0 +1,12 @@
+[Unit]
+Description=Run Trading Bot every 30 min on weekdays
+Requires=trading_bot.service
+
+[Timer]
+# Run Mon-Fri every 30 minutes from 9:30 AM to 4:00 PM ET
+# Bot script checks market hours internally so safe to run broadly
+OnCalendar=Mon-Fri *-*-* 09..16:00,30:00
+Persistent=false
+
+[Install]
+WantedBy=timers.target
