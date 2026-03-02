@@ -171,6 +171,14 @@ st.set_page_config(page_title="Bank Import", page_icon="🍑", layout="wide", in
 init_db()
 require_password()
 
+# ── Persistent success/error banners (survive st.rerun) ──────────────────────
+if st.session_state.get("import_success"):
+    msg = st.session_state.pop("import_success")
+    st.success(msg)
+if st.session_state.get("import_error"):
+    msg = st.session_state.pop("import_error")
+    st.error(msg)
+
 st.sidebar.title("💰 Budget Dashboard")
 st.sidebar.markdown("---")
 months = []
@@ -284,6 +292,7 @@ with tab_nfcu:
                 if st.button(btn_label, type="primary", disabled=(new_count == 0)):
                     conn = get_conn()
                     count = 0
+                    imported_months: set[str] = set()
                     for t in txns:
                         if t['account'] not in selected_accounts:
                             continue
@@ -294,6 +303,7 @@ with tab_nfcu:
                             continue
                         # Month comes from the transaction date, not the sidebar selector
                         txn_month = t['date'][:7]
+                        imported_months.add(txn_month)
                         auto_cat, auto_sub = _auto_category(t['description'])
                         execute(conn,
                             "INSERT INTO bank_transactions "
@@ -304,10 +314,16 @@ with tab_nfcu:
                         count += 1
                     conn.commit()
                     conn.close()
-                    st.success(f"Imported {count} new transaction(s). Go to **Review & Apply** to categorize them.")
+                    month_list = ", ".join(sorted(imported_months)) if imported_months else "unknown"
+                    st.session_state["import_success"] = (
+                        f"✅ Imported **{count}** new transaction(s) for **{month_list}**. "
+                        f"👉 Click the **📋 Review & Apply** tab to categorize them."
+                    )
+                    st.session_state["review_show_all"] = True   # auto-switch to All months
                     st.rerun()
         except Exception as e:
-            st.error(f"Could not parse PDF: {e}")
+            st.session_state["import_error"] = f"Could not parse PDF: {e}"
+            st.rerun()
 
 # ── TAB 2 — CSV Import ────────────────────────────────────────────────────────
 with tab_csv:
@@ -404,12 +420,17 @@ with tab_manual:
 with tab_review:
     st.subheader("Review & Apply Transactions")
 
+    # Auto-switch to "All months" if a fresh import just happened
+    if st.session_state.pop("review_show_all", False):
+        st.session_state["review_filter"] = "All months"
+
     # Let user choose to view a specific month or all months
+    _filter_options = ["All months", f"Selected month ({datetime.strptime(selected_month, '%Y-%m').strftime('%B %Y')})"]
     review_filter = st.radio(
         "Show transactions for:",
-        ["All months", f"Selected month ({datetime.strptime(selected_month, '%Y-%m').strftime('%B %Y')})"],
+        _filter_options,
         horizontal=True,
-        key="review_filter"
+        key="review_filter",
     )
 
     conn = get_conn()
