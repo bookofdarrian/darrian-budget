@@ -13,7 +13,7 @@
 **Revenue target: $500 MRR by Day 90 | See SOLE_OPS_ROADMAP.md for full plan**
 
 ### Week 1 — Core Feature Polish
-- [ ] **SoleOps: Sneaker Inventory Analyzer** — page 65 — Core SoleOps feature. Inventory aging tracker with color-coded staleness (green <7d, yellow 7-14d, orange 14-21d, red 21d+). Auto-suggested price drops by aging tier (5% at 7d, 10% at 14d, 15% at 21d, 20%+ at 30d+). Velocity chart: days-on-market vs sale price vs profit. Profit margin alerts (COGS vs current market). Smart offer tool for Mercari. Telegram alert when pair stalls. Built on top of sole_alert_bot/ + pages/31.
+- [x] **SoleOps: Sneaker Inventory Analyzer** — page 65 — Core SoleOps feature. [DONE] ✅ (pages/65_sneaker_inventory_analyzer.py — 34/34 tests passing)
 - [ ] **SoleOps: Price Monitor Dashboard** — page 68 — Live eBay + Mercari price per SKU with side-by-side comparison. "If you sold today on eBay: $X | Mercari: $X". Profit-after-fees calculator (real-time). Historical price chart per shoe. Reuse sole_alert_bot/ebay_search.py + sole_alert_bot/mercari_search.py.
 - [ ] **SoleOps: P&L Dashboard** — page 69 — Per-pair profit (COGS → sale price → platform fees → net). Platform breakdown chart (eBay vs Mercari vs StockX profit margins). Monthly P&L trend. Best/worst performers table. Schedule C tax summary (COGS totals, mileage deductions). Build on pages/64 + pages/3.
 
