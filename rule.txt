@@ -1,0 +1,3 @@
+I need to write the file using execute_command with a Python script to avoid the truncation issue that keeps happening with write_to_file for large content. Let me write the entire file content as a Python script.
+
+Always use the software delivery proces that involves testing in QA and the final manual push to prod!
