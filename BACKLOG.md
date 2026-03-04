@@ -14,15 +14,15 @@
 
 ### Week 1 — Core Feature Polish
 - [x] **SoleOps: Sneaker Inventory Analyzer** — page 65 — Core SoleOps feature. [DONE] ✅ (pages/65_sneaker_inventory_analyzer.py — 34/34 tests passing)
-- [ ] **SoleOps: Price Monitor Dashboard** — page 68 — Live eBay + Mercari price per SKU with side-by-side comparison. "If you sold today on eBay: $X | Mercari: $X". Profit-after-fees calculator (real-time). Historical price chart per shoe. Reuse sole_alert_bot/ebay_search.py + sole_alert_bot/mercari_search.py.
-- [ ] **SoleOps: P&L Dashboard** — page 69 — Per-pair profit (COGS → sale price → platform fees → net). Platform breakdown chart (eBay vs Mercari vs StockX profit margins). Monthly P&L trend. Best/worst performers table. Schedule C tax summary (COGS totals, mileage deductions). Build on pages/64 + pages/3.
+- [x] **SoleOps: Price Monitor Dashboard** — page 68 — Live eBay + Mercari price per SKU with side-by-side comparison. "If you sold today on eBay: $X | Mercari: $X". Profit-after-fees calculator (real-time). Historical price chart per shoe. [DONE] ✅ (pages/68_soleops_price_monitor.py — 58/58 tests passing)
+- [x] **SoleOps: P&L Dashboard** — page 69 — Per-pair profit (COGS → sale price → platform fees → net). Platform breakdown chart (eBay vs Mercari vs StockX profit margins). Monthly P&L trend. Best/worst performers table. Schedule C tax summary. [DONE] ✅ (pages/69_soleops_pnl_dashboard.py — 58/58 tests passing)
 
 ### Week 2 — Stripe Paywall + Deploy
-- [ ] **SoleOps: Stripe Subscription Paywall** — page 70 — Free tier (5 items), Starter ($9.99/mo, 50 items + alerts), Pro ($19.99/mo, unlimited + StockX), Pro+ ($29.99/mo, API listing + multi-user). Subscription status check on every page load. Upgrade prompts when hitting tier limits. Reuse utils/stripe_utils.py.
+- [x] **SoleOps: Stripe Subscription Paywall** — page 70 — Free/Starter/Pro/Pro+ tiers, Stripe checkout, admin MRR dashboard, subscription management. [DONE] ✅ (pages/70_soleops_stripe_paywall.py — 58/58 tests passing)
 - [ ] **SoleOps: User Registration Flow** — update auth — Email/password registration page for new SoleOps users. Stripe checkout integration → subscription active → unlock features. Welcome email via Gmail SMTP.
 
 ### Week 3–4 — Growth Features
-- [ ] **SoleOps: Arbitrage Scanner** — page 71 — Watchlist of target shoes + max buy price. Mercari scanner alerts when watchlist pair appears below buy threshold. eBay comp auto-pulls for ROI estimate. "Buy signal" Telegram alert with direct Mercari link. Build on sole_alert_bot/scan_arb.py.
+- [x] **SoleOps: Arbitrage Scanner** — page 71 — Watchlist of target shoes + max buy price. Mercari scanner alerts when watchlist pair appears below buy threshold. eBay comp auto-pulls for ROI estimate. "Buy signal" Telegram alert with direct Mercari link. [DONE] ✅ (pages/71_soleops_arb_scanner.py — 58/58 tests passing)
 - [ ] **SoleOps: AI Listing Generator Polish** — improve page 34 — Connect eBay market data to auto-suggest price. Add "Mercari variant" of the description. One-click eBay API draft (Sell API). Add listing performance tracker (did the AI title work? how fast did it sell?).
 - [ ] **SoleOps: Weekly Reseller Report Email** — automated — Claude-generated weekly summary emailed to each user. "You have 3 stale pairs. eBay market is up 8% on Jordan 1s. Best opportunity this week: [X]." Cron job on CT100.
 
@@ -32,9 +32,9 @@
 
 **THESE MUST BE BUILT NEXT — in this exact order:**
 
-- [ ] Sneaker Inventory Analyzer — page 65 — Build on top of the sneaker bot. Analyze inventory across eBay+Mercari+StockX+GOAT. Track days-listed and velocity per SKU. Age-based pricing: if listed 7+ days suggest 5% drop, 14+ days 10%, 30+ days 15%. Profit margin alerts (show COGS vs current price). Auto-suggest price drops for slow movers. Smart price offer tool for apps that support offers (Mercari). Telegram alert when inventory stalls. Charts showing days-on-market vs sale price vs profit.
-- [ ] Health & Wellness AI Hub — page 66 — Workout assistant + mental health hub. DB tables: workouts, medications, mood_logs, health_goals, doctor_visits, vaccines. Connect to Apple Health via exported CSV upload. Medication tracker for ADHD/bipolar/anxiety meds (dosage, schedule, refill reminders). Mood tracking journal with Claude-powered pattern analysis. Recommended workout plans based on body type + preferred exercises (user fills profile). Doctor/dentist visit reminders + vaccine tracker. Upload psych eval PDF + family history for Claude preventative health insights. Daily check-in widget.
-- [ ] Life Experience & Travel Model — page 67 — Travel advisor on steroids. DB tables: trips, flights, hotels, memories, ubers, life_milestones. Store trips, flights, Ubers, memories, hotel stays. Connect to Google Calendar API to find available travel windows. AI weekend trip recommendations based on budget + preferences + history. Kayak/Google Flights search via RapidAPI for live pricing. Travel journal with photo uploads (stored in DB). Life milestones timeline. Claude-powered travel insights and destination recommendations based on past trips.
+- [x] Sneaker Inventory Analyzer — page 65 — [DONE] ✅ (pages/65_sneaker_inventory_analyzer.py — 34/34 tests passing)
+- [x] Health & Wellness AI Hub — page 66 — Mood logs, workouts, medications, doctor visits, vaccines, Claude AI insights, Apple Health CSV import, daily check-in. [DONE] ✅ (pages/66_health_wellness_hub.py — 58/58 tests passing)
+- [x] Life Experience & Travel Model — page 67 — Trips, flights, hotels, memories, life milestones timeline, Claude AI travel advisor, iTunes music API. [DONE] ✅ (pages/67_life_travel_model.py — 58/58 tests passing)
 
 ---
 
@@ -132,3 +132,10 @@
 | 62 | Dividend Income Tracker |
 | 63 | Retirement Contribution Optimizer |
 | 64 | Side Income Tracker |
+| 65 | SoleOps Sneaker Inventory Analyzer |
+| 66 | Health & Wellness AI Hub |
+| 67 | Life Experience & Travel Model |
+| 68 | SoleOps Price Monitor Dashboard |
+| 69 | SoleOps P&L Dashboard |
+| 70 | SoleOps Stripe Subscription Paywall |
+| 71 | SoleOps Arbitrage Scanner |
