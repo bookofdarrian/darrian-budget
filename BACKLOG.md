@@ -1,9 +1,30 @@
 # Feature Backlog — Autonomous AI Dev Queue
-**Owner: Darrian Belcher | Updated: 2026-03-03**
+**Owner: Darrian Belcher | Updated: 2026-03-04**
 
 > The overnight AI dev system reads this file every night and picks the
 > highest-priority uncompleted item to build autonomously.
 > Completed items are marked [DONE] ✅ by the Git Agent.
+
+---
+
+## 🚀 SOLEOPS SAAS — BUILD THIS MONTH (30-Day Sprint)
+
+**Goal: Launch SoleOps as a standalone paid SaaS for sneaker resellers**
+**Revenue target: $500 MRR by Day 90 | See SOLE_OPS_ROADMAP.md for full plan**
+
+### Week 1 — Core Feature Polish
+- [ ] **SoleOps: Sneaker Inventory Analyzer** — page 65 — Core SoleOps feature. Inventory aging tracker with color-coded staleness (green <7d, yellow 7-14d, orange 14-21d, red 21d+). Auto-suggested price drops by aging tier (5% at 7d, 10% at 14d, 15% at 21d, 20%+ at 30d+). Velocity chart: days-on-market vs sale price vs profit. Profit margin alerts (COGS vs current market). Smart offer tool for Mercari. Telegram alert when pair stalls. Built on top of sole_alert_bot/ + pages/31.
+- [ ] **SoleOps: Price Monitor Dashboard** — page 68 — Live eBay + Mercari price per SKU with side-by-side comparison. "If you sold today on eBay: $X | Mercari: $X". Profit-after-fees calculator (real-time). Historical price chart per shoe. Reuse sole_alert_bot/ebay_search.py + sole_alert_bot/mercari_search.py.
+- [ ] **SoleOps: P&L Dashboard** — page 69 — Per-pair profit (COGS → sale price → platform fees → net). Platform breakdown chart (eBay vs Mercari vs StockX profit margins). Monthly P&L trend. Best/worst performers table. Schedule C tax summary (COGS totals, mileage deductions). Build on pages/64 + pages/3.
+
+### Week 2 — Stripe Paywall + Deploy
+- [ ] **SoleOps: Stripe Subscription Paywall** — page 70 — Free tier (5 items), Starter ($9.99/mo, 50 items + alerts), Pro ($19.99/mo, unlimited + StockX), Pro+ ($29.99/mo, API listing + multi-user). Subscription status check on every page load. Upgrade prompts when hitting tier limits. Reuse utils/stripe_utils.py.
+- [ ] **SoleOps: User Registration Flow** — update auth — Email/password registration page for new SoleOps users. Stripe checkout integration → subscription active → unlock features. Welcome email via Gmail SMTP.
+
+### Week 3–4 — Growth Features
+- [ ] **SoleOps: Arbitrage Scanner** — page 71 — Watchlist of target shoes + max buy price. Mercari scanner alerts when watchlist pair appears below buy threshold. eBay comp auto-pulls for ROI estimate. "Buy signal" Telegram alert with direct Mercari link. Build on sole_alert_bot/scan_arb.py.
+- [ ] **SoleOps: AI Listing Generator Polish** — improve page 34 — Connect eBay market data to auto-suggest price. Add "Mercari variant" of the description. One-click eBay API draft (Sell API). Add listing performance tracker (did the AI title work? how fast did it sell?).
+- [ ] **SoleOps: Weekly Reseller Report Email** — automated — Claude-generated weekly summary emailed to each user. "You have 3 stale pairs. eBay market is up 8% on Jordan 1s. Best opportunity this week: [X]." Cron job on CT100.
 
 ---
 
