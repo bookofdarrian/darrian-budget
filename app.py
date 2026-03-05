@@ -10,8 +10,8 @@ except ImportError:
 
 from utils.db import init_db, seed_budget, seed_income, get_conn, read_sql, execute as db_execute
 from utils.auth import (
-    require_login, render_sidebar_brand, render_sidebar_user_widget,
-    inject_css, get_current_user
+    require_login, render_sidebar_brand, render_sidebar_nav,
+    render_sidebar_user_widget, inject_css, get_current_user
 )
 
 # ── App config ────────────────────────────────────────────────────────────────
@@ -95,37 +95,7 @@ selected_month = st.sidebar.selectbox("📅 Month", months, index=default_idx)
 seed_budget(selected_month)
 seed_income(selected_month)
 
-st.sidebar.markdown("---")
-st.sidebar.page_link("pages/20_homelab.py",          label="🖥️ Homelab",           icon="🖥️")
-st.sidebar.page_link("pages/21_setup_homescreen.py", label="📱 iPhone Setup",       icon="📱")
-st.sidebar.markdown("---")
-st.sidebar.page_link("app.py",                    label="Overview",          icon="📊")
-st.sidebar.page_link("pages/19_budget_intake.py", label="Budget Intake",     icon="📥")
-st.sidebar.page_link("pages/18_real_estate_bot.py", label="🏠 Real Estate Bot", icon="🏠")
-st.sidebar.page_link("pages/22_todo.py",            label="✅ Todo",             icon="✅")
-st.sidebar.page_link("pages/24_creator_companion.py", label="🎬 Creator",        icon="🎬")
-st.sidebar.page_link("pages/25_notes.py",           label="📝 Notes",            icon="📝")
-st.sidebar.page_link("pages/26_media_library.py",   label="🎵 Media Library",    icon="🎵")
-st.sidebar.page_link("pages/17_personal_assistant.py", label="Personal Assistant", icon="🤖")
-st.sidebar.markdown("---")
-st.sidebar.page_link("pages/1_expenses.py",       label="Expenses",          icon="📋")
-st.sidebar.page_link("pages/2_income.py",         label="Income",            icon="💵")
-st.sidebar.page_link("pages/3_business_tracker.py",   label="Business Tracker 🔒", icon="💼")
-st.sidebar.page_link("pages/4_trends.py",         label="Monthly Trends",    icon="📈")
-st.sidebar.page_link("pages/5_bank_import.py",    label="Bank Import",       icon="🏦")
-st.sidebar.page_link("pages/6_receipts.py",       label="Receipts & HSA",    icon="🧾")
-st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights 🔒",    icon="🤖")
-st.sidebar.page_link("pages/8_goals.py",          label="Financial Goals",   icon="🎯")
-st.sidebar.page_link("pages/9_net_worth.py",      label="Net Worth 🔒",      icon="💎")
-st.sidebar.page_link("pages/10_rsu_espp.py",      label="RSU/ESPP Advisor 🔒", icon="📈")
-st.sidebar.page_link("pages/11_portfolio.py",     label="Portfolio Analysis 🔒", icon="🗂️")
-st.sidebar.page_link("pages/12_market_news.py",   label="Market News 🔒",    icon="📰")
-st.sidebar.page_link("pages/13_backtesting.py",   label="Strategy Backtest 🔒", icon="🔬")
-st.sidebar.page_link("pages/14_trading_bot.py",   label="Paper Trading Bot 🔒", icon="🤖")
-st.sidebar.page_link("pages/15_bills.py",         label="Bill Calendar",        icon="📅")
-st.sidebar.page_link("pages/16_paycheck.py",      label="Paycheck Allocator",   icon="💸")
-st.sidebar.page_link("pages/0_pricing.py",        label="⭐ Upgrade to Pro",    icon="⭐")
-
+render_sidebar_nav()
 render_sidebar_user_widget()
 
 # ── Main dashboard ────────────────────────────────────────────────────────────

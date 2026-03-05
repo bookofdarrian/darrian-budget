@@ -728,6 +728,47 @@ def render_sidebar_brand():
     """, unsafe_allow_html=True)
 
 
+def render_sidebar_nav():
+    """
+    Render navigation links based on user plan.
+    Free users see only free-tier pages.
+    Pro users see free pages + all Pro pages.
+    Call this after render_sidebar_brand() and before render_sidebar_user_widget().
+    """
+    pro = current_user_is_pro()
+    st.sidebar.markdown("---")
+
+    # ── Free-tier pages (visible to everyone) ─────────────────────────────────
+    st.sidebar.page_link("app.py",                 label="📊 Overview",         icon="📊")
+    st.sidebar.page_link("pages/1_expenses.py",    label="📋 Expenses",         icon="📋")
+    st.sidebar.page_link("pages/2_income.py",      label="💵 Income",           icon="💵")
+    st.sidebar.page_link("pages/5_bank_import.py", label="🏦 Bank Import",      icon="🏦")
+    st.sidebar.page_link("pages/8_goals.py",       label="🎯 Financial Goals",  icon="🎯")
+    st.sidebar.page_link("pages/15_bills.py",      label="📅 Bill Calendar",    icon="📅")
+    st.sidebar.page_link("pages/16_paycheck.py",   label="💸 Paycheck",         icon="💸")
+
+    if pro:
+        # ── Pro-only pages ─────────────────────────────────────────────────────
+        st.sidebar.markdown("---")
+        st.sidebar.markdown(
+            f"<div style='font-size:0.72rem; color:{TEXT_MUTED}; text-transform:uppercase; "
+            f"letter-spacing:0.06em; padding:4px 0 2px 4px;'>⭐ Pro</div>",
+            unsafe_allow_html=True
+        )
+        st.sidebar.page_link("pages/3_business_tracker.py", label="💼 Business Tracker", icon="💼")
+        st.sidebar.page_link("pages/4_trends.py",            label="📈 Monthly Trends",   icon="📈")
+        st.sidebar.page_link("pages/6_receipts.py",          label="🧾 Receipts & HSA",   icon="🧾")
+        st.sidebar.page_link("pages/7_ai_insights.py",       label="🤖 AI Insights",      icon="🤖")
+        st.sidebar.page_link("pages/9_net_worth.py",         label="💎 Net Worth",        icon="💎")
+        st.sidebar.page_link("pages/10_rsu_espp.py",         label="📊 RSU/ESPP",         icon="📊")
+        st.sidebar.page_link("pages/11_portfolio.py",        label="🗂️ Portfolio",        icon="🗂️")
+        st.sidebar.page_link("pages/12_market_news.py",      label="📰 Market News",      icon="📰")
+    else:
+        # ── Upgrade prompt for free users ─────────────────────────────────────
+        st.sidebar.markdown("---")
+        st.sidebar.page_link("pages/0_pricing.py", label="⭐ Upgrade to Pro", icon="⭐")
+
+
 def render_sidebar_user_widget():
     """
     Render the user account widget at the bottom of the sidebar.
