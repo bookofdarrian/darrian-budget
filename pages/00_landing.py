@@ -285,7 +285,7 @@ st.markdown("""
     <div class="hero-logo">🍑 Peach State Savings</div>
     <div class="hero-sub">
         A full-stack, AI-powered personal finance platform built from scratch —
-        71 tools covering budgeting, investing, sneaker resale, net worth tracking, and more.
+        covering budgeting, investing, net worth tracking, and more.
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -305,7 +305,7 @@ with col_c:
 st.markdown("""
 <div class="stat-row">
     <div class="stat-pill">
-        <div class="stat-num">71</div>
+        <div class="stat-num">11+</div>
         <div class="stat-label">Finance Tools</div>
     </div>
     <div class="stat-pill">
@@ -432,7 +432,7 @@ with p2:
             <div class="price-feat">Monthly Trends Analysis</div>
             <div class="price-feat">Business Income Tracker</div>
             <div class="price-feat">Market News & Backtesting</div>
-            <div class="price-feat">All 71 tools unlocked</div>
+            <div class="price-feat">All Pro tools unlocked</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
