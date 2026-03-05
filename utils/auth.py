@@ -582,7 +582,7 @@ def _show_auth_page():
     )
     st.markdown(
         f"<div style='text-align:center; margin-top:12px;'>"
-        f"<a href='/00_landing' target='_self' style='color:{PEACH}; "
+        f"<a href='/landing' target='_self' style='color:{PEACH}; "
         f"font-size:0.82rem; text-decoration:none;'>"
         "← What is Peach State Savings?</a></div>",
         unsafe_allow_html=True
