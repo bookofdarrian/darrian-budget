@@ -284,8 +284,8 @@ st.markdown("""
     <div class="hero-badge">🚀 Built by a TPM at Visa · Deployed on a self-hosted homelab</div>
     <div class="hero-logo">🍑 Peach State Savings</div>
     <div class="hero-sub">
-        A full-stack, AI-powered personal finance platform built from scratch —
-        covering budgeting, investing, net worth tracking, and more.
+        Import your bank statement in seconds, auto-categorize every transaction,
+        and finally see where your money actually goes — free, forever, no credit card.
     </div>
 </div>
 """, unsafe_allow_html=True)
