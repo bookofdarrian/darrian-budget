@@ -164,12 +164,17 @@ def _save_note(note_id: int, title: str, content: str, category: str, tags: str,
 def _create_note(title: str, content: str, category: str, tags: str, color: str) -> int:
     wc = _word_count(content)
     conn = get_conn()
-    c = db_exec(conn,
-        "INSERT INTO notes (title,content,category,tags,color,word_count) VALUES (?,?,?,?,?,?)",
-        (title.strip(), content, category, tags.strip(), color, wc))
+    c = conn.cursor()
+    ph = "%s" if USE_POSTGRES else "?"
     if USE_POSTGRES:
+        c.execute(
+            f"INSERT INTO notes (title,content,category,tags,color,word_count) VALUES ({ph},{ph},{ph},{ph},{ph},{ph}) RETURNING id",
+            (title.strip(), content, category, tags.strip(), color, wc))
         note_id = c.fetchone()[0]
     else:
+        c.execute(
+            f"INSERT INTO notes (title,content,category,tags,color,word_count) VALUES ({ph},{ph},{ph},{ph},{ph},{ph})",
+            (title.strip(), content, category, tags.strip(), color, wc))
         note_id = c.lastrowid
     conn.commit(); conn.close()
     return note_id
@@ -233,10 +238,18 @@ def _load_notebooks():
 
 def _create_notebook(name: str, description: str, icon: str, color: str) -> int:
     conn = get_conn()
-    c = db_exec(conn,
-        "INSERT INTO notebooks (name, description, icon, color) VALUES (?,?,?,?)",
-        (name.strip(), description.strip(), icon, color))
-    nb_id = c.fetchone()[0] if USE_POSTGRES else c.lastrowid
+    c = conn.cursor()
+    ph = "%s" if USE_POSTGRES else "?"
+    if USE_POSTGRES:
+        c.execute(
+            f"INSERT INTO notebooks (name, description, icon, color) VALUES ({ph},{ph},{ph},{ph}) RETURNING id",
+            (name.strip(), description.strip(), icon, color))
+        nb_id = c.fetchone()[0]
+    else:
+        c.execute(
+            f"INSERT INTO notebooks (name, description, icon, color) VALUES ({ph},{ph},{ph},{ph})",
+            (name.strip(), description.strip(), icon, color))
+        nb_id = c.lastrowid
     conn.commit(); conn.close()
     return nb_id
 
@@ -414,10 +427,18 @@ def _load_templates():
 
 def _create_template(name: str, description: str, category: str, content: str, icon: str) -> int:
     conn = get_conn()
-    c = db_exec(conn,
-        "INSERT INTO note_templates (name, description, category, content, icon) VALUES (?,?,?,?,?)",
-        (name.strip(), description.strip(), category, content, icon))
-    t_id = c.fetchone()[0] if USE_POSTGRES else c.lastrowid
+    c = conn.cursor()
+    ph = "%s" if USE_POSTGRES else "?"
+    if USE_POSTGRES:
+        c.execute(
+            f"INSERT INTO note_templates (name, description, category, content, icon) VALUES ({ph},{ph},{ph},{ph},{ph}) RETURNING id",
+            (name.strip(), description.strip(), category, content, icon))
+        t_id = c.fetchone()[0]
+    else:
+        c.execute(
+            f"INSERT INTO note_templates (name, description, category, content, icon) VALUES ({ph},{ph},{ph},{ph},{ph})",
+            (name.strip(), description.strip(), category, content, icon))
+        t_id = c.lastrowid
     conn.commit(); conn.close()
     return t_id
 

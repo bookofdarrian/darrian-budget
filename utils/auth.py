@@ -574,12 +574,19 @@ def _show_auth_page():
                                 "Try signing in instead."
                             )
 
-        st.markdown(
-            f"<div style='text-align:center; margin-top:20px; color:{TEXT_MUTED}; "
-            f"font-size:0.75rem;'>"
-            "Your financial data is encrypted and never shared.</div>",
-            unsafe_allow_html=True
-        )
+    st.markdown(
+        f"<div style='text-align:center; margin-top:20px; color:{TEXT_MUTED}; "
+        f"font-size:0.75rem;'>"
+        "Your financial data is encrypted and never shared.</div>",
+        unsafe_allow_html=True
+    )
+    st.markdown(
+        f"<div style='text-align:center; margin-top:12px;'>"
+        f"<a href='/00_landing' target='_self' style='color:{PEACH}; "
+        f"font-size:0.82rem; text-decoration:none;'>"
+        "← What is Peach State Savings?</a></div>",
+        unsafe_allow_html=True
+    )
 
     st.stop()
 
