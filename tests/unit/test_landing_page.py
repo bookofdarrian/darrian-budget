@@ -95,13 +95,14 @@ def test_landing_page_mentions_brand():
 
 
 def test_auth_page_links_to_landing():
-    """auth.py _show_auth_page must link to the landing page."""
+    """auth.py _show_auth_page must link to the landing page via /landing URL."""
     path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
         "utils", "auth.py"
     )
     with open(path, "r") as f:
         content = f.read()
-    assert "00_landing" in content, (
-        "auth.py login page should link back to /00_landing for unauthenticated visitors"
+    # Streamlit strips numeric prefix: 00_landing.py → /landing URL
+    assert "'/landing'" in content or '"/landing"' in content, (
+        "auth.py login page should link to /landing (Streamlit strips 00_ prefix)"
     )
