@@ -39,14 +39,23 @@ _active_db_path: str | None = None
 def set_active_db(email: str | None):
     """
     Call this right after a user logs in (or logs out).
-    Routes QA accounts to their own isolated DB; everyone else uses the default.
-    Only has effect in SQLite mode (local dev).
+    Routes each user to their own isolated SQLite DB under data/users/.
+    QA accounts get budget_qa.db.
+    Only has effect in SQLite mode (local dev / self-hosted).
     """
     global _active_db_path
-    if email and email.strip().lower() in _QA_EMAILS:
+    if email is None:
+        _active_db_path = None
+        return
+    email_clean = email.strip().lower()
+    if email_clean in _QA_EMAILS:
         _active_db_path = DB_PATH_QA
-    else:
-        _active_db_path = DB_PATH
+        return
+    # ── Per-user isolated database ───────────────────────────────────────────
+    user_hash   = hashlib.sha256(email_clean.encode()).hexdigest()[:24]
+    user_db_dir = os.path.join(os.path.dirname(__file__), '..', 'data', 'users')
+    os.makedirs(user_db_dir, exist_ok=True)
+    _active_db_path = os.path.join(user_db_dir, f'user_{user_hash}.db')
 
 
 def _get_db_path() -> str:
@@ -56,6 +65,7 @@ def _get_db_path() -> str:
 
 # ── Connection factory ────────────────────────────────────────────────────────
 def get_conn():
+    """Return a connection to the current user's data DB (per-user isolated)."""
     if USE_POSTGRES:
         conn = psycopg2.connect(DATABASE_URL)
         return conn
@@ -63,6 +73,19 @@ def get_conn():
         conn = sqlite3.connect(_get_db_path())
         conn.row_factory = sqlite3.Row
         return conn
+
+
+def get_auth_conn():
+    """
+    Always return a connection to the SHARED auth DB (budget.db).
+    Used for users table, app_settings, login_attempts — never per-user data.
+    """
+    if USE_POSTGRES:
+        conn = psycopg2.connect(DATABASE_URL)
+        return conn
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 
 # ── Portable execute helper ───────────────────────────────────────────────────
@@ -111,42 +134,79 @@ def read_sql(query: str, conn, params=None):
 
 # ── Schema init ───────────────────────────────────────────────────────────────
 def init_db():
-    conn = get_conn()
-    c = conn.cursor()
+    """
+    Initialize both the shared auth DB and the current user's data DB.
+    - Auth DB (budget.db): users, app_settings, waitlist, login_attempts
+    - Data DB (per-user): all financial tables (expenses, income, bank_transactions, etc.)
+    Safe to call multiple times (all CREATE TABLE IF NOT EXISTS).
+    """
+    # ── 1. Init auth tables in the shared budget.db ───────────────────────────
+    auth_conn = get_auth_conn()
+    auth_c    = auth_conn.cursor()
+    if USE_POSTGRES:
+        # users, waitlist, app_settings, login_attempts, pa_* in shared DB
+        auth_c.execute('''CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY, email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL, salt TEXT NOT NULL,
+            plan TEXT DEFAULT 'free', stripe_customer_id TEXT DEFAULT '',
+            stripe_subscription_id TEXT DEFAULT '', subscription_status TEXT DEFAULT 'none',
+            created_at TEXT DEFAULT (to_char(now(), 'YYYY-MM-DD HH24:MI:SS')), last_login TEXT
+        )''')
+        auth_c.execute('''CREATE TABLE IF NOT EXISTS waitlist (
+            id SERIAL PRIMARY KEY, email TEXT UNIQUE NOT NULL,
+            name TEXT DEFAULT '', source TEXT DEFAULT '',
+            created_at TEXT DEFAULT (to_char(now(), 'YYYY-MM-DD HH24:MI:SS'))
+        )''')
+        auth_c.execute('''CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT)''')
+        auth_c.execute('''CREATE TABLE IF NOT EXISTS login_attempts (
+            id SERIAL PRIMARY KEY, email TEXT NOT NULL,
+            attempted_at REAL NOT NULL, success INTEGER DEFAULT 0
+        )''')
+    else:
+        auth_c.execute('''CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL, salt TEXT NOT NULL,
+            plan TEXT DEFAULT 'free', stripe_customer_id TEXT DEFAULT '',
+            stripe_subscription_id TEXT DEFAULT '', subscription_status TEXT DEFAULT 'none',
+            created_at TEXT DEFAULT (datetime('now')), last_login TEXT
+        )''')
+        auth_c.execute('''CREATE TABLE IF NOT EXISTS waitlist (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE NOT NULL,
+            name TEXT DEFAULT '', source TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now'))
+        )''')
+        auth_c.execute('''CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT)''')
+        auth_c.execute('''CREATE TABLE IF NOT EXISTS login_attempts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL,
+            attempted_at REAL NOT NULL, success INTEGER DEFAULT 0
+        )''')
+    auth_conn.commit()
+    auth_conn.close()
 
+    # ── 2. Init financial data tables in the user's isolated DB ──────────────
+    conn = get_conn()
+    c    = conn.cursor()
     if USE_POSTGRES:
         _init_postgres(c)
     else:
         _init_sqlite(c)
 
-    # ── Migrations: add columns to existing tables if missing ────────────────
+    # ── Migrations ────────────────────────────────────────────────────────────
     if USE_POSTGRES:
-        c.execute("""
-            SELECT column_name FROM information_schema.columns
-            WHERE table_name='bank_transactions' AND column_name='is_debit'
-        """)
+        c.execute("""SELECT column_name FROM information_schema.columns
+                     WHERE table_name='bank_transactions' AND column_name='is_debit'""")
         if not c.fetchone():
             c.execute("ALTER TABLE bank_transactions ADD COLUMN is_debit INTEGER DEFAULT 1")
-
-        # Migration: add due_day to recurring_templates
-        c.execute("""
-            SELECT column_name FROM information_schema.columns
-            WHERE table_name='recurring_templates' AND column_name='due_day'
-        """)
+        c.execute("""SELECT column_name FROM information_schema.columns
+                     WHERE table_name='recurring_templates' AND column_name='due_day'""")
         if not c.fetchone():
             c.execute("ALTER TABLE recurring_templates ADD COLUMN due_day INTEGER DEFAULT NULL")
-
-        # Migration: add nfcu_balance to app_settings (stored as key/value — no schema change needed)
     else:
         c.execute("PRAGMA table_info(bank_transactions)")
-        cols = [row[1] for row in c.fetchall()]
-        if 'is_debit' not in cols:
+        if 'is_debit' not in [row[1] for row in c.fetchall()]:
             c.execute("ALTER TABLE bank_transactions ADD COLUMN is_debit INTEGER DEFAULT 1")
-
-        # Migration: add due_day to recurring_templates
         c.execute("PRAGMA table_info(recurring_templates)")
-        rt_cols = [row[1] for row in c.fetchall()]
-        if 'due_day' not in rt_cols:
+        if 'due_day' not in [row[1] for row in c.fetchall()]:
             c.execute("ALTER TABLE recurring_templates ADD COLUMN due_day INTEGER DEFAULT NULL")
 
     conn.commit()
@@ -571,18 +631,15 @@ def _init_sqlite(c):
     )''')
 
 
-# ── App settings helpers (key/value store) ───────────────────────────────────
+# ── App settings helpers (key/value store — stored in shared auth DB) ─────────
 def _ensure_settings_table(conn):
-    conn.cursor().execute('''CREATE TABLE IF NOT EXISTS app_settings (
-        key TEXT PRIMARY KEY,
-        value TEXT
-    )''')
+    conn.cursor().execute('''CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT)''')
     conn.commit()
 
 
 def get_setting(key: str, default: str = "") -> str:
-    """Retrieve a single app setting by key."""
-    conn = get_conn()
+    """Retrieve a single app setting by key (reads from shared auth DB)."""
+    conn = get_auth_conn()
     _ensure_settings_table(conn)
     c = execute(conn, "SELECT value FROM app_settings WHERE key = ?", (key,))
     row = c.fetchone()
@@ -593,8 +650,8 @@ def get_setting(key: str, default: str = "") -> str:
 
 
 def set_setting(key: str, value: str):
-    """Upsert a single app setting."""
-    conn = get_conn()
+    """Upsert a single app setting (writes to shared auth DB)."""
+    conn = get_auth_conn()
     _ensure_settings_table(conn)
     if USE_POSTGRES:
         execute(conn,
@@ -645,23 +702,19 @@ _WINDOW_SECS    = 15 * 60    # count failures within this window
 def _ensure_login_attempts_table(conn):
     if USE_POSTGRES:
         conn.cursor().execute('''CREATE TABLE IF NOT EXISTS login_attempts (
-            id SERIAL PRIMARY KEY,
-            email TEXT NOT NULL,
-            attempted_at REAL NOT NULL,
-            success INTEGER DEFAULT 0
+            id SERIAL PRIMARY KEY, email TEXT NOT NULL,
+            attempted_at REAL NOT NULL, success INTEGER DEFAULT 0
         )''')
     else:
         conn.cursor().execute('''CREATE TABLE IF NOT EXISTS login_attempts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT NOT NULL,
-            attempted_at REAL NOT NULL,
-            success INTEGER DEFAULT 0
+            id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL,
+            attempted_at REAL NOT NULL, success INTEGER DEFAULT 0
         )''')
     conn.commit()
 
 
 def _record_login_attempt(email: str, success: bool):
-    conn = get_conn()
+    conn = get_auth_conn()   # always log to shared auth DB
     _ensure_login_attempts_table(conn)
     execute(conn,
         "INSERT INTO login_attempts (email, attempted_at, success) VALUES (?, ?, ?)",
@@ -675,8 +728,9 @@ def is_account_locked(email: str) -> tuple[bool, int]:
     """
     Returns (locked, seconds_remaining).
     Locked if >= _MAX_ATTEMPTS failures in the last _WINDOW_SECS.
+    Reads from shared auth DB (login_attempts is global, not per-user).
     """
-    conn = get_conn()
+    conn = get_auth_conn()   # always read from shared auth DB
     _ensure_login_attempts_table(conn)
     cutoff = time.time() - _WINDOW_SECS
     c = execute(conn,
@@ -687,7 +741,6 @@ def is_account_locked(email: str) -> tuple[bool, int]:
     conn.close()
     if len(rows) < _MAX_ATTEMPTS:
         return False, 0
-    # Locked — compute remaining time from the most recent failure
     most_recent = rows[0][0]
     remaining = int(_LOCKOUT_SECS - (time.time() - most_recent))
     return True, max(remaining, 0)
@@ -716,7 +769,7 @@ def _hash_password_legacy(password: str, salt: str) -> str:
 
 def create_user(email: str, password: str) -> dict | None:
     """
-    Create a new user with bcrypt password hashing.
+    Create a new user. Writes to the shared auth DB (budget.db).
     Returns the user dict on success, None if email already exists or validation fails.
     """
     email = email.strip().lower()
@@ -727,9 +780,8 @@ def create_user(email: str, password: str) -> dict | None:
         return None
 
     pw_hash = _hash_password_bcrypt(password)
-    # salt column kept for schema compatibility but unused for new accounts
-    salt = "bcrypt"
-    conn = get_conn()
+    salt    = "bcrypt"
+    conn    = get_auth_conn()   # users table is in shared auth DB
     try:
         if USE_POSTGRES:
             c = execute(conn,
@@ -757,28 +809,24 @@ def create_user(email: str, password: str) -> dict | None:
 
 def authenticate_user(email: str, password: str) -> dict | None:
     """
-    Verify email + password with brute-force protection.
+    Verify email + password. Reads from the shared auth DB (budget.db).
     - Checks account lockout before attempting verification.
     - Records every attempt (success or failure).
     - Supports both bcrypt (new) and legacy SHA-256 accounts.
-    - On successful legacy login, upgrades hash to bcrypt transparently.
     Returns user dict on success, None on failure.
     """
     email = email.strip().lower()
 
-    # ── Brute-force check ─────────────────────────────────────────────────────
     locked, remaining = is_account_locked(email)
     if locked:
-        # Record this attempt too (counts against them)
         _record_login_attempt(email, False)
         return None
 
-    conn = get_conn()
+    conn = get_auth_conn()   # users table is in shared auth DB
     c = execute(conn, "SELECT * FROM users WHERE email = ?", (email,))
     row = c.fetchone()
     if row is None:
         conn.close()
-        # Constant-time dummy work to prevent user enumeration via timing
         import bcrypt
         bcrypt.checkpw(b"dummy", bcrypt.hashpw(b"dummy", bcrypt.gensalt(rounds=4)))
         _record_login_attempt(email, False)
@@ -793,22 +841,16 @@ def authenticate_user(email: str, password: str) -> dict | None:
     stored_hash = user["password_hash"]
     salt        = user.get("salt", "")
 
-    # ── Verify password ───────────────────────────────────────────────────────
     verified = False
     if stored_hash.startswith("$2b$") or stored_hash.startswith("$2a$"):
-        # bcrypt hash
         verified = _verify_password_bcrypt(password, stored_hash)
     else:
-        # Legacy SHA-256 — verify then upgrade to bcrypt
         legacy_hash = _hash_password_legacy(password, salt)
         if secrets.compare_digest(legacy_hash, stored_hash):
             verified = True
-            # Upgrade to bcrypt in-place
             new_hash = _hash_password_bcrypt(password)
-            execute(conn,
-                "UPDATE users SET password_hash=?, salt='bcrypt' WHERE id=?",
-                (new_hash, user["id"])
-            )
+            execute(conn, "UPDATE users SET password_hash=?, salt='bcrypt' WHERE id=?",
+                    (new_hash, user["id"]))
             conn.commit()
 
     if not verified:
@@ -816,29 +858,22 @@ def authenticate_user(email: str, password: str) -> dict | None:
         _record_login_attempt(email, False)
         return None
 
-    # ── Success ───────────────────────────────────────────────────────────────
     if USE_POSTGRES:
-        execute(conn,
-            "UPDATE users SET last_login = to_char(now(), 'YYYY-MM-DD HH24:MI:SS') WHERE id = %s",
-            (user["id"],)
-        )
+        execute(conn, "UPDATE users SET last_login = to_char(now(), 'YYYY-MM-DD HH24:MI:SS') WHERE id = %s",
+                (user["id"],))
     else:
-        execute(conn,
-            "UPDATE users SET last_login = datetime('now') WHERE id = ?",
-            (user["id"],)
-        )
+        execute(conn, "UPDATE users SET last_login = datetime('now') WHERE id = ?", (user["id"],))
     conn.commit()
     conn.close()
     _record_login_attempt(email, True)
-    # Strip sensitive fields before returning
     user.pop("password_hash", None)
     user.pop("salt", None)
     return user
 
 
 def get_user_by_id(user_id: int) -> dict | None:
-    """Fetch a user by ID."""
-    conn = get_conn()
+    """Fetch a user by ID from the shared auth DB."""
+    conn = get_auth_conn()
     c = execute(conn, "SELECT * FROM users WHERE id = ?", (user_id,))
     row = c.fetchone()
     conn.close()
@@ -851,9 +886,9 @@ def get_user_by_id(user_id: int) -> dict | None:
 
 
 def get_user_by_email(email: str) -> dict | None:
-    """Fetch a user by email."""
+    """Fetch a user by email from the shared auth DB."""
     email = email.strip().lower()
-    conn = get_conn()
+    conn  = get_auth_conn()
     c = execute(conn, "SELECT * FROM users WHERE email = ?", (email,))
     row = c.fetchone()
     conn.close()
@@ -867,11 +902,10 @@ def get_user_by_email(email: str) -> dict | None:
 
 def update_user_subscription(user_id: int, plan: str, stripe_customer_id: str,
                               stripe_subscription_id: str, subscription_status: str):
-    """Update a user's subscription details after a Stripe event."""
-    conn = get_conn()
+    """Update a user's subscription details. Writes to shared auth DB."""
+    conn = get_auth_conn()
     execute(conn,
-        """UPDATE users SET plan=?, stripe_customer_id=?, stripe_subscription_id=?,
-           subscription_status=? WHERE id=?""",
+        "UPDATE users SET plan=?, stripe_customer_id=?, stripe_subscription_id=?, subscription_status=? WHERE id=?",
         (plan, stripe_customer_id, stripe_subscription_id, subscription_status, user_id)
     )
     conn.commit()
@@ -914,14 +948,12 @@ def is_pro_user(user: dict) -> bool:
 
 
 def add_to_waitlist(email: str, name: str = "", source: str = "") -> bool:
-    """Add an email to the waitlist. Returns True on success, False if already exists."""
+    """Add an email to the waitlist (shared auth DB)."""
     email = email.strip().lower()
-    conn = get_conn()
+    conn  = get_auth_conn()
     try:
-        execute(conn,
-            "INSERT INTO waitlist (email, name, source) VALUES (?, ?, ?)",
-            (email, name.strip(), source.strip())
-        )
+        execute(conn, "INSERT INTO waitlist (email, name, source) VALUES (?, ?, ?)",
+                (email, name.strip(), source.strip()))
         conn.commit()
         conn.close()
         return True
@@ -931,9 +963,9 @@ def add_to_waitlist(email: str, name: str = "", source: str = "") -> bool:
 
 
 def get_waitlist_count() -> int:
-    """Return total waitlist signups."""
-    conn = get_conn()
-    c = execute(conn, "SELECT COUNT(*) FROM waitlist")
+    """Return total waitlist signups from shared auth DB."""
+    conn  = get_auth_conn()
+    c     = execute(conn, "SELECT COUNT(*) FROM waitlist")
     count = c.fetchone()[0]
     conn.close()
     return int(count)

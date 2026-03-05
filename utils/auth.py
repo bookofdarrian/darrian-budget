@@ -626,13 +626,14 @@ def require_login():
 
     if st.session_state.get("authenticated") and st.session_state.get("user"):
         user = st.session_state["user"]
-        # Ensure DB routing is correct for this session (survives page reloads)
+        # Route this session to the user's isolated data DB
         set_active_db(user.get("email"))
-        # Refresh from DB every page load to pick up subscription changes
+        # Ensure the user's per-user DB has all tables created
+        init_db()
+        # Refresh from shared auth DB to pick up subscription changes
         if user.get("id", 0) != 0:
             fresh = get_user_by_id(user["id"])
             if fresh:
-                # Strip sensitive fields just in case
                 fresh.pop("password_hash", None)
                 fresh.pop("salt", None)
                 st.session_state["user"] = fresh
