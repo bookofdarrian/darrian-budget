@@ -338,7 +338,6 @@ features = [
     ("📈", "Portfolio & RSU Tracker", "Track your Visa RSUs, ESPP, investment portfolio, and dividend income in one view."),
     ("💎", "Net Worth Tracker", "Watch your net worth grow month over month with historical charts and projections."),
     ("🎯", "Financial Goals", "Set savings goals with deadlines. See progress bars and AI-powered milestone predictions."),
-    ("👟", "Sneaker Resale (SoleOps)", "Built for resellers — inventory, P&L, arbitrage scanner, Telegram price alerts."),
     ("🏠", "Rent vs Buy Calculator", "Model the real cost of buying vs renting in your market with full amortization breakdowns."),
     ("📋", "Bill Calendar", "Never miss a bill. Visual calendar with due-date alerts and monthly totals."),
     ("💸", "Paycheck Allocator", "Enter your gross salary — get an exact net paycheck breakdown including GA state taxes."),
@@ -372,7 +371,7 @@ st.markdown("""
 st.markdown("""
 <div class="builder-card">
     <div class="builder-name">Darrian Belcher</div>
-    <div class="builder-role">Technical Project Analyst @ Visa · Georgia Tech Data Analytics · Atlanta, GA</div>
+    <div class="builder-role">Technical Project Analyst @ Visa · Atlanta, GA</div>
     <div class="builder-quote">
         "I built Peach State Savings because every finance app I tried either did too little
         or cost too much — and none of them actually understood how I made money.
@@ -400,7 +399,7 @@ st.markdown("""
 <div class="section-sub">Start free. Upgrade when you're ready.</div>
 """, unsafe_allow_html=True)
 
-p1, p2, p3 = st.columns(3, gap="large")
+pc_l, p1, p2, pc_r = st.columns([1, 2, 2, 1], gap="large")
 
 with p1:
     st.markdown("""
@@ -438,24 +437,6 @@ with p2:
     </div>
     """, unsafe_allow_html=True)
 
-with p3:
-    st.markdown("""
-    <div class="price-card">
-        <div class="price-name">SoleOps</div>
-        <div class="price-tag">$9.99</div>
-        <div class="price-period">/ month</div>
-        <div style="margin-top: 20px;">
-            <div class="price-feat">Everything in Pro</div>
-            <div class="price-feat">Sneaker Inventory Manager</div>
-            <div class="price-feat">P&L Dashboard</div>
-            <div class="price-feat">Arbitrage Scanner</div>
-            <div class="price-feat">eBay AI Listing Generator</div>
-            <div class="price-feat">Price Monitor Dashboard</div>
-            <div class="price-feat">Telegram Buy/Sell Alerts</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
 st.markdown("<div style='margin-top: 32px;'></div>", unsafe_allow_html=True)
 
 # ── FINAL CTA ─────────────────────────────────────────────────────────────────
@@ -474,6 +455,14 @@ with cta_c:
     st.markdown("<div style='margin-top: -32px;'></div>", unsafe_allow_html=True)
     if st.button("🍑 Create Free Account", type="primary", use_container_width=True, key="cta_bottom"):
         st.switch_page("app.py")
+    st.markdown(
+        f"<div style='text-align:center; color:{TEXT_MUTED}; font-size:0.78rem; margin-top:8px; margin-bottom:10px; line-height:1.6;'>"
+        "Creates a secure account with your email and password. "
+        "Your data is stored privately on this server — no third-party sharing, no ads. "
+        "Free plan is free forever, no credit card required."
+        "</div>",
+        unsafe_allow_html=True
+    )
     if st.button("Sign In →", use_container_width=True, key="signin_bottom"):
         st.switch_page("app.py")
 
@@ -481,13 +470,9 @@ with cta_c:
 st.markdown(f"""
 <hr class="section-divider" style="margin-top: 60px;">
 <div style="text-align: center; color: {TEXT_MUTED}; font-size: 0.8rem; padding-bottom: 40px;">
-    🍑 Peach State Savings · Built & self-hosted in Atlanta, GA ·
-    <a href="https://github.com/bookofdarrian/darrian-budget" style="color: {PEACH}; text-decoration: none;">
-        Open on GitHub
-    </a>
-    &nbsp;·&nbsp;
+    🍑 Peach State Savings · Built &amp; self-hosted in Atlanta, GA ·
     <a href="https://www.linkedin.com/in/darrian-belcher/" style="color: {PEACH}; text-decoration: none;">
-        LinkedIn
+        Connect on LinkedIn
     </a>
 </div>
 """, unsafe_allow_html=True)
