@@ -4,7 +4,7 @@ import io
 from datetime import datetime
 from utils.db import get_conn, init_db, read_sql, execute, fetchone
 from utils.nfcu_parser import parse_nfcu_pdf
-from utils.auth import require_password
+from utils.auth import require_password, render_sidebar_brand, render_sidebar_nav, render_sidebar_user_widget, inject_css
 
 
 # ── Auto-categorization rules ─────────────────────────────────────────────────
@@ -179,8 +179,7 @@ if st.session_state.get("import_error"):
     msg = st.session_state.pop("import_error")
     st.error(msg)
 
-st.sidebar.title("💰 Budget Dashboard")
-st.sidebar.markdown("---")
+render_sidebar_brand()
 months = []
 for m in range(1, 13):
     months.append(datetime(2025, m, 1).strftime("%Y-%m"))
@@ -190,19 +189,8 @@ current_month = datetime.now().strftime("%Y-%m")
 default_idx = months.index(current_month) if current_month in months else 0
 selected_month = st.sidebar.selectbox("📅 Month", months, index=default_idx)
 
-st.sidebar.markdown("---")
-st.sidebar.page_link("app.py",                    label="Overview",          icon="📊")
-st.sidebar.page_link("pages/18_real_estate_bot.py", label="🏠 Real Estate Bot", icon="🏠")
-st.sidebar.page_link("pages/22_todo.py",            label="✅ Todo",             icon="✅")
-st.sidebar.page_link("pages/1_expenses.py",       label="Expenses",          icon="📋")
-st.sidebar.page_link("pages/2_income.py",         label="Income",            icon="💵")
-st.sidebar.page_link("pages/3_business_tracker.py",   label="Business Tracker 🔒", icon="💼")
-st.sidebar.page_link("pages/4_trends.py",         label="Monthly Trends",    icon="📈")
-st.sidebar.page_link("pages/5_bank_import.py",    label="Bank Import",       icon="🏦")
-st.sidebar.page_link("pages/6_receipts.py",       label="Receipts & HSA",    icon="🧾")
-st.sidebar.page_link("pages/7_ai_insights.py",    label="AI Insights",       icon="🤖")
-st.sidebar.page_link("pages/8_goals.py",          label="Financial Goals",   icon="🎯")
-st.sidebar.page_link("pages/9_net_worth.py",      label="Net Worth",         icon="💎")
+render_sidebar_nav()
+render_sidebar_user_widget()
 
 st.title("🏦 Bank Import")
 st.caption("Upload your Navy Federal PDF statement or any bank CSV to pull in transactions. Then map each one to a budget category and apply to your actuals.")
