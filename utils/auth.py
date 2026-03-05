@@ -448,6 +448,18 @@ def _show_auth_page():
     """Full register/login UI with security hardening."""
     inject_css()
 
+    # Hide sidebar entirely on login page — unauthenticated visitors
+    # should not see the full page list
+    st.markdown("""
+    <style>
+    [data-testid="stSidebar"] { display: none !important; }
+    [data-testid="stSidebarNav"] { display: none !important; }
+    [data-testid="stSidebarCollapsedControl"] { display: none !important; }
+    [data-testid="collapsedControl"] { display: none !important; }
+    button[kind="header"] { display: none !important; }
+    </style>
+    """, unsafe_allow_html=True)
+
     st.markdown(f"""
     <div style="text-align:center; padding: 48px 0 24px 0;">
         <div style="font-size:2.4rem; font-weight:800; color:{PEACH}; letter-spacing:-0.03em;">
