@@ -14,6 +14,9 @@ init_db()
 inject_css()
 require_login()
 
+# ── User isolation ─────────────────────────────────────────────────────────
+_uid = st.session_state.get("user", {}).get("id", 0)
+
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 render_sidebar_brand()
 
@@ -25,8 +28,8 @@ for m in range(1, 13):
 current_month = datetime.now().strftime("%Y-%m")
 default_idx = months.index(current_month) if current_month in months else 0
 selected_month = st.sidebar.selectbox("📅 Month", months, index=default_idx)
-seed_budget(selected_month)
-seed_income(selected_month)
+seed_budget(selected_month, _uid)
+seed_income(selected_month, _uid)
 
 render_sidebar_nav()
 
@@ -43,12 +46,12 @@ st.caption(
 # ── Load current month data ───────────────────────────────────────────────────
 conn = get_conn()
 expense_df = read_sql(
-    "SELECT * FROM expenses WHERE month = ? ORDER BY category, subcategory",
-    conn, params=(selected_month,)
+    "SELECT * FROM expenses WHERE month = ? AND user_id = ? ORDER BY category, subcategory",
+    conn, params=(selected_month, _uid)
 )
 income_df = read_sql(
-    "SELECT * FROM income WHERE month = ?",
-    conn, params=(selected_month,)
+    "SELECT * FROM income WHERE month = ? AND user_id = ?",
+    conn, params=(selected_month, _uid)
 )
 conn.close()
 
@@ -96,9 +99,9 @@ with log_income_col:
         if paycheck_amount > 0 and paycheck_source.strip():
             conn = get_conn()
             execute(conn,
-                "INSERT INTO income (month, source, amount, notes) VALUES (?, ?, ?, ?)",
+                "INSERT INTO income (month, source, amount, notes, user_id) VALUES (?, ?, ?, ?, ?)",
                 (selected_month, paycheck_source.strip(), paycheck_amount,
-                 f"Logged via Paycheck Allocator on {datetime.now().strftime('%Y-%m-%d')}")
+                 f"Logged via Paycheck Allocator on {datetime.now().strftime('%Y-%m-%d')}", _uid)
             )
             conn.commit()
             conn.close()
@@ -397,8 +400,8 @@ if apply_btn:
         updated = 0
         for _, row in edited_alloc.iterrows():
             execute(conn,
-                "UPDATE expenses SET projected = ? WHERE id = ?",
-                (float(row["New Projected ($)"]), int(row["id"]))
+                "UPDATE expenses SET projected = ? WHERE id = ? AND user_id = ?",
+                (float(row["New Projected ($)"]), int(row["id"]), _uid)
             )
             updated += 1
         conn.commit()

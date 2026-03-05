@@ -29,6 +29,9 @@ inject_css()
 # This runs AFTER require_login so we have a valid user session to upgrade.
 require_login()
 
+# ── User isolation ─────────────────────────────────────────────────────────
+_uid = st.session_state.get("user", {}).get("id", 0)
+
 _params = st.query_params
 if _params.get("checkout") == "success":
     _session_id = _params.get("session_id", "")
@@ -92,8 +95,8 @@ current_month = datetime.now().strftime("%Y-%m")
 default_idx = months.index(current_month) if current_month in months else 0
 selected_month = st.sidebar.selectbox("📅 Month", months, index=default_idx)
 
-seed_budget(selected_month)
-seed_income(selected_month)
+seed_budget(selected_month, _uid)
+seed_income(selected_month, _uid)
 
 render_sidebar_nav()
 render_sidebar_user_widget()
@@ -103,24 +106,25 @@ st.title(f"📊 Overview — {datetime.strptime(selected_month, '%Y-%m').strftim
 
 conn = get_conn()
 
-income_df      = read_sql("SELECT * FROM income WHERE month = ?", conn, params=(selected_month,))
+income_df      = read_sql("SELECT * FROM income WHERE month = ? AND user_id = ?", conn, params=(selected_month, _uid))
 total_income   = income_df['amount'].sum()
 
-expense_df     = read_sql("SELECT * FROM expenses WHERE month = ?", conn, params=(selected_month,))
+expense_df     = read_sql("SELECT * FROM expenses WHERE month = ? AND user_id = ?", conn, params=(selected_month, _uid))
 total_projected = expense_df['projected'].sum()
 total_actual    = expense_df['actual'].sum()
 
-_c = db_execute(conn, "SELECT SUM(amount) FROM income")
+_c = db_execute(conn, "SELECT SUM(amount) FROM income WHERE user_id = ?", (_uid,))
 at_income_manual = float(_c.fetchone()[0] or 0)
 
-_c = db_execute(conn, "SELECT SUM(amount) FROM bank_transactions WHERE is_debit = 0")
+_c = db_execute(conn, "SELECT SUM(amount) FROM bank_transactions WHERE is_debit = 0 AND user_id = ?", (_uid,))
 at_deposits = float(_c.fetchone()[0] or 0)
 
 _c = db_execute(conn, """
     SELECT SUM(amount) FROM bank_transactions
     WHERE (is_debit = 1 OR is_debit IS NULL)
     AND (category IS NULL OR category != 'Transfer')
-""")
+    AND user_id = ?
+""", (_uid,))
 at_spent = float(_c.fetchone()[0] or 0)
 conn.close()
 
