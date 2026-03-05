@@ -37,6 +37,9 @@ TEXT_MAIN   = "#fafafa"
 
 GLOBAL_CSS = f"""
 <style>
+/* ── Hide Streamlit's auto-generated page nav (we use our own) ── */
+[data-testid="stSidebarNav"] {{ display: none !important; }}
+
 /* ── Peach State Savings global styles ── */
 [data-testid="stSidebar"] {{
     background: linear-gradient(180deg, {BG_MAIN} 0%, #12151c 100%);
