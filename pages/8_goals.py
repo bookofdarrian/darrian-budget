@@ -8,6 +8,9 @@ st.set_page_config(page_title="Financial Goals", page_icon="🍑", layout="wide"
 init_db()
 require_password()
 
+# ── User isolation ─────────────────────────────────────────────────────────
+_uid = st.session_state.get("user", {}).get("id", 0)
+
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 render_sidebar_brand()
 render_sidebar_nav()
@@ -37,7 +40,7 @@ PERIOD_LABELS = {
 # ── Helper functions ──────────────────────────────────────────────────────────
 def load_goals() -> pd.DataFrame:
     conn = get_conn()
-    df = read_sql("SELECT * FROM financial_goals WHERE status = 'active' ORDER BY sort_order, id", conn)
+    df = read_sql("SELECT * FROM financial_goals WHERE status = 'active' AND user_id = ? ORDER BY sort_order, id", conn, params=(_uid,))
     conn.close()
     return df
 
@@ -157,23 +160,23 @@ def render_goal_card(goal, tab_prefix: str = "all"):
                 if save_btn:
                     conn = get_conn()
                     execute(conn,
-                        "UPDATE financial_goals SET current_amount=?, description=?, target_date=? WHERE id=?",
-                        (new_current, new_desc, new_date or None, int(goal["id"])))
+                        "UPDATE financial_goals SET current_amount=?, description=?, target_date=? WHERE id=? AND user_id=?",
+                        (new_current, new_desc, new_date or None, int(goal["id"]), _uid))
                     conn.commit()
                     conn.close()
                     st.success("Updated!")
                     st.rerun()
                 if complete_btn:
                     conn = get_conn()
-                    execute(conn, "UPDATE financial_goals SET status='completed' WHERE id=?", (int(goal["id"]),))
+                    execute(conn, "UPDATE financial_goals SET status='completed' WHERE id=? AND user_id=?", (int(goal["id"]), _uid))
                     conn.commit()
                     conn.close()
                     st.success("Goal marked complete! 🎉")
                     st.rerun()
                 if delete_btn:
                     conn = get_conn()
-                    execute(conn, "DELETE FROM goal_checklist WHERE goal_id=?", (int(goal["id"]),))
-                    execute(conn, "DELETE FROM financial_goals WHERE id=?", (int(goal["id"]),))
+                    execute(conn, "DELETE FROM goal_checklist WHERE goal_id=?", (int(goal["id"]),))  # checklist filtered via goal ownership
+                    execute(conn, "DELETE FROM financial_goals WHERE id=? AND user_id=?", (int(goal["id"]), _uid))
                     conn.commit()
                     conn.close()
                     st.rerun()
@@ -265,9 +268,9 @@ with tab_add:
             else:
                 conn = get_conn()
                 cur = execute(conn,
-                    "INSERT INTO financial_goals (title, description, goal_type, target_amount, current_amount, target_date, period, category) VALUES (?,?,?,?,?,?,?,?)",
+                    "INSERT INTO financial_goals (title, description, goal_type, target_amount, current_amount, target_date, period, category, user_id) VALUES (?,?,?,?,?,?,?,?,?)",
                     (title.strip(), description.strip(), goal_type, target_amount, current_amount,
-                     str(target_date), period, category.strip()))
+                     str(target_date), period, category.strip(), _uid))
                 new_id = cur.lastrowid
                 if not new_id:
                     row = fetchone(conn, "SELECT id FROM financial_goals ORDER BY id DESC LIMIT 1")
@@ -275,8 +278,8 @@ with tab_add:
                 if new_id and checklist_text.strip():
                     items = [line.strip() for line in checklist_text.strip().split("\n") if line.strip()]
                     for i, item in enumerate(items):
-                        execute(conn, "INSERT INTO goal_checklist (goal_id, item, sort_order) VALUES (?,?,?)",
-                                (new_id, item, i))
+                        execute(conn, "INSERT INTO goal_checklist (goal_id, item, sort_order, user_id) VALUES (?,?,?,?)",
+                                (new_id, item, i, _uid))
                 conn.commit()
                 conn.close()
                 st.success(f"Goal '{title}' added!")
@@ -286,7 +289,7 @@ with tab_add:
 st.markdown("---")
 with st.expander("🏆 Completed Goals"):
     conn = get_conn()
-    completed = read_sql("SELECT * FROM financial_goals WHERE status = 'completed' ORDER BY id DESC", conn)
+    completed = read_sql("SELECT * FROM financial_goals WHERE status = 'completed' AND user_id = ? ORDER BY id DESC", conn, params=(_uid,))
     conn.close()
     if completed.empty:
         st.info("No completed goals yet — keep going!")

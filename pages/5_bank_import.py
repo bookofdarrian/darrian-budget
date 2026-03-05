@@ -157,12 +157,12 @@ def _auto_category(description: str) -> tuple[str | None, str | None]:
     return (None, None)
 
 
-def _is_duplicate(conn, date: str, description: str, amount: float) -> bool:
+def _is_duplicate(conn, date: str, description: str, amount: float, uid: int = 0) -> bool:
     """Check if a transaction already exists by date + description + amount (any month)."""
     row = fetchone(
         conn,
-        "SELECT id FROM bank_transactions WHERE date=? AND description=? AND amount=?",
-        (date, description, amount)
+        "SELECT id FROM bank_transactions WHERE date=? AND description=? AND amount=? AND user_id=?",
+        (date, description, amount, uid)
     )
     return row is not None
 
@@ -170,6 +170,9 @@ def _is_duplicate(conn, date: str, description: str, amount: float) -> bool:
 st.set_page_config(page_title="Bank Import", page_icon="🍑", layout="wide", initial_sidebar_state="auto")
 init_db()
 require_password()
+
+# ── User isolation ─────────────────────────────────────────────────────────
+_uid = st.session_state.get("user", {}).get("id", 0)
 
 # ── Persistent success/error banners (survive st.rerun) ──────────────────────
 if st.session_state.get("import_success"):
@@ -238,7 +241,7 @@ with tab_nfcu:
                 # ── Duplicate detection ──────────────────────────────────────
                 conn = get_conn()
                 preview_df['duplicate'] = preview_df.apply(
-                    lambda r: _is_duplicate(conn, r['date'], r['description'], r['amount']),
+                    lambda r: _is_duplicate(conn, r['date'], r['description'], r['amount'], _uid),
                     axis=1
                 )
                 conn.close()
@@ -287,7 +290,7 @@ with tab_nfcu:
                         if not t['is_debit'] and not import_credits:
                             continue
                         # Skip duplicates
-                        if _is_duplicate(conn, t['date'], t['description'], t['amount']):
+                        if _is_duplicate(conn, t['date'], t['description'], t['amount'], _uid):
                             continue
                         # Month comes from the transaction date, not the sidebar selector
                         txn_month = t['date'][:7]
@@ -295,10 +298,10 @@ with tab_nfcu:
                         auto_cat, auto_sub = _auto_category(t['description'])
                         execute(conn,
                             "INSERT INTO bank_transactions "
-                            "(month, date, description, amount, is_debit, category, subcategory, source) "
-                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                            "(month, date, description, amount, is_debit, category, subcategory, source, user_id) "
+                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                             (txn_month, t['date'], t['description'], t['amount'],
-                             1 if t['is_debit'] else 0, auto_cat, auto_sub, 'nfcu_pdf'))
+                             1 if t['is_debit'] else 0, auto_cat, auto_sub, 'nfcu_pdf', _uid))
                         count += 1
                     conn.commit()
                     conn.close()
@@ -357,13 +360,13 @@ with tab_csv:
                         except Exception:
                             txn_month = selected_month  # fallback if date can't be parsed
 
-                        if _is_duplicate(conn, date_str, desc_str, amt_val):
+                        if _is_duplicate(conn, date_str, desc_str, amt_val, _uid):
                             skipped += 1
                             continue
                         execute(conn,
-                            "INSERT INTO bank_transactions (month, date, description, amount, source) "
-                            "VALUES (?, ?, ?, ?, ?)",
-                            (txn_month, date_str, desc_str, amt_val, "csv"))
+                            "INSERT INTO bank_transactions (month, date, description, amount, source, user_id) "
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            (txn_month, date_str, desc_str, amt_val, "csv", _uid))
                         count += 1
                     conn.commit()
                     conn.close()
@@ -394,9 +397,9 @@ with tab_manual:
             txn_month = str(t_date)[:7]
             conn = get_conn()
             execute(conn,
-                "INSERT INTO bank_transactions (month, date, description, amount, category, subcategory, source, notes) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (txn_month, str(t_date), t_desc, t_amt, cat_val, sub_val, "manual", t_notes))
+                "INSERT INTO bank_transactions (month, date, description, amount, category, subcategory, source, notes, user_id) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (txn_month, str(t_date), t_desc, t_amt, cat_val, sub_val, "manual", t_notes, _uid))
             conn.commit()
             conn.close()
             st.success("Transaction added!")
@@ -423,9 +426,9 @@ with tab_review:
 
     conn = get_conn()
     if review_filter.startswith("All"):
-        txn_df = read_sql("SELECT * FROM bank_transactions ORDER BY date DESC", conn)
+        txn_df = read_sql("SELECT * FROM bank_transactions WHERE user_id = ? ORDER BY date DESC", conn, params=(_uid,))
     else:
-        txn_df = read_sql("SELECT * FROM bank_transactions WHERE month = ? ORDER BY date DESC", conn, params=(selected_month,))
+        txn_df = read_sql("SELECT * FROM bank_transactions WHERE month = ? AND user_id = ? ORDER BY date DESC", conn, params=(selected_month, _uid))
     conn.close()
 
     if txn_df.empty:
@@ -466,8 +469,8 @@ with tab_review:
                         cat_v, sub_v = parts[0], parts[1]
                     else:
                         cat_v, sub_v = None, None
-                    execute(conn, "UPDATE bank_transactions SET category=?, subcategory=?, notes=? WHERE id=?",
-                            (cat_v, sub_v, row['notes'], row['id']))
+                    execute(conn, "UPDATE bank_transactions SET category=?, subcategory=?, notes=? WHERE id=? AND user_id=?",
+                            (cat_v, sub_v, row['notes'], row['id'], _uid))
                 conn.commit()
                 conn.close()
                 st.success("Mappings saved!")
@@ -484,11 +487,11 @@ with tab_review:
                         exp = fetchone(conn, "SELECT id, actual FROM expenses WHERE month=? AND category=? AND subcategory=?",
                                        (selected_month, cat_v, sub_v))
                         if exp:
-                            orig = fetchone(conn, "SELECT amount FROM bank_transactions WHERE id=?", (row['id'],))
+                            orig = fetchone(conn, "SELECT amount FROM bank_transactions WHERE id=? AND user_id=?", (row['id'], _uid))
                             if orig:
                                 new_actual = (exp[1] or 0) + orig[0]
                                 execute(conn, "UPDATE expenses SET actual=? WHERE id=?", (new_actual, exp[0]))
-                                execute(conn, "UPDATE bank_transactions SET matched_expense_id=? WHERE id=?", (exp[0], row['id']))
+                                execute(conn, "UPDATE bank_transactions SET matched_expense_id=? WHERE id=? AND user_id=?", (exp[0], row['id'], _uid))
                                 applied += 1
                         else:
                             skipped += 1
@@ -506,7 +509,7 @@ with tab_review:
                 format_func=lambda x: f"#{x} — {txn_df[txn_df['id']==x]['description'].values[0]} (${txn_df[txn_df['id']==x]['amount'].values[0]:,.2f})")
             if st.button("Delete", type="secondary"):
                 conn = get_conn()
-                execute(conn, "DELETE FROM bank_transactions WHERE id=?", (del_id,))
+                execute(conn, "DELETE FROM bank_transactions WHERE id=? AND user_id=?", (del_id, _uid))
                 conn.commit()
                 conn.close()
                 st.success("Deleted.")

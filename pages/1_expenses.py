@@ -8,6 +8,9 @@ st.set_page_config(page_title="Expenses", page_icon="🍑", layout="wide", initi
 init_db()
 require_password()
 
+# ── User isolation ─────────────────────────────────────────────────────────
+_uid = st.session_state.get("user", {}).get("id", 0)
+
 render_sidebar_brand()
 months = []
 for m in range(1, 13):
@@ -26,12 +29,12 @@ st.title(f"📋 Expenses — {datetime.strptime(selected_month, '%Y-%m').strftim
 
 # ── Auto-fill recurring expenses ─────────────────────────────────────────────
 conn = get_conn()
-templates_df = read_sql("SELECT * FROM recurring_templates WHERE active = 1", conn)
+templates_df = read_sql("SELECT * FROM recurring_templates WHERE active = 1 AND user_id = ?", conn, params=(_uid,))
 conn.close()
 
 if not templates_df.empty:
     conn = get_conn()
-    existing = read_sql("SELECT subcategory FROM expenses WHERE month = ?", conn, params=(selected_month,))
+    existing = read_sql("SELECT subcategory FROM expenses WHERE month = ? AND user_id = ?", conn, params=(selected_month, _uid))
     conn.close()
     existing_subs = existing['subcategory'].tolist()
     new_recurring = templates_df[~templates_df['subcategory'].isin(existing_subs)]
@@ -39,8 +42,8 @@ if not templates_df.empty:
         conn = get_conn()
         for _, row in new_recurring.iterrows():
             execute(conn,
-                "INSERT INTO expenses (month, category, subcategory, projected, actual) VALUES (?, ?, ?, ?, 0)",
-                (selected_month, row['category'], row['subcategory'], row['projected'])
+                "INSERT INTO expenses (month, category, subcategory, projected, actual, user_id) VALUES (?, ?, ?, ?, 0, ?)",
+                (selected_month, row['category'], row['subcategory'], row['projected'], _uid)
             )
         conn.commit()
         conn.close()
@@ -49,8 +52,8 @@ if not templates_df.empty:
 # ── Load expenses ─────────────────────────────────────────────────────────────
 conn = get_conn()
 expense_df = read_sql(
-    "SELECT * FROM expenses WHERE month = ? ORDER BY category, subcategory",
-    conn, params=(selected_month,)
+    "SELECT * FROM expenses WHERE month = ? AND user_id = ? ORDER BY category, subcategory",
+    conn, params=(selected_month, _uid)
 )
 conn.close()
 
@@ -86,8 +89,8 @@ if st.button("💾 Save Changes", type="primary"):
     conn = get_conn()
     for _, row in edited.iterrows():
         execute(conn,
-            "UPDATE expenses SET projected = ?, actual = ?, notes = ? WHERE id = ?",
-            (row['projected'], row['actual'], row['notes'], row['id'])
+            "UPDATE expenses SET projected = ?, actual = ?, notes = ? WHERE id = ? AND user_id = ?",
+            (row['projected'], row['actual'], row['notes'], row['id'], _uid)
         )
     conn.commit()
     conn.close()
@@ -112,15 +115,15 @@ with st.expander("➕ Add Custom Expense"):
         if new_cat and new_sub:
             conn = get_conn()
             execute(conn,
-                "INSERT INTO expenses (month, category, subcategory, projected, actual, notes) VALUES (?, ?, ?, ?, ?, ?)",
-                (selected_month, new_cat, new_sub, new_proj, new_actual, new_notes)
+                "INSERT INTO expenses (month, category, subcategory, projected, actual, notes, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (selected_month, new_cat, new_sub, new_proj, new_actual, new_notes, _uid)
             )
             if save_as_recurring:
-                existing_t = read_sql("SELECT id FROM recurring_templates WHERE subcategory = ?", conn, params=(new_sub,))
+                existing_t = read_sql("SELECT id FROM recurring_templates WHERE subcategory = ? AND user_id = ?", conn, params=(new_sub, _uid))
                 if existing_t.empty:
                     execute(conn,
-                        "INSERT INTO recurring_templates (category, subcategory, projected) VALUES (?, ?, ?)",
-                        (new_cat, new_sub, new_proj)
+                        "INSERT INTO recurring_templates (category, subcategory, projected, user_id) VALUES (?, ?, ?, ?)",
+                        (new_cat, new_sub, new_proj, _uid)
                     )
             conn.commit()
             conn.close()
@@ -133,7 +136,7 @@ with st.expander("➕ Add Custom Expense"):
 with st.expander("🔁 Manage Recurring Expenses"):
     st.caption("These auto-fill into every new month. Toggle active/inactive or delete rows.")
     conn = get_conn()
-    tmpl_df = read_sql("SELECT * FROM recurring_templates ORDER BY category, subcategory", conn)
+    tmpl_df = read_sql("SELECT * FROM recurring_templates WHERE user_id = ? ORDER BY category, subcategory", conn, params=(_uid,))
     conn.close()
 
     if tmpl_df.empty:
@@ -156,8 +159,8 @@ with st.expander("🔁 Manage Recurring Expenses"):
             conn = get_conn()
             for _, row in tmpl_edit.iterrows():
                 execute(conn,
-                    "UPDATE recurring_templates SET category=?, subcategory=?, projected=?, active=? WHERE id=?",
-                    (row['category'], row['subcategory'], row['projected'], int(row['active']), row['id'])
+                    "UPDATE recurring_templates SET category=?, subcategory=?, projected=?, active=? WHERE id=? AND user_id=?",
+                    (row['category'], row['subcategory'], row['projected'], int(row['active']), row['id'], _uid)
                 )
             conn.commit()
             conn.close()

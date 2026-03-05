@@ -16,6 +16,9 @@ init_db()
 inject_css()
 require_login()
 
+# ── User isolation ─────────────────────────────────────────────────────────
+_uid = st.session_state.get("user", {}).get("id", 0)
+
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 render_sidebar_brand()
 
@@ -44,8 +47,8 @@ _, days_in_month = calendar.monthrange(sel_year, sel_month)
 # ── Load recurring templates ──────────────────────────────────────────────────
 conn = get_conn()
 templates_df = read_sql(
-    "SELECT * FROM recurring_templates WHERE active = 1 ORDER BY due_day NULLS LAST, subcategory",
-    conn
+    "SELECT * FROM recurring_templates WHERE active = 1 AND user_id = ? ORDER BY due_day NULLS LAST, subcategory",
+    conn, params=(_uid,)
 )
 conn.close()
 
@@ -440,8 +443,8 @@ else:
         for _, row in edited.iterrows():
             due_val = int(row["Due Day"]) if row["Due Day"] and int(row["Due Day"]) > 0 else None
             execute(conn,
-                "UPDATE recurring_templates SET due_day = ? WHERE id = ?",
-                (due_val, int(row["id"]))
+                "UPDATE recurring_templates SET due_day = ? WHERE id = ? AND user_id = ?",
+                (due_val, int(row["id"]), _uid)
             )
             saved_count += 1
         conn.commit()
@@ -478,8 +481,8 @@ def detect_recurring_candidates(min_months: int = 2, max_amount_variance_pct: fl
     conn = get_conn()
     txn_df = read_sql(
         "SELECT description, amount, month, date, category, subcategory "
-        "FROM bank_transactions WHERE is_debit = 1 OR is_debit IS NULL",
-        conn
+        "FROM bank_transactions WHERE (is_debit = 1 OR is_debit IS NULL) AND user_id = ?",
+        conn, params=(_uid,)
     )
     conn.close()
 
@@ -557,7 +560,7 @@ def detect_recurring_candidates(min_months: int = 2, max_amount_variance_pct: fl
 existing_subs = set(templates_df["subcategory"].str.upper().tolist()) if not templates_df.empty else set()
 
 conn = get_conn()
-txn_count_row = execute(conn, "SELECT COUNT(*) FROM bank_transactions WHERE is_debit = 1 OR is_debit IS NULL")
+txn_count_row = execute(conn, "SELECT COUNT(*) FROM bank_transactions WHERE (is_debit = 1 OR is_debit IS NULL) AND user_id = ?", (_uid,))
 txn_count = txn_count_row.fetchone()[0]
 conn.close()
 
@@ -672,15 +675,15 @@ else:
 
                     # Check not already in templates
                     existing_check = execute(conn,
-                        "SELECT id FROM recurring_templates WHERE subcategory = ?", (sub,)
+                        "SELECT id FROM recurring_templates WHERE subcategory = ? AND user_id = ?", (sub, _uid)
                     ).fetchone()
                     if existing_check:
                         continue
 
                     execute(conn,
-                        "INSERT INTO recurring_templates (category, subcategory, projected, active, due_day) "
-                        "VALUES (?, ?, ?, 1, ?)",
-                        (cat, sub, amt, due_d)
+                        "INSERT INTO recurring_templates (category, subcategory, projected, active, due_day, user_id) "
+                        "VALUES (?, ?, ?, 1, ?, ?)",
+                        (cat, sub, amt, due_d, _uid)
                     )
                     added += 1
 

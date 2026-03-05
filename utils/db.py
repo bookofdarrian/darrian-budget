@@ -209,6 +209,22 @@ def init_db():
         if 'due_day' not in [row[1] for row in c.fetchall()]:
             c.execute("ALTER TABLE recurring_templates ADD COLUMN due_day INTEGER DEFAULT NULL")
 
+    # Migration: add user_id to all financial data tables
+    for tbl in ['expenses','income','bank_transactions','recurring_templates',
+                'financial_goals','goal_checklist','net_worth_snapshots',
+                'investment_context','receipts','sole_archive']:
+        try:
+            if USE_POSTGRES:
+                c.execute("SELECT column_name FROM information_schema.columns WHERE table_name=%s AND column_name='user_id'", (tbl,))
+                if not c.fetchone():
+                    c.execute(f"ALTER TABLE {tbl} ADD COLUMN user_id INTEGER DEFAULT NULL")
+            else:
+                c.execute(f"PRAGMA table_info({tbl})")
+                if 'user_id' not in [row[1] for row in c.fetchall()]:
+                    c.execute(f"ALTER TABLE {tbl} ADD COLUMN user_id INTEGER DEFAULT NULL")
+        except Exception:
+            pass
+
     conn.commit()
     conn.close()
 
@@ -1039,14 +1055,14 @@ def save_investment_context(data: dict):
 
 
 # ── Seed helpers ──────────────────────────────────────────────────────────────
-def seed_budget(month: str):
+def seed_budget(month: str, user_id: int = 0):
     conn = get_conn()
     c = conn.cursor()
 
     if USE_POSTGRES:
-        c.execute("SELECT COUNT(*) FROM expenses WHERE month = %s", (month,))
+        c.execute("SELECT COUNT(*) FROM expenses WHERE month = %s AND user_id = %s", (month, user_id))
     else:
-        c.execute("SELECT COUNT(*) FROM expenses WHERE month = ?", (month,))
+        c.execute("SELECT COUNT(*) FROM expenses WHERE month = ? AND user_id = ?", (month, user_id))
 
     if c.fetchone()[0] > 0:
         conn.close()
@@ -1090,47 +1106,47 @@ def seed_budget(month: str):
     if USE_POSTGRES:
         for cat, sub, proj in categories:
             c.execute(
-                "INSERT INTO expenses (month, category, subcategory, projected, actual) VALUES (%s, %s, %s, %s, 0)",
-                (month, cat, sub, proj)
+                "INSERT INTO expenses (month, category, subcategory, projected, actual, user_id) VALUES (%s, %s, %s, %s, 0, %s)",
+                (month, cat, sub, proj, user_id)
             )
     else:
         c.executemany(
-            "INSERT INTO expenses (month, category, subcategory, projected, actual) VALUES (?, ?, ?, ?, 0)",
-            [(month, cat, sub, proj) for cat, sub, proj in categories]
+            "INSERT INTO expenses (month, category, subcategory, projected, actual, user_id) VALUES (?, ?, ?, ?, 0, ?)",
+            [(month, cat, sub, proj, user_id) for cat, sub, proj in categories]
         )
 
     conn.commit()
     conn.close()
 
 
-def seed_income(month: str):
+def seed_income(month: str, user_id: int = 0):
     conn = get_conn()
     c = conn.cursor()
 
     if USE_POSTGRES:
-        c.execute("SELECT COUNT(*) FROM income WHERE month = %s", (month,))
+        c.execute("SELECT COUNT(*) FROM income WHERE month = %s AND user_id = %s", (month, user_id))
     else:
-        c.execute("SELECT COUNT(*) FROM income WHERE month = ?", (month,))
+        c.execute("SELECT COUNT(*) FROM income WHERE month = ? AND user_id = ?", (month, user_id))
 
     if c.fetchone()[0] > 0:
         conn.close()
         return
 
     rows = [
-        (month, "Salary — Paycheck 1 (Post-Tax)", 0, "Bi-weekly take-home"),
-        (month, "Salary — Paycheck 2 (Post-Tax)", 0, "Bi-weekly take-home"),
-        (month, "Business Income", 0, "Side hustle / resale / freelance"),
+        (month, "Salary — Paycheck 1 (Post-Tax)", 0, "Bi-weekly take-home", user_id),
+        (month, "Salary — Paycheck 2 (Post-Tax)", 0, "Bi-weekly take-home", user_id),
+        (month, "Business Income", 0, "Side hustle / resale / freelance", user_id),
     ]
 
     if USE_POSTGRES:
         for row in rows:
             c.execute(
-                "INSERT INTO income (month, source, amount, notes) VALUES (%s, %s, %s, %s)",
+                "INSERT INTO income (month, source, amount, notes, user_id) VALUES (%s, %s, %s, %s, %s)",
                 row
             )
     else:
         c.executemany(
-            "INSERT INTO income (month, source, amount, notes) VALUES (?, ?, ?, ?)",
+            "INSERT INTO income (month, source, amount, notes, user_id) VALUES (?, ?, ?, ?, ?)",
             rows
         )
 

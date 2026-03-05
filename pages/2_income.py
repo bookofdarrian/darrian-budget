@@ -8,6 +8,9 @@ st.set_page_config(page_title="Income", page_icon="🍑", layout="wide", initial
 init_db()
 require_password()
 
+# ── User isolation ─────────────────────────────────────────────────────────
+_uid = st.session_state.get("user", {}).get("id", 0)
+
 render_sidebar_brand()
 months = []
 for m in range(1, 13):
@@ -25,7 +28,7 @@ render_sidebar_user_widget()
 st.title(f"💵 Income — {datetime.strptime(selected_month, '%Y-%m').strftime('%B %Y')}")
 
 conn = get_conn()
-income_df = read_sql("SELECT * FROM income WHERE month = ?", conn, params=(selected_month,))
+income_df = read_sql("SELECT * FROM income WHERE month = ? AND user_id = ?", conn, params=(selected_month, _uid))
 conn.close()
 
 st.subheader("Income Sources")
@@ -45,8 +48,8 @@ edited = st.data_editor(
 if st.button("💾 Save Changes", type="primary"):
     conn = get_conn()
     for _, row in edited.iterrows():
-        execute(conn, "UPDATE income SET source = ?, amount = ?, notes = ? WHERE id = ?",
-                (row['source'], row['amount'], row['notes'], row['id']))
+        execute(conn, "UPDATE income SET source = ?, amount = ?, notes = ? WHERE id = ? AND user_id = ?",
+                (row['source'], row['amount'], row['notes'], row['id'], _uid))
     conn.commit()
     conn.close()
     st.success("Saved!")
@@ -60,8 +63,8 @@ with st.expander("➕ Add Income Source"):
     if st.button("Add"):
         if src:
             conn = get_conn()
-            execute(conn, "INSERT INTO income (month, source, amount, notes) VALUES (?, ?, ?, ?)",
-                    (selected_month, src, amt, notes))
+            execute(conn, "INSERT INTO income (month, source, amount, notes, user_id) VALUES (?, ?, ?, ?, ?)",
+                    (selected_month, src, amt, notes, _uid))
             conn.commit()
             conn.close()
             st.success("Added!")
