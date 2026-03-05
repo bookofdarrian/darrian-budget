@@ -182,48 +182,8 @@ def render_goal_card(goal, tab_prefix: str = "all"):
 
 # ── Seed default goals if none exist ─────────────────────────────────────────
 def seed_default_goals():
-    conn = get_conn()
-    row = fetchone(conn, "SELECT COUNT(*) FROM financial_goals")
-    count = row[0] if row else 0
-    conn.close()
-    if count > 0:
-        return
-
-    conn = get_conn()
-    defaults = [
-        ("Max Roth IRA Contributions",
-         "Contribute the full $7,000 annual limit to Roth IRA via Fidelity",
-         "investment", 7000.0, 0.0, f"{date.today().year}-12-31", "yearly", "Retirement", 1),
-        ("Increase ESPP to 7%",
-         "Increase Employee Stock Purchase Plan contribution from current rate to 7%",
-         "investment", 0.0, 0.0, f"{date.today().year}-06-30", "one-time", "Work Benefits", 2),
-        ("Store Medical Receipts (No HSA Debit Card)",
-         "Save all medical receipts and reimburse from HSA manually — do not use HSA debit card directly",
-         "habit", 0.0, 0.0, None, "yearly", "HSA", 3),
-        ("Home Maintenance Fund (2% of Income)",
-         "Build a home maintenance reserve equal to 2% of annual income (~$1,200/yr)",
-         "savings", 1200.0, 0.0, f"{date.today().year}-12-31", "yearly", "Housing", 4),
-    ]
-    for title, desc, gtype, target, current, tdate, period, cat, sort in defaults:
-        execute(conn,
-            "INSERT INTO financial_goals (title, description, goal_type, target_amount, current_amount, target_date, period, category, sort_order) VALUES (?,?,?,?,?,?,?,?,?)",
-            (title, desc, gtype, target, current, tdate, period, cat, sort))
-    conn.commit()
-
-    # Add checklist to the HSA habit goal
-    habit_row = fetchone(conn, "SELECT id FROM financial_goals WHERE goal_type='habit' AND title LIKE '%Medical%'")
-    if habit_row:
-        habit_id = habit_row[0]
-        checklist_items = [
-            "Set up a dedicated folder (physical or digital) for medical receipts",
-            "Stop using HSA debit card for direct purchases",
-            "Log each medical expense in the Receipts & HSA page",
-            "Reimburse yourself from HSA quarterly",
-        ]
-        for i, item in enumerate(checklist_items):
-            execute(conn, "INSERT INTO goal_checklist (goal_id, item, sort_order) VALUES (?,?,?)", (habit_id, item, i))
-    conn.commit()
-    conn.close()
+    """New users start with a blank goals page — no personal data seeded."""
+    pass
 
 seed_default_goals()
 
