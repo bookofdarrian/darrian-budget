@@ -349,7 +349,11 @@ class AURAHandler(BaseHTTPRequestHandler):
                 rows = c.fetchall()
                 conn.close()
                 self._send_json({
-                    "feedings": [dict(r) for r in rows],
+                    "feedings": [
+                        {k: str(v) if hasattr(v, 'isoformat') else v
+                         for k, v in dict(r).items()}
+                        for r in rows
+                    ],
                     "count": len(rows),
                 })
             except Exception as e:
