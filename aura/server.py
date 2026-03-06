@@ -22,7 +22,49 @@ import hashlib
 import logging
 from typing import Optional
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
+
+# ── Postgres (for cat feeding log) ───────────────────────────────────────────
+try:
+    import psycopg2
+    import psycopg2.extras
+    _PG_DSN = os.environ.get(
+        "DATABASE_URL",
+        "postgresql://budget:budget2026@budget-postgres:5432/budget"
+    )
+    _PG_AVAILABLE = True
+except ImportError:
+    _PG_AVAILABLE = False
+    _PG_DSN = ""
+
+
+def _pg_conn():
+    """Return a fresh Postgres connection."""
+    return psycopg2.connect(_PG_DSN)
+
+
+def _ensure_cat_table():
+    """Create cat_feedings table if it doesn't exist."""
+    if not _PG_AVAILABLE:
+        return
+    try:
+        conn = _pg_conn()
+        c = conn.cursor()
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS cat_feedings (
+                id          SERIAL PRIMARY KEY,
+                cat_name    TEXT    DEFAULT 'cat',
+                meal        TEXT    NOT NULL,
+                portions    REAL    DEFAULT 1,
+                source      TEXT    DEFAULT 'manual',
+                fed_at      TIMESTAMPTZ DEFAULT NOW(),
+                notes       TEXT    DEFAULT ''
+            )
+        """)
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.warning(f"cat_feedings table init failed: {e}")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -285,8 +327,33 @@ class AURAHandler(BaseHTTPRequestHandler):
                 "service": "AURA Compression Service",
                 "version": "1.0.0-peach",
                 "cache_entries": len(_cache),
-                "uptime_note": "Running on your Mac / home lab",
+                "uptime_note": "Running on your homelab",
+                "cat_log": _PG_AVAILABLE,
             })
+            return
+
+        # ── GET /cat/feedings ─────────────────────────────────────────────────
+        if path == "/cat/feedings":
+            if not _PG_AVAILABLE:
+                self._send_error("Postgres not available", 503)
+                return
+            try:
+                qs     = parse_qs(urlparse(self.path).query)
+                limit  = int(qs.get("limit", ["50"])[0])
+                conn   = _pg_conn()
+                c      = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+                c.execute(
+                    "SELECT * FROM cat_feedings ORDER BY fed_at DESC LIMIT %s",
+                    (limit,)
+                )
+                rows = c.fetchall()
+                conn.close()
+                self._send_json({
+                    "feedings": [dict(r) for r in rows],
+                    "count": len(rows),
+                })
+            except Exception as e:
+                self._send_error(str(e), 500)
             return
 
         self._send_error("Not found", 404)
@@ -382,16 +449,52 @@ class AURAHandler(BaseHTTPRequestHandler):
             self._send_json({"cleared": count, "message": "Cache cleared"})
             return
 
+        # ── POST /cat/feeding — log a cat feeding event ───────────────────────
+        if path == "/cat/feeding":
+            if not _PG_AVAILABLE:
+                self._send_error("Postgres not available", 503)
+                return
+            try:
+                meal     = body.get("meal", "meal")        # breakfast / dinner / manual
+                portions = float(body.get("portions", 1))
+                cat_name = body.get("cat_name", "cat")
+                source   = body.get("source", "home_assistant")
+                notes    = body.get("notes", "")
+                conn = _pg_conn()
+                c    = conn.cursor()
+                c.execute(
+                    """INSERT INTO cat_feedings (cat_name, meal, portions, source, notes)
+                       VALUES (%s, %s, %s, %s, %s) RETURNING id, fed_at""",
+                    (cat_name, meal, portions, source, notes)
+                )
+                row = c.fetchone()
+                conn.commit()
+                conn.close()
+                logger.info(f"🐱 Cat feeding logged: {meal} ({portions} portions) via {source}")
+                self._send_json({
+                    "ok":      True,
+                    "id":      row[0],
+                    "fed_at":  str(row[1]),
+                    "meal":    meal,
+                    "message": f"Feeding logged: {meal}",
+                })
+            except Exception as e:
+                logger.error(f"cat/feeding error: {e}")
+                self._send_error(str(e), 500)
+            return
+
         self._send_error("Not found", 404)
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
+    _ensure_cat_table()
     server = HTTPServer((HOST, PORT), AURAHandler)
     logger.info(f"AURA Compression Service listening on http://{HOST}:{PORT}")
     logger.info(f"Health check: http://localhost:{PORT}/health")
     logger.info(f"Auth: {'enabled (API_KEY set)' if API_KEY else 'disabled (open)'}")
+    logger.info(f"Cat log: {'Postgres connected' if _PG_AVAILABLE else 'psycopg2 not installed'}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
