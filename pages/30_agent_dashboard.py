@@ -1,7 +1,8 @@
 """
 Agent Dashboard — Page 30
 Live monitoring dashboard for the Overnight AI Dev System.
-Shows agent status, live logs, backlog progress, and build history.
+Shows agent status, live logs, backlog progress, build history,
+and scheduled task management.
 """
 import streamlit as st
 import subprocess
@@ -31,11 +32,31 @@ st.sidebar.page_link("pages/26_media_library.py",       label="🎵 Media Librar
 st.sidebar.page_link("pages/17_personal_assistant.py",  label="Personal Assistant", icon="🤖")
 render_sidebar_user_widget()
 
-# ── DB helpers ────────────────────────────────────────────────────────────────
 
-def _ensure_tables():
+# ══════════════════════════════════════════════════════════════════════════════
+# ── DB helpers ────────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _ensure_tables() -> None:
     conn = get_conn()
     if USE_POSTGRES:
+        db_exec(conn, """
+            CREATE TABLE IF NOT EXISTS agent_scheduled_tasks (
+                id SERIAL PRIMARY KEY,
+                task_name       TEXT NOT NULL,
+                description     TEXT DEFAULT '',
+                backlog_item    TEXT DEFAULT '',
+                schedule_type   TEXT DEFAULT 'weekly',
+                schedule_day    INTEGER DEFAULT 1,
+                schedule_hour   INTEGER DEFAULT 23,
+                last_run        TEXT,
+                next_run        TEXT,
+                enabled         BOOLEAN DEFAULT TRUE,
+                run_count       INTEGER DEFAULT 0,
+                created_by      TEXT DEFAULT 'darrian',
+                created_at      TEXT DEFAULT (to_char(now(), 'YYYY-MM-DD HH24:MI:SS'))
+            )
+        """)
         db_exec(conn, """
             CREATE TABLE IF NOT EXISTS agent_runs (
                 id SERIAL PRIMARY KEY,
@@ -59,6 +80,23 @@ def _ensure_tables():
             )
         """)
     else:
+        db_exec(conn, """
+            CREATE TABLE IF NOT EXISTS agent_scheduled_tasks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_name       TEXT NOT NULL,
+                description     TEXT DEFAULT '',
+                backlog_item    TEXT DEFAULT '',
+                schedule_type   TEXT DEFAULT 'weekly',
+                schedule_day    INTEGER DEFAULT 1,
+                schedule_hour   INTEGER DEFAULT 23,
+                last_run        TEXT,
+                next_run        TEXT,
+                enabled         INTEGER DEFAULT 1,
+                run_count       INTEGER DEFAULT 0,
+                created_by      TEXT DEFAULT 'darrian',
+                created_at      TEXT DEFAULT (datetime('now'))
+            )
+        """)
         db_exec(conn, """
             CREATE TABLE IF NOT EXISTS agent_runs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -84,6 +122,138 @@ def _ensure_tables():
     conn.commit()
     conn.close()
 
+
+# ── Scheduled task helpers ────────────────────────────────────────────────────
+
+def _calc_next_run(schedule_type: str, schedule_day: int, schedule_hour: int) -> str:
+    """
+    Compute the next wall-clock run time (ISO string) for a scheduled task.
+    schedule_type: 'daily' | 'weekly' | 'monthly'
+    schedule_day:  for weekly → 0=Mon…6=Sun; for monthly → 1–28 (day of month)
+    schedule_hour: 0–23
+    """
+    now = datetime.now()
+    target = now.replace(minute=0, second=0, microsecond=0, hour=schedule_hour)
+
+    if schedule_type == "daily":
+        if target <= now:
+            target += timedelta(days=1)
+
+    elif schedule_type == "weekly":
+        days_ahead = schedule_day - now.weekday()
+        if days_ahead < 0:
+            days_ahead += 7
+        candidate = (now + timedelta(days=days_ahead)).replace(
+            hour=schedule_hour, minute=0, second=0, microsecond=0
+        )
+        if candidate <= now:
+            candidate += timedelta(weeks=1)
+        target = candidate
+
+    elif schedule_type == "monthly":
+        try:
+            candidate = now.replace(day=schedule_day, hour=schedule_hour, minute=0, second=0, microsecond=0)
+        except ValueError:
+            candidate = now.replace(day=28, hour=schedule_hour, minute=0, second=0, microsecond=0)
+        if candidate <= now:
+            # advance one month
+            if now.month == 12:
+                candidate = candidate.replace(year=now.year + 1, month=1)
+            else:
+                try:
+                    candidate = candidate.replace(month=now.month + 1)
+                except ValueError:
+                    candidate = candidate.replace(month=now.month + 1, day=28)
+        target = candidate
+
+    return target.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _list_scheduled_tasks() -> list[dict]:
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT * FROM agent_scheduled_tasks ORDER BY next_run ASC"
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def _create_scheduled_task(
+    task_name: str,
+    description: str,
+    backlog_item: str,
+    schedule_type: str,
+    schedule_day: int,
+    schedule_hour: int,
+    created_by: str,
+) -> None:
+    next_run = _calc_next_run(schedule_type, schedule_day, schedule_hour)
+    conn = get_conn()
+    ph = "%s" if USE_POSTGRES else "?"
+    db_exec(conn, f"""
+        INSERT INTO agent_scheduled_tasks
+            (task_name, description, backlog_item, schedule_type, schedule_day,
+             schedule_hour, next_run, created_by)
+        VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph})
+    """, (task_name, description, backlog_item, schedule_type, schedule_day,
+          schedule_hour, next_run, created_by))
+    conn.commit()
+    conn.close()
+
+
+def _toggle_scheduled_task(task_id: int, enabled: bool) -> None:
+    conn = get_conn()
+    ph = "%s" if USE_POSTGRES else "?"
+    val = enabled if USE_POSTGRES else (1 if enabled else 0)
+    db_exec(conn, f"UPDATE agent_scheduled_tasks SET enabled = {ph} WHERE id = {ph}", (val, task_id))
+    conn.commit()
+    conn.close()
+
+
+def _delete_scheduled_task(task_id: int) -> None:
+    conn = get_conn()
+    ph = "%s" if USE_POSTGRES else "?"
+    db_exec(conn, f"DELETE FROM agent_scheduled_tasks WHERE id = {ph}", (task_id,))
+    conn.commit()
+    conn.close()
+
+
+def _seed_default_scheduled_tasks(created_by: str) -> None:
+    """Seed helpful default scheduled tasks if table is empty."""
+    existing = _list_scheduled_tasks()
+    if existing:
+        return
+    defaults = [
+        (
+            "Weekly Spending Digest",
+            "Auto-generate weekly spending summary and email report every Monday at 8 AM.",
+            "Weekly Spending Digest (page 56)",
+            "weekly", 0, 8,
+        ),
+        (
+            "Daily Price Alert Refresh",
+            "Re-scan eBay/Mercari for sneaker price alerts every day at 7 AM.",
+            "Sneaker Price Alert Bot (page 31)",
+            "daily", 0, 7,
+        ),
+        (
+            "Monthly Financial Email Report",
+            "Email full monthly financial report on the 1st of every month at 9 AM.",
+            "Monthly Financial Email Report (page 36)",
+            "monthly", 1, 9,
+        ),
+        (
+            "Weekly Reseller Report",
+            "Claude-generated weekly SoleOps reseller summary every Sunday at 8 PM.",
+            "SoleOps: Weekly Reseller Report Email",
+            "weekly", 6, 20,
+        ),
+    ]
+    for task_name, desc, backlog_item, stype, sday, shour in defaults:
+        _create_scheduled_task(task_name, desc, backlog_item, stype, sday, shour, created_by)
+
+
+# ── Agent run helpers ─────────────────────────────────────────────────────────
 
 def _load_runs() -> list[dict]:
     conn = get_conn()
@@ -187,15 +357,22 @@ def _run_git(cmd: str) -> str:
         return ""
 
 
-# ── Init tables ───────────────────────────────────────────────────────────────
+# ── Init tables + seed defaults ───────────────────────────────────────────────
 _ensure_tables()
+_seed_default_scheduled_tasks(st.session_state.get("username", "darrian"))
 
+# ══════════════════════════════════════════════════════════════════════════════
 # ── Page header ───────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+
 st.title("🤖 Agent Dashboard")
 st.caption("Live monitoring for the Overnight AI Dev System — watch features being built in real time.")
 
 # ── Auto-refresh control ──────────────────────────────────────────────────────
-active_run = _load_active_run()
+try:
+    active_run = _load_active_run()
+except Exception:
+    active_run = None
 
 col_refresh, col_auto = st.columns([1, 3])
 with col_refresh:
@@ -242,10 +419,14 @@ tail -f /var/log/overnight-dev.log""", language="bash")
 
 st.divider()
 
+# ══════════════════════════════════════════════════════════════════════════════
 # ── Tabs ──────────────────────────────────────────────────────────────────────
-tab_live, tab_backlog, tab_history, tab_git = st.tabs([
+# ══════════════════════════════════════════════════════════════════════════════
+
+tab_live, tab_backlog, tab_sched, tab_history, tab_git = st.tabs([
     "📡 Live Log",
     "📋 Backlog",
+    "⏰ Scheduled Tasks",
     "📜 Build History",
     "🌿 Git Activity",
 ])
@@ -265,7 +446,6 @@ with tab_live:
     if not logs:
         st.info("No log entries yet. Logs appear here as the agent runs.")
     else:
-        # Build a colored log display
         level_colors = {
             "INFO":    "#e8f5e9",
             "SUCCESS": "#c8e6c9",
@@ -327,7 +507,160 @@ with tab_backlog:
     if total == 0:
         st.info("BACKLOG.md not found or empty. Add features to `BACKLOG.md` in the repo root.")
 
-# ── Tab 3: Build History ──────────────────────────────────────────────────────
+# ── Tab 3: Scheduled Tasks ────────────────────────────────────────────────────
+with tab_sched:
+    st.subheader("⏰ Scheduled Agent Tasks")
+    st.caption(
+        "Set up recurring tasks that run autonomously — daily, weekly, or monthly — "
+        "without you having to remember. Inspired by Claude Desktop's scheduled task system."
+    )
+
+    sched_tasks = _list_scheduled_tasks()
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    # ── Metrics row ──────────────────────────────────────────────────────────
+    enabled_count = sum(1 for t in sched_tasks if t.get("enabled"))
+    sm1, sm2, sm3 = st.columns(3)
+    sm1.metric("Total Scheduled", len(sched_tasks))
+    sm2.metric("Enabled", enabled_count)
+    sm3.metric("Disabled", len(sched_tasks) - enabled_count)
+
+    st.markdown("---")
+
+    # ── Add new task form ─────────────────────────────────────────────────────
+    with st.expander("➕ Add New Scheduled Task", expanded=False):
+        with st.form("new_sched_task", clear_on_submit=True):
+            nf1, nf2 = st.columns(2)
+            new_name = nf1.text_input("Task Name *", placeholder="Weekly Spending Digest")
+            new_stype = nf2.selectbox("Schedule", ["daily", "weekly", "monthly"])
+
+            new_desc = st.text_area("Description", placeholder="What does this task do?", height=70)
+            new_backlog = st.text_input("Backlog Item (optional)", placeholder="Link to BACKLOG.md item")
+
+            df1, df2, df3 = st.columns(3)
+            day_labels = {
+                "daily": ["Every day"],
+                "weekly": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+                "monthly": [str(d) for d in range(1, 29)],
+            }
+
+            if new_stype == "daily":
+                new_day = 0
+                df1.caption("Runs every day")
+            elif new_stype == "weekly":
+                day_choice = df1.selectbox("Day of Week", day_labels["weekly"])
+                new_day = day_labels["weekly"].index(day_choice)
+            else:
+                new_day = int(df1.selectbox("Day of Month", day_labels["monthly"]))
+
+            new_hour = df2.slider("Hour (24h)", min_value=0, max_value=23, value=8)
+            df3.caption(f"Next run: {_calc_next_run(new_stype, new_day, new_hour)[:16]}")
+
+            if st.form_submit_button("✅ Create Scheduled Task", use_container_width=True):
+                if new_name.strip():
+                    _create_scheduled_task(
+                        new_name.strip(), new_desc.strip(), new_backlog.strip(),
+                        new_stype, new_day, new_hour,
+                        st.session_state.get("username", "darrian"),
+                    )
+                    st.success(f"✅ Scheduled task **{new_name}** created!")
+                    st.rerun()
+                else:
+                    st.error("Task Name is required.")
+
+    st.markdown("---")
+
+    # ── Task cards ────────────────────────────────────────────────────────────
+    DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+    if not sched_tasks:
+        st.info("No scheduled tasks yet. Add one above or reload the page to seed defaults.")
+    else:
+        for task in sched_tasks:
+            tid       = task["id"]
+            name      = task["task_name"]
+            desc      = task["description"] or ""
+            stype     = task.get("schedule_type", "weekly")
+            sday      = task.get("schedule_day", 0)
+            shour     = task.get("schedule_hour", 8)
+            next_run  = (task.get("next_run") or "—")[:16]
+            last_run  = (task.get("last_run") or "Never")[:16]
+            run_count = task.get("run_count", 0)
+            enabled   = bool(task.get("enabled"))
+
+            # Human-readable schedule label
+            if stype == "daily":
+                sched_label = f"Daily @ {shour:02d}:00"
+            elif stype == "weekly":
+                day_label = DAY_NAMES[sday] if 0 <= sday <= 6 else str(sday)
+                sched_label = f"Every {day_label} @ {shour:02d}:00"
+            else:
+                sched_label = f"Monthly day {sday} @ {shour:02d}:00"
+
+            # Is overdue?
+            overdue = False
+            try:
+                nr = datetime.strptime(next_run, "%Y-%m-%d %H:%M")
+                overdue = enabled and (nr < datetime.now())
+            except Exception:
+                pass
+
+            status_icon = "🟢" if enabled else "⚫"
+            overdue_badge = "  ⚠️ **OVERDUE**" if overdue else ""
+
+            with st.container():
+                tc1, tc2, tc3, tc4 = st.columns([4, 2, 2, 2])
+                tc1.markdown(f"{status_icon} **{name}**{overdue_badge}")
+                tc1.caption(desc[:80] if desc else "")
+                tc2.metric("Schedule", sched_label)
+                tc3.metric("Next Run", next_run)
+                tc4.metric("Runs", run_count)
+
+                bc1, bc2, bc3 = st.columns(3)
+                if enabled:
+                    if bc1.button("⏸ Disable", key=f"dis_{tid}", use_container_width=True):
+                        _toggle_scheduled_task(tid, False)
+                        st.rerun()
+                else:
+                    if bc1.button("▶️ Enable", key=f"en_{tid}", use_container_width=True):
+                        _toggle_scheduled_task(tid, True)
+                        st.rerun()
+                bc2.caption(f"Last: {last_run}")
+                if bc3.button("🗑️ Delete", key=f"del_{tid}", use_container_width=True):
+                    _delete_scheduled_task(tid)
+                    st.rerun()
+
+                st.divider()
+
+    # ── Cron setup instructions ───────────────────────────────────────────────
+    st.markdown("---")
+    with st.expander("⚙️ How to wire this into the actual cron / agent runner"):
+        st.markdown("""
+        The scheduled tasks table is a **task queue** for the overnight agent system.
+        To make them actually run automatically, the agent runner script needs to check
+        this table before deciding what to build next.
+
+        **Option A — Add to the existing overnight cron:**
+        ```bash
+        # On CT100, edit /root/start-agents.sh to check agent_scheduled_tasks
+        # for any row where enabled=1 AND next_run <= NOW()
+        # run that task, update last_run + run_count + next_run
+        ```
+
+        **Option B — Dedicated scheduler cron (recommended):**
+        ```bash
+        # Every 15 minutes, check for due tasks
+        echo "*/15 * * * * root python3 /app/run_scheduled_agents.py >> /var/log/sched-agents.log 2>&1" >> /etc/crontab
+        ```
+
+        **The scheduler picks up any task where:**
+        - `enabled = 1`
+        - `next_run <= datetime('now')`
+
+        After running, it updates `last_run = NOW()` and recalculates `next_run`.
+        """)
+
+# ── Tab 4: Build History ──────────────────────────────────────────────────────
 with tab_history:
     runs = _load_runs()
     if not runs:
@@ -360,7 +693,7 @@ with tab_history:
                     c3.caption(f"❌ {err[:40]}")
             st.divider()
 
-# ── Tab 4: Git Activity ───────────────────────────────────────────────────────
+# ── Tab 5: Git Activity ───────────────────────────────────────────────────────
 with tab_git:
     log_raw = _run_git('git log --oneline -15 --format="%h|%s|%cr|%an"')
     if log_raw:
@@ -394,7 +727,6 @@ with tab_git:
 
     st.divider()
 
-    # Link to GitHub
     st.markdown("""
 **🔗 Quick Links**
 - [📋 GitHub PRs](https://github.com/bookofdarrian/darrian-budget/pulls)
