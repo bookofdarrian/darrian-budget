@@ -14,11 +14,11 @@
 - [x] **Todo: Brain Dump section** — Always-visible text area on every todo view. Paste raw text, voice transcript, or notes → Claude AI extracts individual tasks and adds them to the list. [DONE] ✅ (pages/22_todo.py)
 - [x] **Todo: Calendar integration restored** — Google Calendar now a top-level tab alongside "My Tasks". Sync tasks with due dates as events, view upcoming events, manage auth — all without scrolling. [DONE] ✅ (pages/22_todo.py)
 - [x] **Resale Price Advisor** — page 72 — Upload item photo → Claude Vision identifies product → searches eBay & Mercari sold comps → AI recommends listing price, Buy It Now vs Auction, shipping strategy, platform ranking, and ROI calculation. [DONE] ✅ (pages/72_resale_price_advisor.py)
-- [ ] **Sandbox / Privacy Mode** — Allow specific trusted users to run the app in a local-only mode where all data stays on their device (browser localStorage or downloadable SQLite). No server-side storage of financial data. Ideal for demos and privacy-sensitive users. See recommendation in NEXT_USECASES.md.
+- [x] **Sandbox / Privacy Mode** — page 73 — Per-user isolated SQLite DB (`data/sandbox_{user}.db`), completely separate from the shared production DB. Admin grants access, 7-day auto-expiry on inactivity, JSON export, raw .db download, one-click wipe. [DONE] ✅ (pages/73_sandbox_mode.py — 331/331 tests passing)
 
 ### Reddit Insights (r/claude, 2026-03-08) — Applied to Our Agent System
 
-- [ ] **Scheduled Autonomous Tasks** — Extend the nightly agent system to support per-feature scheduled runs (daily, weekly). E.g., auto-generate weekly financial summary every Monday at 8 AM, auto-pull bank statements daily, auto-refresh Mercari price alerts. UI in agent dashboard to set schedule per feature.
+- [x] **Scheduled Autonomous Tasks** — Added `agent_scheduled_tasks` table + ⏰ tab in Agent Dashboard. Daily/weekly/monthly scheduler with next_run calculator. Seeds 4 defaults (weekly digest, daily price alert, monthly report, weekly reseller report). Cron wiring instructions included. [DONE] ✅ (pages/30_agent_dashboard.py — 331/331 tests passing)
 - [ ] **Agent: Google Drive Connector** — MCP-based Google Drive integration so agents can read/write budget export files, receipts, and reports directly from Drive without manual uploads. Google Drive is already a native Claude connector.
 - [ ] **Agent: Background File Organizer** — Autonomous agent that runs weekly, scans uploaded receipts and documents, and organizes them into labeled folders/categories. Surfaces "you have 12 uncategorized receipts" alerts.
 - [ ] **Creator Companion: Auto-Brief Synthesizer** — Point the agent at a folder of briefs, notes, and meeting exports → Claude synthesizes a finished content brief or script outline. No more 30-min manual organizing sessions.
@@ -91,11 +91,20 @@
 - [x] Dividend Income Tracker (portfolio dividends, yield tracking, projected annual income) [DONE] ✅
 - [x] Retirement Contribution Optimizer (401k/IRA/HSA maximizer based on income + employer match) [DONE] ✅
 - [x] Side Income Tracker (freelance gigs, reselling, all side hustles — P&L per stream) [DONE] ✅
-- [ ] Tax Loss Harvesting Assistant (scan portfolio for unrealized losses, wash sale warnings, optimize timing)
-- [ ] Net Worth Projection (5/10/20 year wealth trajectory with savings rate + investment return assumptions)
-- [ ] Paycheck Calculator v2 (federal + GA state + FICA + Visa RSU supplement rate wizard)
-- [ ] 404 Sole Archive P&L Dashboard (per-sneaker profit, COGS, platform fees, net margin per sale)
-- [ ] Insurance Tracker (health, auto, renters — coverage summary, premium tracking, renewal alerts)
+
+> ⚠️ NOTE: "Paycheck Calculator v2" is an UPDATE to existing page 16, not a new page.
+> ⚠️ NOTE: "404 Sole Archive P&L Dashboard" overlaps significantly with SoleOps P&L (page 69) — consider merging.
+
+- [ ] **Tax Loss Harvesting Assistant** — page 74 — Scan investment portfolio for unrealized losses, wash sale warnings, optimal timing recommendations, Schedule D impact estimate
+- [ ] **Net Worth Projection** — page 75 — 5/10/20 year wealth trajectory with Monte Carlo, savings rate + return assumptions, inflation-adjusted, milestone alerts
+- [ ] **Insurance Tracker** — page 76 — Health, auto, renters/homeowners coverage summary, premium tracking, renewal calendar, Claude comparison tips
+- [ ] **ESPP Lot Tracker** — page 77 — Track each Visa ESPP purchase period, 15% discount capture, qualifying vs disqualifying disposition calculator, optimal hold/sell timing, Schedule D export. Completely separate from RSU tracker.
+- [ ] **Real-Time Tax Liability Estimator** — page 78 — YTD income + deductions + withholding → live estimated federal + GA state tax bill so no April surprises. Accounts for RSU vests, ESPP sales, side income.
+- [ ] **Automated Bank Reconciliation** — page 79 — Auto-match imported transactions to expected bills/income entries. Flag unknowns, suggest categories, reduce manual work by 80%.
+- [ ] **Depop Marketplace Integration** — page 80 — Add Depop to the resale ecosystem (Price Advisor + Arbitrage Scanner). Search sold comps, generate Depop-optimized listings, compare eBay vs Mercari vs Depop fees + estimated profit.
+- [ ] **MCP Financial Data Server** — page 81 / utils/mcp_server.py — Expose budget data as an MCP resource so Claude can query your finances directly in Claude.ai conversations. Google Drive connector + budget DB → instant AI-powered answers about your money without opening the app.
+- [ ] **SoleOps: Customer CRM** — page 82 — Track repeat buyers, buyer notes, feedback per sale, ban list, top customer insights. Turns one-time buyers into loyal customers. eBay + Mercari buyer ID import.
+- [ ] **Content Performance Dashboard** — page 83 — Pull YouTube/IG/TikTok analytics into Creator Companion. Views, revenue, upload cadence, best-performing content, CPM trends. Claude AI content strategy recommendations.
 
 ---
 
@@ -106,10 +115,11 @@
 - [x] Health Cost Tracker (gym + medical + HSA integration, annual summary) [DONE] ✅
 - [x] Uptime Kuma status page (monitor all services, phone alerts) [DONE] ✅
 - [x] Grafana + Prometheus monitoring stack (CPU, RAM, disk, container health) [DONE] ✅
-- [ ] Grocery Budget Tracker (Kroger API or manual entry, weekly spend vs budget, smart shopping list)
-- [ ] Home Equity Dashboard (Zillow Zestimate, mortgage balance, equity %, appreciation rate)
-- [ ] Habit Tracker (daily streaks — gym, water, sleep, journaling — ties into Health Hub)
-- [ ] Password Manager Integration (1Password or Bitwarden API — audit weak/reused passwords)
+- [ ] **Grocery Budget Tracker** — Kroger API or manual entry, weekly spend vs budget, smart shopping list, Claude meal-plan-to-budget optimizer
+- [ ] **Home Equity Dashboard** — Zillow Zestimate, mortgage balance, equity %, appreciation rate, refinance break-even calculator
+- [ ] **Habit Tracker** — Daily streaks (gym, water, sleep, journaling), ties into Health Hub, Claude motivation + streak recovery tips
+- [ ] **Password Manager Integration** — 1Password or Bitwarden API, audit weak/reused passwords, breach monitoring alerts
+- [ ] **Paycheck v2 Update** — UPDATE to page 16 (not new page) — Add GA state tax rates, Visa RSU supplemental withholding rate (22% federal + 6% GA), ESPP paycheck impact, pre-tax vs Roth 401k optimizer
 
 ---
 
