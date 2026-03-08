@@ -1,9 +1,27 @@
 # Feature Backlog — Autonomous AI Dev Queue
-**Owner: Darrian Belcher | Updated: 2026-03-04**
+**Owner: Darrian Belcher | Updated: 2026-03-08**
 
 > The overnight AI dev system reads this file every night and picks the
 > highest-priority uncompleted item to build autonomously.
 > Completed items are marked [DONE] ✅ by the Git Agent.
+
+---
+
+## 🆕 NEW FEATURES — Added 2026-03-08
+
+### Darrian's Feature Requests
+
+- [x] **Todo: Brain Dump section** — Always-visible text area on every todo view. Paste raw text, voice transcript, or notes → Claude AI extracts individual tasks and adds them to the list. [DONE] ✅ (pages/22_todo.py)
+- [x] **Todo: Calendar integration restored** — Google Calendar now a top-level tab alongside "My Tasks". Sync tasks with due dates as events, view upcoming events, manage auth — all without scrolling. [DONE] ✅ (pages/22_todo.py)
+- [x] **Resale Price Advisor** — page 72 — Upload item photo → Claude Vision identifies product → searches eBay & Mercari sold comps → AI recommends listing price, Buy It Now vs Auction, shipping strategy, platform ranking, and ROI calculation. [DONE] ✅ (pages/72_resale_price_advisor.py)
+- [ ] **Sandbox / Privacy Mode** — Allow specific trusted users to run the app in a local-only mode where all data stays on their device (browser localStorage or downloadable SQLite). No server-side storage of financial data. Ideal for demos and privacy-sensitive users. See recommendation in NEXT_USECASES.md.
+
+### Reddit Insights (r/claude, 2026-03-08) — Applied to Our Agent System
+
+- [ ] **Scheduled Autonomous Tasks** — Extend the nightly agent system to support per-feature scheduled runs (daily, weekly). E.g., auto-generate weekly financial summary every Monday at 8 AM, auto-pull bank statements daily, auto-refresh Mercari price alerts. UI in agent dashboard to set schedule per feature.
+- [ ] **Agent: Google Drive Connector** — MCP-based Google Drive integration so agents can read/write budget export files, receipts, and reports directly from Drive without manual uploads. Google Drive is already a native Claude connector.
+- [ ] **Agent: Background File Organizer** — Autonomous agent that runs weekly, scans uploaded receipts and documents, and organizes them into labeled folders/categories. Surfaces "you have 12 uncategorized receipts" alerts.
+- [ ] **Creator Companion: Auto-Brief Synthesizer** — Point the agent at a folder of briefs, notes, and meeting exports → Claude synthesizes a finished content brief or script outline. No more 30-min manual organizing sessions.
 
 ---
 
