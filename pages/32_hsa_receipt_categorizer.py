@@ -7,7 +7,7 @@ from decimal import Decimal
 import json
 import base64
 
-st.set_page_config(page_title="HSA Receipt Categorizer", page_icon="🍑", layout="wide")
+st.set_page_config(page_title="HSA Receipt Vault", page_icon="🏥", layout="wide")
 
 from utils.db import get_conn, USE_POSTGRES, execute as db_exec, init_db, get_setting, set_setting
 from utils.auth import require_login, render_sidebar_brand, render_sidebar_user_widget, inject_css
