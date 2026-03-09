@@ -781,10 +781,11 @@ with tab_spotify:
         if existing_pl:
             pl_id = existing_pl[0]
         else:
+            # include RETURNING so we can grab the new id in Postgres
             c = db_exec(conn,
-                "INSERT INTO media_playlists (name, description, color) VALUES (?,?,?)",
+                "INSERT INTO media_playlists (name, description, color) VALUES (?,?,?) RETURNING id",
                 (pl_name, f"Imported from Spotify", pl_color))
-            pl_id = c.lastrowid if not USE_POSTGRES else c.fetchone()[0]
+            pl_id = c.fetchone()[0] if USE_POSTGRES else c.lastrowid
         conn.commit()
         conn.close()
 
@@ -1083,9 +1084,9 @@ with tab_apple:
             pl_id = existing_pl[0]
         else:
             c = db_exec(conn,
-                "INSERT INTO media_playlists (name, description, color) VALUES (?,?,?)",
+                "INSERT INTO media_playlists (name, description, color) VALUES (?,?,?) RETURNING id",
                 (pl_name, "Imported from Apple Music / Music.app", "#fc3c44"))
-            pl_id = c.lastrowid if not USE_POSTGRES else c.fetchone()[0]
+            pl_id = c.fetchone()[0] if USE_POSTGRES else c.lastrowid
         conn.commit()
         conn.close()
 
