@@ -1,5 +1,5 @@
 # Feature Backlog — Autonomous AI Dev Queue
-**Owner: Darrian Belcher | Updated: 2026-03-08**
+**Owner: Darrian Belcher | Updated: 2026-03-09**
 
 > The overnight AI dev system reads this file every night and picks the
 > highest-priority uncompleted item to build autonomously.
@@ -7,7 +7,7 @@
 
 ---
 
-## 🆕 NEW FEATURES — Added 2026-03-08
+## 🆕 NEW FEATURES — Added 2026-03-08 / 2026-03-09
 
 ### Darrian's Feature Requests
 
@@ -95,16 +95,65 @@
 > ⚠️ NOTE: "Paycheck Calculator v2" is an UPDATE to existing page 16, not a new page.
 > ⚠️ NOTE: "404 Sole Archive P&L Dashboard" overlaps significantly with SoleOps P&L (page 69) — consider merging.
 
-- [ ] **Tax Loss Harvesting Assistant** — page 74 — Scan investment portfolio for unrealized losses, wash sale warnings, optimal timing recommendations, Schedule D impact estimate
-- [ ] **Net Worth Projection** — page 75 — 5/10/20 year wealth trajectory with Monte Carlo, savings rate + return assumptions, inflation-adjusted, milestone alerts
-- [ ] **Insurance Tracker** — page 76 — Health, auto, renters/homeowners coverage summary, premium tracking, renewal calendar, Claude comparison tips
-- [ ] **ESPP Lot Tracker** — page 77 — Track each Visa ESPP purchase period, 15% discount capture, qualifying vs disqualifying disposition calculator, optimal hold/sell timing, Schedule D export. Completely separate from RSU tracker.
-- [ ] **Real-Time Tax Liability Estimator** — page 78 — YTD income + deductions + withholding → live estimated federal + GA state tax bill so no April surprises. Accounts for RSU vests, ESPP sales, side income.
-- [ ] **Automated Bank Reconciliation** — page 79 — Auto-match imported transactions to expected bills/income entries. Flag unknowns, suggest categories, reduce manual work by 80%.
-- [ ] **Depop Marketplace Integration** — page 80 — Add Depop to the resale ecosystem (Price Advisor + Arbitrage Scanner). Search sold comps, generate Depop-optimized listings, compare eBay vs Mercari vs Depop fees + estimated profit.
-- [ ] **MCP Financial Data Server** — page 81 / utils/mcp_server.py — Expose budget data as an MCP resource so Claude can query your finances directly in Claude.ai conversations. Google Drive connector + budget DB → instant AI-powered answers about your money without opening the app.
-- [ ] **SoleOps: Customer CRM** — page 82 — Track repeat buyers, buyer notes, feedback per sale, ban list, top customer insights. Turns one-time buyers into loyal customers. eBay + Mercari buyer ID import.
-- [ ] **Content Performance Dashboard** — page 83 — Pull YouTube/IG/TikTok analytics into Creator Companion. Views, revenue, upload cadence, best-performing content, CPM trends. Claude AI content strategy recommendations.
+---
+
+## 🧠 NEXT-LEVEL VISION FEATURES — Added 2026-03-09
+*These features will transform peachstatesavings.com from a personal finance app into a full AI-powered wealth OS.*
+
+### Tier 1 — Financial Intelligence Core (Build First)
+
+- [ ] **Tax Loss Harvesting Assistant** — page 74 — Scan investment portfolio for unrealized losses, wash sale rule warnings (30-day window), optimal timing recommendations by lot, estimated Schedule D impact, and Claude narrative of best action. Plugs into existing portfolio data.
+- [ ] **Net Worth Projection Engine** — page 75 — 5/10/20-year interactive wealth trajectory. Runs 1,000 Monte Carlo simulations per session. Adjustable savings rate, market return, inflation, and side income sliders. Milestone alerts: "You hit $500k at age 34." Inflation-adjusted final numbers.
+- [ ] **Real-Time Tax Liability Estimator** — page 78 — YTD income (W2 + RSU vests + ESPP sales + side income) against deductions + withholding → live estimated federal + GA state balance due. Never be surprised in April again. Accounts for 22% supplemental rate on RSUs.
+- [ ] **ESPP Lot Tracker** — page 77 — Track each Visa ESPP purchase period separately. 15% discount capture calculator per period. Qualifying vs disqualifying disposition analyzer with optimal hold/sell timing. One-click Schedule D export CSV. 100% separate from RSU page.
+- [ ] **Automated Bank Reconciliation** — page 79 — Auto-match imported bank transactions to known bills, income, and categories. Flags unknowns with Claude classification suggestions. "Reconcile in 3 clicks" workflow. Reduces manual categorization by 80%.
+
+### Tier 2 — Resale & Creator Business Stack (Revenue Generating)
+
+- [ ] **Depop Marketplace Integration** — page 80 — Add Depop to the full resale ecosystem alongside eBay & Mercari. Sold comp search, Depop-optimized listing generator (short captions, hashtag strategy), real fee calculator (Depop 10% + PayPal), and platform profit comparison: eBay vs Mercari vs Depop per pair.
+- [ ] **SoleOps: Customer CRM** — page 82 — Track repeat buyers across platforms. Buyer notes, seller feedback history, ban list, VIP buyers, communication log. Top 10 customers by volume. Import buyer IDs from eBay + Mercari order history. Turns one-time sales into loyal relationships.
+- [ ] **SoleOps: Stale Inventory Alert System** — page 84 — Flag pairs sitting unsold past configurable thresholds (30/60/90 days). Claude-powered markdown strategy: "Drop 10% on eBay, cross-list Mercari." Auto-update recommended price across platforms. Weekly stale inventory digest email.
+- [ ] **Content Performance Dashboard** — page 83 — Pull YouTube, Instagram, TikTok analytics into Creator Companion. Views, revenue per video, upload cadence heatmap, best-performing content by format. CPM trends over time. Claude AI content strategy: "Your 'cook with me' content outperforms hauls by 3×."
+- [ ] **Brand Deal Tracker** — page 85 — Log brand partnerships, deliverables, rates, deadlines, and payment status. Claude drafts follow-up emails for overdue payments. Annual brand revenue by category. "Your average CPM is $28 — here's how to pitch higher rates."
+
+### Tier 3 — Life & Wealth OS (Full Personal Command Center)
+
+- [ ] **MCP Financial Data Server** — page 81 / utils/mcp_server.py — Expose your entire budget DB as an MCP resource. Claude.ai can answer "What did I spend on food last month?" or "Am I on track for $500k by 35?" in native Claude conversations. No app needed — your finances are just *in* Claude. Google Drive connector included.
+- [ ] **Insurance Coverage Tracker** — page 76 — Health, auto, renters/homeowners, life, umbrella — all policies in one place. Premium tracker, renewal calendar, coverage gap analysis. Claude: "Your auto deductible is $2k but your emergency fund only covers $800." Annual coverage review report.
+- [ ] **Grocery Budget Optimizer** — page 86 — Weekly grocery spend tracker, Kroger API or manual entry. Smart shopping list generator based on budget remaining and meal plan. Claude meal-plan-to-budget optimizer: "You can eat healthy for $120/week with these 5 meals." Year-over-year food inflation tracker.
+- [ ] **Home Equity & Mortgage Intelligence** — page 87 — Zillow Zestimate + mortgage balance = live equity %. Appreciation rate vs. neighborhood comps. Refi break-even calculator. "At current rates, you'd save $340/mo and break even in 27 months." Home equity line of credit (HELOC) max calculator.
+- [ ] **Habit Tracker & Streak Engine** — page 88 — Daily streaks for gym, water, sleep, journaling, meditation. Ties into Health Hub for mood correlation ("Your mood score is 3× higher on gym days"). Claude streak recovery tips. Weekly habit review. "You've hit 85% of your gym goal this month — best month ever."
+- [ ] **Daily Financial Briefing** — page 89 — Every morning at 8 AM, Claude reviews overnight market moves, your portfolio delta, upcoming bills, and pending SoleOps orders → sends a 5-sentence Telegram briefing. Like a personal CFO daily standup. Cron-driven, zero interaction needed.
+
+### Tier 4 — Platform & Monetization (SaaS Expansion)
+
+- [ ] **SoleOps: User Registration Flow** — update auth — Email/password self-registration for new SoleOps users. Stripe checkout triggers subscription → features unlock. Welcome email via Gmail SMTP. Admin user management panel.
+- [ ] **Paycheck Calculator v2** — UPDATE page 16 — Add GA state tax rates (5.75%), Visa RSU supplemental withholding (22% federal + 6% GA), ESPP paycheck deduction impact, pre-tax vs Roth 401k optimizer with side-by-side take-home comparison, HSA contribution optimizer.
+- [ ] **Peach State Savings Pro Tier** — update auth/pricing — Gate advanced pages (Tax Estimator, Net Worth Projection, ESPP Tracker) behind a $9.99/mo "Pro" tier. Stripe checkout, free 14-day trial, upgrade prompts at feature walls. 10 free pages remain ungated.
+- [ ] **Affiliate & Referral Tracker** — page 90 — Track Amazon, eBay Partner, and brand affiliate links. Click-through rates, conversion rates, commission earned vs. projected. Claude recommendations: "Your top 3 affiliate links generate 90% of revenue — double down here."
+
+### Tier 5 — AI Agent Upgrades (Make the Bot Smarter)
+
+- [ ] **Agent: Nightly Financial Anomaly Detector** — autonomous — Every night, Claude scans your latest transactions for anomalies: duplicate charges, unusual merchant locations, price spikes vs. category averages. Sends Telegram alert only when something is actually wrong. Zero false positives.
+- [ ] **Agent: Weekly Net Worth Summary Bot** — automated — Every Sunday at 6 PM, pulls all accounts, investments, and debts → calculates net worth delta from last week → sends Telegram: "Net worth up $1,240 this week (+0.6%). New all-time high." Simple, no charts, just the number.
+- [ ] **Agent: Quarterly Tax Planning Memo** — autonomous — On Jan 1, Apr 1, Jul 1, Oct 1, Claude generates a 1-page tax strategy memo: "Q2 projections — you're $4,200 ahead of withholding. Consider increasing 401k by $200/paycheck." Sent via Telegram + saved to Tax Vault.
+- [ ] **Agent: Price Trend Watcher** — autonomous — Monitors your SoleOps watchlist 4× per day. When a shoe's eBay 30-day average moves ±10%, Claude sends a Telegram briefing: "Air Jordan 1 Royal Blue is up 12% this week. 3 of your inventory pairs benefit. Suggested new list price: $285."
+- [ ] **Agent: Monthly Expense Audit** — autonomous — On the 2nd of each month, Claude reviews last month's spending vs. budget, identifies top 3 overspend categories, generates a 3-bullet action plan, and saves it to the Notes page as a pinned memo. No manual work needed.
+
+---
+
+## 📋 UNCHANGED MEDIUM PRIORITY (Carry-Forward)
+
+- [ ] **Tax Loss Harvesting Assistant** — page 74 — (also listed in Tier 1 above, build first)
+- [ ] **Net Worth Projection** — page 75 — (also listed in Tier 1 above)
+- [ ] **Insurance Tracker** — page 76 — (also in Tier 3)
+- [ ] **ESPP Lot Tracker** — page 77 — (also in Tier 1)
+- [ ] **Real-Time Tax Liability Estimator** — page 78 — (also in Tier 1)
+- [ ] **Automated Bank Reconciliation** — page 79 — (also in Tier 1)
+- [ ] **Depop Marketplace Integration** — page 80 — (also in Tier 2)
+- [ ] **MCP Financial Data Server** — page 81 — (also in Tier 3)
+- [ ] **SoleOps: Customer CRM** — page 82 — (also in Tier 2)
+- [ ] **Content Performance Dashboard** — page 83 — (also in Tier 2)
 
 ---
 
@@ -115,15 +164,15 @@
 - [x] Health Cost Tracker (gym + medical + HSA integration, annual summary) [DONE] ✅
 - [x] Uptime Kuma status page (monitor all services, phone alerts) [DONE] ✅
 - [x] Grafana + Prometheus monitoring stack (CPU, RAM, disk, container health) [DONE] ✅
-- [ ] **Grocery Budget Tracker** — Kroger API or manual entry, weekly spend vs budget, smart shopping list, Claude meal-plan-to-budget optimizer
-- [ ] **Home Equity Dashboard** — Zillow Zestimate, mortgage balance, equity %, appreciation rate, refinance break-even calculator
-- [ ] **Habit Tracker** — Daily streaks (gym, water, sleep, journaling), ties into Health Hub, Claude motivation + streak recovery tips
+- [ ] **Grocery Budget Tracker** — Kroger API or manual entry, weekly spend vs budget, smart shopping list, Claude meal-plan-to-budget optimizer (see Tier 3 — Grocery Budget Optimizer for full spec)
+- [ ] **Home Equity Dashboard** — Zillow Zestimate, mortgage balance, equity %, appreciation rate, refinance break-even calculator (see Tier 3 — Home Equity & Mortgage Intelligence)
+- [ ] **Habit Tracker** — Daily streaks (gym, water, sleep, journaling), ties into Health Hub, Claude motivation + streak recovery tips (see Tier 3 — Habit Tracker & Streak Engine)
 - [ ] **Password Manager Integration** — 1Password or Bitwarden API, audit weak/reused passwords, breach monitoring alerts
 - [ ] **Paycheck v2 Update** — UPDATE to page 16 (not new page) — Add GA state tax rates, Visa RSU supplemental withholding rate (22% federal + 6% GA), ESPP paycheck impact, pre-tax vs Roth 401k optimizer
 
 ---
 
-## COMPLETED (pages 31–64)
+## COMPLETED (pages 31–73)
 
 | Page | Feature |
 |------|---------|
@@ -167,3 +216,36 @@
 | 69 | SoleOps P&L Dashboard |
 | 70 | SoleOps Stripe Subscription Paywall |
 | 71 | SoleOps Arbitrage Scanner |
+| 72 | Resale Price Advisor |
+| 73 | Sandbox / Privacy Mode |
+
+---
+
+## 🗺️ ROADMAP SUMMARY — The Vision
+
+```
+TODAY (73 pages built):
+  Personal Finance OS (expenses, income, net worth, investments, goals)
+  SoleOps Reseller Suite (inventory, P&L, arbitrage, price monitor, paywall)
+  AI Agent System (overnight dev, scheduled tasks, Telegram alerts)
+  Creator Stack (notes, media library, creator companion)
+  Health & Life (wellness hub, travel model, health cost tracker)
+
+30 DAYS FROM NOW (pages 74–90):
+  Tax Intelligence Suite (Tax Estimator, ESPP Tracker, Tax Loss Harvesting)
+  Resale Platform Expansion (Depop, Customer CRM, Stale Inventory Alerts)
+  Life OS Completion (Habit Tracker, Home Equity, Insurance, Grocery)
+  AI Agent Upgrades (Anomaly Detector, Weekly Net Worth Bot, Daily Briefing)
+
+60 DAYS FROM NOW:
+  MCP Server — Your finances live natively inside Claude.ai
+  SoleOps SaaS — Public user registration, Pro tier paywall, $500 MRR
+  Daily AI Briefing — 5-sentence CFO standup every morning at 8 AM
+  Content Dashboard — YouTube/IG/TikTok analytics + brand deal tracker
+
+90 DAYS — THE NORTH STAR:
+  Peach State Savings = Your AI-powered wealth OS
+  Everything connected: spending → investing → reselling → creating → tax planning
+  Revenue: SoleOps SaaS ($500+ MRR) + Peach State Pro tier ($9.99/mo)
+  Autonomy: 90% of financial reviews automated via AI agents
+```
