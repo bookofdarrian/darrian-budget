@@ -1,27 +1,61 @@
 # CLAUDE.md — Darrian Belcher's Project Context
-**Last Updated: 2026-03-04**
+**Last Updated: 2026-03-10**
 
 > This file is read by Claude Code at startup. It contains everything needed to
 > understand the project, standards, and current priorities.
 
 ---
 
-## 🎯 PRIMARY GOAL RIGHT NOW: 404 Sole Archive → SoleOps SaaS
+## 🎯 PRIMARY GOALS RIGHT NOW: SoleOps SaaS + College Confused
 
-**The #1 focus for the next 30 days is launching SoleOps:**
-- Extract sneaker tools from darrian-budget into a standalone SaaS product
-- Target users: eBay/Mercari/StockX/GOAT sneaker resellers
+### 🔥 Goal 1 — SoleOps (Monetization Priority)
+**Finish and launch SoleOps as a standalone paid SaaS for sneaker resellers:**
+- Pages 65–73 built and deployed — core feature set complete
+- NOW: Close the remaining revenue gaps below
 - Pricing: $9.99/mo (Starter), $19.99/mo (Pro), $29.99/mo (Pro+)
-- Goal: 10 beta users in 30 days, 100 paying users in 90 days
+- Goal: 10 beta users in 30 days, $500 MRR by Day 90
 - Distribution: r/flipping, r/sneakermarket, reseller Discord servers
 
-**Existing assets to reuse:**
+**SoleOps remaining work (build in this order):**
+1. **User Registration Flow** — email/password reg + Stripe checkout + welcome email (HIGHEST PRIORITY)
+2. **AI Listing Generator Polish** (page 34) — eBay API draft, Mercari variant, performance tracker
+3. **Weekly Reseller Report Email** — Claude-generated cron, per-user personalization
+4. **Stale Inventory Alert System** (page 84) — already has skeleton, needs full build-out
+5. **SoleOps Customer CRM** (page 82) — repeat buyer tracking, VIP buyers, ban list
+
+**Existing SoleOps assets:**
 - `sole_alert_bot/` — full price alert bot (eBay + Mercari + arb detection)
 - `pages/31_sneaker_price_alert_bot.py` — Streamlit UI for alerts
-- `pages/34_ebay_listing_generator.py` — AI listing generator (80% done)
-- `pages/64_side_income_tracker.py` — P&L tracking foundation
+- `pages/34_ebay_listing_generator.py` — AI listing generator (needs polish)
+- `pages/65–71, 73, 84` — full SoleOps feature suite
 - `utils/stripe_utils.py` — Stripe payments already wired
 - `utils/db.py` — shared DB utilities
+
+---
+
+### 🎓 Goal 2 — College Confused (Mission Priority)
+**Build out College Confused as a full nonprofit college prep platform:**
+- Nonprofit founded by Darrian Belcher (25 acceptances, 7 full rides, $500K+ in scholarships)
+- Target users: Students, parents, first-gen families, school counselors, community mentors
+- 100% FREE — no paywalls, no subscriptions, no gatekeeping ever
+- Pages 80–84 built: Home, Timeline, Scholarships, Essay Station, SAT/ACT Prep
+- Domain: collegeconfused.org (planned standalone site)
+
+**College Confused remaining work (build in this order):**
+1. **CC: College List Builder** (page 85) — search/filter colleges by major, location, cost, acceptance rate, HBCU; save to personal list; compare side-by-side
+2. **CC: FAFSA Guide + EFC Calculator** (page 86) — step-by-step FAFSA walkthrough, plain-English EFC/SAI calculator, dependency status guide, deadline tracker
+3. **CC: Application Tracker** (page 87) — track all schools applied to, deadlines, requirements, decisions, scholarship status; Common App checklist
+4. **CC: Recommendation Letter Tracker** (page 88) — log recommenders, send reminders, track submission status, thank-you note generator
+5. **CC: Interview Prep AI** (page 89) — mock interview Q&A with Claude, college-specific interview tips, behavioral question bank, confidence score
+6. **CC: Financial Aid Appeal Generator** (page 90) — Claude drafts professional financial aid appeal letters, comparator award letter analyzer
+
+**College Confused context for agents:**
+- All CC pages use `🎓` icon and `#6C63FF` purple color scheme
+- CC sidebar: `render_sidebar_brand()` + CC section links (80–84 + new pages)
+- CC pages are for a PUBLIC audience — write for 8th graders and grandparents (plain English)
+- NEVER paywall CC features — this is a nonprofit
+- AI calls use same `claude-opus-4-5` pattern via `get_setting("anthropic_api_key")`
+- CC tables prefixed with `cc_` (e.g., `cc_timeline`, `cc_scholarships`, `cc_support_emails`)
 
 ---
 
@@ -155,13 +189,23 @@ if not api_key:
 
 ## 📋 Current Backlog (High Priority)
 
-See `BACKLOG.md` for the full queue. Highest priority SoleOps features:
+See `BACKLOG.md` for the full queue.
 
-1. **Sneaker Inventory Analyzer** (page 65) — inventory aging, price velocity, auto-price-drop suggestions
-2. **Health & Wellness AI Hub** (page 66) — personal use
-3. **Life Experience & Travel Model** (page 67) — personal use
+### 🔥 SoleOps — Immediate (Revenue Unlocking)
+1. **SoleOps: User Registration Flow** — email/password + Stripe checkout + welcome email ← BUILD FIRST
+2. **SoleOps: AI Listing Generator Polish** (page 34) — eBay API draft, Mercari variant, perf tracker
+3. **SoleOps: Weekly Reseller Report Email** — Claude-generated cron job, per-user
+4. **SoleOps: Stale Inventory Alert System** (page 84) — full build-out of existing skeleton
+5. **SoleOps: Customer CRM** (page 82) — buyer tracking, VIP list
 
-See `SOLE_OPS_ROADMAP.md` for the full SaaS product plan.
+### 🎓 College Confused — Immediate (Platform Growth)
+1. **CC: College List Builder** (page 85) — college search, compare, save personal list
+2. **CC: FAFSA Guide + EFC Calculator** (page 86) — plain-English FAFSA walkthrough
+3. **CC: Application Tracker** (page 87) — all schools, deadlines, decisions
+4. **CC: Recommendation Letter Tracker** (page 88) — log recommenders, track submissions
+5. **CC: Interview Prep AI** (page 89) — mock interviews with Claude, behavioral Q&A bank
+
+See `SOLE_OPS_ROADMAP.md` for the full SoleOps product plan.
 
 ---
 
