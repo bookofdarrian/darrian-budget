@@ -1,11 +1,39 @@
 # Feature Backlog — Autonomous AI Dev Queue
-**Owner: Darrian Belcher | Updated: 2026-03-09**
+**Owner: Darrian Belcher | Updated: 2026-03-10**
 
 > The overnight AI dev system reads this file every night and picks the
 > highest-priority uncompleted item to build autonomously.
 > Completed items are marked [DONE] ✅ by the Git Agent.
 
 ---
+
+## 🚨 AGENT DIRECTIVE — 2026-03-10
+
+> **Agents: Focus ONLY on SoleOps and College Confused until all items below are complete.**
+> Pick the TOP uncompleted item from whichever product has the highest-priority open task.
+> Do NOT build general personal finance pages (74–79) until SoleOps + CC backlogs are cleared.
+
+### 🔥 SoleOps Build Queue (pick top uncompleted — in order)
+| Priority | Feature | Page | Status |
+|----------|---------|------|--------|
+| 1 | SoleOps: User Registration Flow | update auth | ⬜ TODO ← START HERE |
+| 2 | SoleOps: AI Listing Generator Polish | page 34 | ⬜ TODO |
+| 3 | SoleOps: Weekly Reseller Report Email | cron/agent | ⬜ TODO |
+| 4 | SoleOps: Stale Inventory Alert System | page 84 | ⬜ TODO (skeleton exists) |
+| 5 | SoleOps: Customer CRM | page 82 | ⬜ TODO |
+
+### 🎓 College Confused Build Queue (pick top uncompleted — in order)
+| Priority | Feature | Page | Status |
+|----------|---------|------|--------|
+| 1 | CC: College List Builder | page 85 | ⬜ TODO ← START HERE |
+| 2 | CC: FAFSA Guide + EFC Calculator | page 86 | ⬜ TODO |
+| 3 | CC: Application Tracker | page 87 | ⬜ TODO |
+| 4 | CC: Recommendation Letter Tracker | page 88 | ⬜ TODO |
+| 5 | CC: Interview Prep AI | page 89 | ⬜ TODO |
+| 6 | CC: Financial Aid Appeal Generator | page 90 | ⬜ TODO |
+
+---
+
 
 ## 🆕 NEW FEATURES — Added 2026-03-08 / 2026-03-09
 

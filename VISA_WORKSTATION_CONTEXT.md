@@ -1,5 +1,5 @@
 # 🍑 Darrian Belcher — Full Project Context File
-### Visa Workstation Feed | Last Updated: 2026-03-04
+### Visa Workstation Feed | Last Updated: 2026-03-10
 ### For: Cline, Claude Code, GitHub Copilot, Any AI assistant
 
 > **Feed this file to your AI assistant at the start of every session.**
@@ -20,34 +20,88 @@
 
 ---
 
-## 📦 Active Projects (as of 2026-03-04)
+## 🚨 AGENT FOCUS — AS OF 2026-03-10
+
+> **Agents: You have TWO active build targets right now. Alternate between them or pick the highest-priority uncompleted item from either product below.**
+
+### 🔥 PRIMARY TARGET 1 — SoleOps SaaS (Revenue)
+Build SoleOps into a standalone paid SaaS. **Every feature you build here has revenue potential.**
+Remaining work (in priority order):
+1. **SoleOps: User Registration Flow** ← BUILD THIS FIRST — email/password + Stripe checkout + welcome email via Gmail SMTP
+2. **SoleOps: AI Listing Generator Polish** (page 34) — eBay API draft, Mercari variant, listing performance tracker
+3. **SoleOps: Weekly Reseller Report Email** — Claude-generated cron job, per-user personalization, Telegram + email
+4. **SoleOps: Stale Inventory Alert System** (page 84) — full build-out, existing skeleton at `pages/84_soleops_stale_inventory.py`
+5. **SoleOps: Customer CRM** (page 82) — repeat buyer tracking, VIP buyers, ban list, communication log
+
+### 🎓 PRIMARY TARGET 2 — College Confused (Mission)
+Build College Confused as a full nonprofit college prep platform. **Every feature here helps first-gen students win.**
+Remaining work (in priority order):
+1. **CC: College List Builder** (page 85) — search/filter colleges, HBCU flag, compare side-by-side, save personal list
+2. **CC: FAFSA Guide + EFC Calculator** (page 86) — plain-English FAFSA walkthrough, EFC/SAI calculator, deadline tracker
+3. **CC: Application Tracker** (page 87) — track all schools, deadlines, requirements, decisions, Common App checklist
+4. **CC: Recommendation Letter Tracker** (page 88) — log recommenders, reminders, submission status, thank-you generator
+5. **CC: Interview Prep AI** (page 89) — mock interviews with Claude, behavioral Q&A bank, confidence scoring
+6. **CC: Financial Aid Appeal Generator** (page 90) — Claude drafts financial aid appeal letters, award letter comparison
+
+**College Confused agent rules:**
+- CC pages: `page_icon="🎓"`, purple `#6C63FF` color scheme, `cc_` table prefix
+- Always write CC content at an 8th-grade reading level — parents and grandparents use this too
+- NEVER paywall any CC feature — nonprofit, 100% free
+- CC sidebar links: pages 80–84 + any new CC pages added
+
+---
+
+## 📦 Active Projects (as of 2026-03-10)
 
 ### 1. `darrian-budget` / peachstatesavings.com
-- **Status:** ACTIVE — 71 pages built and deployed to production
+- **Status:** ACTIVE — 84 pages built and deployed to production
 - **Stack:** Python 3.11+, Streamlit, PostgreSQL, Anthropic Claude `claude-opus-4-5`
 - **Repo:** https://github.com/bookofdarrian/darrian-budget
 - **Production:** https://www.peachstatesavings.com (CT100 homelab, Nginx proxy)
 - **DB:** PostgreSQL on CT100 at `172.17.0.3:5432` (migrated off Railway 2026-02-27)
 - **Agent:** Overnight autonomous AI dev system builds new pages nightly from BACKLOG.md
 
-### 2. SoleOps — 404 Sole Archive SaaS (PRIMARY FOCUS)
-- **Status:** ACTIVE — Pages 65–71 built and deployed (all tests passing)
+### 2. SoleOps — 404 Sole Archive SaaS (PRIMARY FOCUS — REVENUE)
+- **Status:** ACTIVE — Pages 65–73, 84 built and deployed (all tests passing)
 - **Goal:** Standalone paid SaaS for sneaker resellers — $9.99–$29.99/mo
 - **Revenue Target:** $500 MRR by Day 90 | 10 beta users in 30 days
 - **Pages Built:**
   - Page 65: Sneaker Inventory Analyzer (34/34 tests ✅)
-  - Page 66: Health & Wellness AI Hub (58/58 tests ✅)
-  - Page 67: Life Experience & Travel Model (58/58 tests ✅)
   - Page 68: SoleOps Price Monitor Dashboard (58/58 tests ✅)
   - Page 69: SoleOps P&L Dashboard (58/58 tests ✅)
   - Page 70: SoleOps Stripe Subscription Paywall (58/58 tests ✅)
   - Page 71: SoleOps Arbitrage Scanner (58/58 tests ✅)
-- **Next Up:**
-  - [ ] SoleOps User Registration Flow (email/password + Stripe checkout + welcome email)
+  - Page 72: Resale Price Advisor (✅)
+  - Page 73: Sandbox / Privacy Mode (331/331 tests ✅)
+  - Page 84: SoleOps Stale Inventory (skeleton — needs full build-out)
+- **Next Up (in order):**
+  - [ ] SoleOps User Registration Flow (email/password + Stripe checkout + welcome email) ← HIGHEST PRIORITY
   - [ ] SoleOps AI Listing Generator Polish — page 34 (eBay API draft, Mercari variant)
   - [ ] SoleOps Weekly Reseller Report Email (Claude-generated, cron job on CT100)
+  - [ ] SoleOps Stale Inventory Alert System — page 84 (full build-out)
+  - [ ] SoleOps Customer CRM — page 82 (buyer tracking, VIP list)
 
-### 3. `sole_alert_bot/` — Production Price Alert Bot
+### 3. College Confused — Nonprofit College Prep Platform (PRIMARY FOCUS — MISSION)
+- **Status:** ACTIVE — Pages 80–84 built and deployed
+- **Goal:** Free AI-powered college prep for every student, family, and supporter
+- **Founded by:** Darrian Belcher — 25 college acceptances, 7 full rides, $500K+ in scholarships
+- **Audience:** Students (8th grade → college), parents, grandparents, first-gen families, counselors
+- **Brand:** `🎓` icon, `#6C63FF` purple, plain English always, zero paywalls
+- **Pages Built:**
+  - Page 80: CC Home / Landing (✅)
+  - Page 81: CC Timeline (✅)
+  - Page 82: CC Scholarships (✅)
+  - Page 83: CC Essay Station (✅)
+  - Page 84: CC Test Prep / SAT/ACT (✅)
+- **Next Up (in order):**
+  - [ ] CC College List Builder — page 85 (college search, compare, HBCU filter, save list)
+  - [ ] CC FAFSA Guide + EFC Calculator — page 86 (plain-English walkthrough + calculator)
+  - [ ] CC Application Tracker — page 87 (all schools, deadlines, decisions)
+  - [ ] CC Recommendation Letter Tracker — page 88 (log recommenders, reminders)
+  - [ ] CC Interview Prep AI — page 89 (mock interviews with Claude)
+  - [ ] CC Financial Aid Appeal Generator — page 90 (Claude-drafted appeal letters)
+
+### 4. `sole_alert_bot/` — Production Price Alert Bot
 - **Status:** PRODUCTION — runs on CT100 as a cron job
 - **Function:** Polls eBay + Mercari every 30 min, fires Telegram buy/sell alerts
 - **Files:** `sole_alert_bot/alert.py`, `ebay_search.py`, `mercari_search.py`, `scan_arb.py`
@@ -960,17 +1014,27 @@ set_setting("some_key", "some_value")
 
 ## 🎯 What to Work On Next (Priority Order)
 
-### Immediate (This Week)
-1. **SoleOps: User Registration Flow** — email/password + Stripe checkout → subscription → welcome email
+### 🔥 SoleOps — Immediate (Revenue)
+1. **SoleOps: User Registration Flow** ← BUILD FIRST — email/password + Stripe checkout + welcome email via Gmail SMTP
 2. **SoleOps: AI Listing Generator Polish** (page 34) — eBay API draft, Mercari variant, performance tracker
 3. **SoleOps: Weekly Reseller Report Email** — Claude-generated cron job, per-user personalization
+4. **SoleOps: Stale Inventory Alert System** (page 84) — full build-out of existing skeleton
+5. **SoleOps: Customer CRM** — repeat buyer tracking, VIP buyers, communication log
 
-### Medium-Term Backlog
-- Tax Loss Harvesting Assistant
-- Net Worth Projection (5/10/20 year)
-- Paycheck Calculator v2 (GA state + federal + Visa RSU)
-- 404 Sole Archive P&L Dashboard (dedicated)
-- Insurance Tracker
+### 🎓 College Confused — Immediate (Mission)
+1. **CC: College List Builder** (page 85) — college search/filter, HBCU flag, compare, save list
+2. **CC: FAFSA Guide + EFC Calculator** (page 86) — plain-English FAFSA + SAI calculator
+3. **CC: Application Tracker** (page 87) — all schools, deadlines, decisions, Common App checklist
+4. **CC: Recommendation Letter Tracker** (page 88) — log recommenders, track submission status
+5. **CC: Interview Prep AI** (page 89) — mock interviews with Claude, behavioral Q&A bank
+6. **CC: Financial Aid Appeal Generator** (page 90) — Claude-drafted appeal letters
+
+### Later (After SoleOps + CC complete)
+- Tax Loss Harvesting Assistant (page 74)
+- Net Worth Projection Engine (page 75)
+- Real-Time Tax Liability Estimator (page 78)
+- ESPP Lot Tracker (page 77)
+- Paycheck Calculator v2 (UPDATE page 16)
 
 ### Infrastructure
 - [ ] Install Tailscale on iPhone (App Store → `dbelcher003@`)
