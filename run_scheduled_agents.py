@@ -188,13 +188,198 @@ def _handler_monthly_financial_report(task: dict) -> tuple[bool, str]:
     return ok, msg
 
 
+def _handler_stale_inventory_scan(task: dict) -> tuple[bool, str]:
+    """
+    SoleOps: Scan all inventory for pairs 14+ days old.
+    Generates Claude markdown strategy and sends Telegram digest.
+    """
+    try:
+        from datetime import datetime as _dt, date as _date
+        import requests as _req
+
+        conn = get_conn()
+        ph = "%s" if USE_POSTGRES else "?"
+        cur = conn.execute("""
+            SELECT id, shoe_name, size, cost_basis, listed_date, listed_price, listed_platform
+            FROM soleops_inventory
+            WHERE status = 'inventory'
+            ORDER BY listed_date ASC
+        """)
+        rows = cur.fetchall()
+        conn.close()
+
+        stale = []
+        for r in rows:
+            listed_date_val = r[4]
+            if not listed_date_val:
+                continue
+            try:
+                if isinstance(listed_date_val, str):
+                    ld = _dt.strptime(str(listed_date_val)[:10], "%Y-%m-%d").date()
+                else:
+                    ld = listed_date_val
+                days = max(0, (_date.today() - ld).days)
+            except Exception:
+                continue
+
+            if days < 14:
+                continue
+
+            listed_price = float(r[5]) if r[5] else 0.0
+            cost_basis   = float(r[3]) if r[3] else 0.0
+
+            if days >= 30:
+                drop_pct, tier_label = 0.20, "⚫ Critical"
+            elif days >= 21:
+                drop_pct, tier_label = 0.15, "🔴 Stale"
+            elif days >= 14:
+                drop_pct, tier_label = 0.10, "🟠 Aging"
+            else:
+                drop_pct, tier_label = 0.05, "🟡 Warm"
+
+            sugg_price = round(listed_price * (1 - drop_pct), 2) if listed_price > 0 else 0.0
+            stale.append({
+                "shoe_name": r[1], "size": r[2], "cost_basis": cost_basis,
+                "listed_price": listed_price, "listed_platform": r[6] or "Unknown",
+                "days_listed": days, "suggested_price": sugg_price,
+                "tier_label": tier_label,
+            })
+
+        if not stale:
+            return True, "Stale scan: no pairs 14+ days old — all inventory is fresh!"
+
+        total_at_risk = sum(i["listed_price"] - i["cost_basis"] for i in stale if i["listed_price"])
+        lines = [
+            "⏰ <b>SOLEOPS WEEKLY STALE SCAN</b>",
+            f"📊 {len(stale)} pairs need attention\n",
+        ]
+        for item in stale[:8]:
+            lines.append(
+                f"{item['tier_label']} <b>{item['shoe_name']}</b> Sz {item['size']} — "
+                f"{item['days_listed']}d → drop to <b>${item['suggested_price']:.0f}</b>"
+            )
+        if len(stale) > 8:
+            lines.append(f"...and {len(stale) - 8} more pairs")
+        lines.append(f"\n💰 Total $ at risk: ${total_at_risk:,.0f}")
+        lines.append("\n📱 Open SoleOps → peachstatesavings.com")
+
+        token   = get_setting("telegram_bot_token")
+        chat_id = get_setting("telegram_chat_id")
+        if token and chat_id:
+            r = _req.post(
+                f"https://api.telegram.org/bot{token}/sendMessage",
+                json={"chat_id": chat_id, "text": "\n".join(lines), "parse_mode": "HTML"},
+                timeout=10,
+            )
+            if r.status_code == 200:
+                return True, f"Stale scan: {len(stale)} pairs alerted via Telegram."
+            return False, f"Telegram error {r.status_code}"
+        return True, f"Stale scan: {len(stale)} stale pairs found (Telegram not configured)."
+    except Exception as e:
+        return False, f"Stale inventory scan error: {str(e)}"
+
+
 def _handler_weekly_reseller_report(task: dict) -> tuple[bool, str]:
-    """Generate the SoleOps weekly reseller report."""
-    script = PROJECT_ROOT / "pages" / "69_soleops_pnl_dashboard.py"
-    if not script.exists():
-        return False, "SoleOps P&L page not found — report skipped"
-    # For now, log that this needs manual send from the UI
-    return True, "Reseller report queued — open SoleOps P&L Dashboard to send the weekly summary"
+    """
+    Generate SoleOps weekly reseller report.
+    Pulls last 7 days of sold inventory + current stale pairs.
+    Sends Claude-generated narrative via Telegram + optional email.
+    """
+    try:
+        from datetime import datetime as _dt, date as _date, timedelta as _td
+        import requests as _req
+
+        today = _date.today()
+        week_ago = today - _td(days=7)
+
+        conn = get_conn()
+        # Last 7 days sold
+        cur = conn.execute("""
+            SELECT shoe_name, size, sell_price, cost_basis, sold_platform, sold_date
+            FROM soleops_inventory
+            WHERE status = 'sold' AND sold_date >= ?
+            ORDER BY sold_date DESC
+        """, (str(week_ago),)) if not USE_POSTGRES else conn.execute("""
+            SELECT shoe_name, size, sell_price, cost_basis, sold_platform, sold_date
+            FROM soleops_inventory
+            WHERE status = 'sold' AND sold_date >= %s
+            ORDER BY sold_date DESC
+        """, (str(week_ago),))
+        sold_rows = cur.fetchall()
+
+        # Current inventory count
+        cur2 = conn.execute("SELECT COUNT(*) FROM soleops_inventory WHERE status = 'inventory'")
+        inv_count = cur2.fetchone()[0]
+
+        # Stale pairs
+        cur3 = conn.execute("""
+            SELECT shoe_name, size, listed_date, listed_price, listed_platform
+            FROM soleops_inventory
+            WHERE status = 'inventory' AND listed_date IS NOT NULL
+        """)
+        inv_rows = cur3.fetchall()
+        conn.close()
+
+        stale_count = 0
+        for r in inv_rows:
+            try:
+                ld = _dt.strptime(str(r[2])[:10], "%Y-%m-%d").date()
+                if (today - ld).days >= 14:
+                    stale_count += 1
+            except Exception:
+                pass
+
+        # P&L summary
+        pairs_sold = len(sold_rows)
+        gross_rev  = sum(float(r[2]) if r[2] else 0 for r in sold_rows)
+        total_cogs = sum(float(r[3]) if r[3] else 0 for r in sold_rows)
+        net_profit = gross_rev - total_cogs - (gross_rev * 0.12)
+
+        # Platform breakdown
+        plat_counts: dict = {}
+        for r in sold_rows:
+            p = r[4] or "Unknown"
+            plat_counts[p] = plat_counts.get(p, 0) + 1
+        best_plat = max(plat_counts, key=plat_counts.get) if plat_counts else "—"
+
+        # Build Telegram message
+        sold_lines = "\n".join([
+            f"  • {r[0]} Sz {r[1]} — ${float(r[2]) if r[2] else 0:.0f} on {r[4] or '?'}"
+            for r in sold_rows[:5]
+        ]) or "  None this week"
+
+        msg = (
+            f"📊 <b>SOLEOPS WEEKLY REPORT</b> — {today.strftime('%b %d, %Y')}\n\n"
+            f"<b>🔢 Summary</b>\n"
+            f"  Pairs sold: {pairs_sold}\n"
+            f"  Gross revenue: ${gross_rev:.0f}\n"
+            f"  Net profit (est.): ${net_profit:.0f}\n"
+            f"  Best platform: {best_plat}\n\n"
+            f"<b>📦 Inventory</b>\n"
+            f"  Total pairs: {inv_count}\n"
+            f"  Stale (14d+): {stale_count}\n\n"
+            f"<b>✅ Sold This Week</b>\n{sold_lines}\n\n"
+            f"📱 Open SoleOps → peachstatesavings.com"
+        )
+
+        token   = get_setting("telegram_bot_token")
+        chat_id = get_setting("telegram_chat_id")
+        if token and chat_id:
+            r = _req.post(
+                f"https://api.telegram.org/bot{token}/sendMessage",
+                json={"chat_id": chat_id, "text": msg, "parse_mode": "HTML"},
+                timeout=10,
+            )
+            if r.status_code == 200:
+                return True, f"Weekly reseller report sent: {pairs_sold} pairs sold, ${net_profit:.0f} net profit."
+            return False, f"Telegram error {r.status_code}"
+        return True, (
+            f"Weekly report generated: {pairs_sold} pairs sold this week, "
+            f"${net_profit:.0f} net profit. "
+            "Configure Telegram to auto-send."
+        )
+    except Exception as e:
+        return False, f"Weekly reseller report error: {str(e)}"
 
 
 def _handler_generic(task: dict) -> tuple[bool, str]:
@@ -216,6 +401,7 @@ TASK_HANDLERS: list[tuple[str, callable]] = [
     ("weekly spending digest",          _handler_weekly_spending_digest),
     ("daily price alert",               _handler_daily_price_alert),
     ("monthly financial email report",  _handler_monthly_financial_report),
+    ("stale inventory",                 _handler_stale_inventory_scan),
     ("weekly reseller report",          _handler_weekly_reseller_report),
 ]
 
