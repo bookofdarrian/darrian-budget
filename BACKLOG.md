@@ -32,6 +32,13 @@
 | 5 | CC: Interview Prep AI | page 89 | ⬜ TODO |
 | 6 | CC: Financial Aid Appeal Generator | page 90 | ⬜ TODO |
 
+### 📊 Web Analytics / Traffic Monitoring
+| Priority | Feature | Where | Status |
+|----------|---------|-------|--------|
+| 1 | Plausible Analytics self-hosted | CT100 Docker (port 8888) | ⬜ TODO — add to monitoring/docker-compose.yml |
+| 2 | Web Analytics Dashboard (Streamlit) | page 91 | ⬜ TODO — query Plausible API, show visits/pages/countries |
+| 3 | Nginx Prometheus Exporter | monitoring/docker-compose.yml | ⬜ TODO — adds request rate, 4xx/5xx to Grafana |
+
 ---
 
 
