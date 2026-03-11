@@ -3,6 +3,7 @@ College Confused — Scholarship Dashboard (Page 82)
 Helps students find, filter, save, and track scholarship opportunities.
 """
 
+import os
 import streamlit as st
 from datetime import datetime
 from utils.db import get_conn, USE_POSTGRES, execute as db_exec, init_db, get_setting, set_setting
@@ -153,7 +154,7 @@ def _seed_scholarships():
 # ── AI Matcher ────────────────────────────────────────────────────────────────
 
 def _ai_match_scholarships(profile: dict, scholarships: list) -> str:
-    api_key = get_setting("anthropic_api_key", "")
+    api_key = os.environ.get("CC_ANTHROPIC_API_KEY") or get_setting("cc_anthropic_api_key", "")
     if not api_key:
         return "No AI key configured. Please set your Anthropic API key in Settings."
     try:
