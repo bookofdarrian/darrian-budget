@@ -153,14 +153,15 @@ services:
   # Privacy-first web analytics (Google Analytics replacement)
   # No cookies, GDPR compliant, lightweight script tag
   #
-  # Dashboard: http://100.117.1.171:8888  (Tailscale: http://100.95.125.112:8888)
+  # Dashboard: http://100.117.1.171:8889  (Tailscale: http://100.95.125.112:8889)
   # Setup:
-  #   1. cd /opt/monitoring && docker-compose up -d plausible_db plausible_events plausible
-  #   2. Visit http://100.95.125.112:8888 → create admin account → add site
+  #   1. cd /opt/monitoring && docker compose up -d plausible_db plausible_events plausible
+  #   2. Visit http://100.95.125.112:8889 → create admin account → add site
   #   3. Copy the <script> snippet → paste into your Streamlit app:
   #        st.components.v1.html('<script defer data-domain="peachstatesavings.com"
-  #          src="http://100.95.125.112:8888/js/script.js"></script>', height=0)
+  #          src="http://100.95.125.112:8889/js/script.js"></script>', height=0)
   #   4. Repeat for College Confused pages with data-domain="collegeconfused.org"
+  #   NOTE: Port 8888 is Vaultwarden — Plausible uses 8889
   #
   # Tracks: unique visitors, page views, bounce rate, session duration,
   #         top pages, countries, devices, referrers — all in one clean dashboard
@@ -201,13 +202,13 @@ services:
     networks:
       - monitoring
     ports:
-      - "8888:8000"
+      - "8889:8000"
     command: sh -c "sleep 10 && /entrypoint.sh db createdb && /entrypoint.sh db migrate && /entrypoint.sh run"
     depends_on:
       - plausible_db
       - plausible_events
     environment:
-      - BASE_URL=http://100.95.125.112:8888
+      - BASE_URL=http://100.95.125.112:8889
       - SECRET_KEY_BASE=${PLAUSIBLE_SECRET_KEY:-super_secret_change_me_in_production_32chars_min}
       - DATABASE_URL=postgres://plausible:plausible2026secure@plausible_db:5432/plausible
       - CLICKHOUSE_DATABASE_URL=http://plausible_events:8123/plausible_events
