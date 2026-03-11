@@ -3,6 +3,7 @@ College Confused — SAT/ACT Test Prep (Page 84)
 Free resources, practice questions, score tracker, and AI study coach
 to help students score higher and unlock scholarship opportunities.
 """
+import os
 import streamlit as st
 from datetime import date
 import json
@@ -407,7 +408,7 @@ def _load_practice_history(user_email: str) -> list:
 
 # ── AI Study Coach ─────────────────────────────────────────────────────────────
 def _ai_study_coach(test_type: str, weak_areas: list, scores_history: list) -> str:
-    api_key = get_setting("anthropic_api_key", "")
+    api_key = os.environ.get("CC_ANTHROPIC_API_KEY") or get_setting("cc_anthropic_api_key", "")
     if not api_key:
         return "Please configure Anthropic API key in Settings."
     try:
@@ -957,7 +958,7 @@ with tab4:
             st.markdown("### 📋 Your Personalized Study Plan")
             st.markdown(plan)
 
-            api_key = get_setting("anthropic_api_key", "")
+            api_key = os.environ.get("CC_ANTHROPIC_API_KEY") or get_setting("cc_anthropic_api_key", "")
             if not api_key:
                 st.warning("⚙️ To unlock AI features, add your Anthropic API key in the Settings page.")
 

@@ -3,6 +3,7 @@ College Confused — Essay Development Station (Page 83)
 AI-powered essay writing & coaching, trained on Darrian Belcher's winning essay style.
 """
 
+import os
 import streamlit as st
 from utils.db import get_conn, USE_POSTGRES, execute as db_exec, init_db, get_setting, set_setting
 
@@ -367,7 +368,7 @@ def _save_story(user_email: str, background: str, challenges: str, achievements:
 # ── AI helpers ────────────────────────────────────────────────────────────────
 
 def _generate_essay_draft(prompt_text: str, essay_type: str, story: dict, darrian_style: bool) -> str:
-    api_key = get_setting("anthropic_api_key", "")
+    api_key = os.environ.get("CC_ANTHROPIC_API_KEY") or get_setting("cc_anthropic_api_key", "")
     if not api_key:
         return "⚠️ No API key configured. Please ask an admin to configure the Anthropic API key in Settings."
 
@@ -430,7 +431,7 @@ After the essay, provide 3 specific suggestions for how to make it even more per
 
 
 def _get_essay_feedback(essay_text: str, prompt_text: str, essay_type: str) -> str:
-    api_key = get_setting("anthropic_api_key", "")
+    api_key = os.environ.get("CC_ANTHROPIC_API_KEY") or get_setting("cc_anthropic_api_key", "")
     if not api_key:
         return "⚠️ No API key configured. Please ask an admin to configure the Anthropic API key in Settings."
     try:
