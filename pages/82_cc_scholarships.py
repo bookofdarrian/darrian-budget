@@ -6,7 +6,7 @@ Helps students find, filter, save, and track scholarship opportunities.
 import os
 import streamlit as st
 from datetime import datetime
-from utils.db import get_conn, USE_POSTGRES, execute as db_exec, init_db, get_setting, set_setting
+from utils.db import get_conn, USE_POSTGRES, execute as db_exec, init_db, get_setting, set_setting, is_cc_ai_allowed
 from utils.auth import require_login, render_sidebar_brand, render_sidebar_user_widget, inject_css
 
 st.set_page_config(
@@ -153,7 +153,9 @@ def _seed_scholarships():
 
 # ── AI Matcher ────────────────────────────────────────────────────────────────
 
-def _ai_match_scholarships(profile: dict, scholarships: list) -> str:
+def _ai_match_scholarships(profile: dict, scholarships: list, user_email: str = "") -> str:
+    if not is_cc_ai_allowed(user_email):
+        return "🚀 AI Matching is coming soon to College Confused! In the meantime, use the filters in the Browse tab to find scholarships that match your profile."
     api_key = os.environ.get("CC_ANTHROPIC_API_KEY") or get_setting("cc_anthropic_api_key", "")
     if not api_key:
         return "No AI key configured. Please set your Anthropic API key in Settings."
@@ -1042,7 +1044,7 @@ All info stays private and is only used for matching.
         }
 
         with st.spinner("🔍 Analyzing your profile against our scholarship database..."):
-            result = _ai_match_scholarships(profile_dict, all_scholarships)
+            result = _ai_match_scholarships(profile_dict, all_scholarships, _user_email)
             st.session_state["ai_scholarship_result"] = result
 
     if st.session_state.get("ai_scholarship_result"):

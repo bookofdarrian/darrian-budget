@@ -941,6 +941,19 @@ _SANDBOX_EMAILS = {
     "dbelcher003@gmail.com",       # QA / payment testing account
 }
 
+def is_cc_ai_allowed(user_email: str) -> bool:
+    """CC AI features are owner-only until a dedicated CC key is configured.
+    Set cc_ai_owner_only=0 in app_settings to open AI to all CC users."""
+    email = (user_email or "").strip().lower()
+    try:
+        owner_only = get_setting("cc_ai_owner_only", "1")
+    except Exception:
+        owner_only = "1"
+    if str(owner_only) == "0":
+        return True  # AI open to everyone
+    return email in _OWNER_EMAILS
+
+
 def is_pro_user(user: dict) -> bool:
     """Return True if the user has an active Pro subscription."""
     if not user:

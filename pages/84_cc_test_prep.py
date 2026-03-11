@@ -8,7 +8,7 @@ import streamlit as st
 from datetime import date
 import json
 
-from utils.db import get_conn, USE_POSTGRES, execute as db_exec, init_db, get_setting, set_setting
+from utils.db import get_conn, USE_POSTGRES, execute as db_exec, init_db, get_setting, set_setting, is_cc_ai_allowed
 from utils.auth import require_login, render_sidebar_brand, render_sidebar_user_widget, inject_css
 
 st.set_page_config(
@@ -407,7 +407,9 @@ def _load_practice_history(user_email: str) -> list:
 
 
 # ── AI Study Coach ─────────────────────────────────────────────────────────────
-def _ai_study_coach(test_type: str, weak_areas: list, scores_history: list) -> str:
+def _ai_study_coach(test_type: str, weak_areas: list, scores_history: list, user_email: str = "") -> str:
+    if not is_cc_ai_allowed(user_email):
+        return "🚀 AI Study Coach is coming soon to College Confused! In the meantime, use the Quick Study Tips on the right and [Khan Academy](https://www.khanacademy.org/SAT) (free + official) for personalized SAT/ACT prep."
     api_key = os.environ.get("CC_ANTHROPIC_API_KEY") or get_setting("cc_anthropic_api_key", "")
     if not api_key:
         return "Please configure Anthropic API key in Settings."
@@ -952,7 +954,7 @@ with tab4:
 
         if st.button("🤖 Get My Personalized Study Plan", use_container_width=True, type="primary"):
             with st.spinner("Creating your personalized 2-week study plan..."):
-                plan = _ai_study_coach(coach_test, weak_areas_sel, scores_hist)
+                plan = _ai_study_coach(coach_test, weak_areas_sel, scores_hist, _get_user_email())
 
             st.markdown("---")
             st.markdown("### 📋 Your Personalized Study Plan")
