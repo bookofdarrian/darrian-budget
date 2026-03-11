@@ -210,6 +210,7 @@ services:
     environment:
       - BASE_URL=http://100.95.125.112:8889
       - SECRET_KEY_BASE=${PLAUSIBLE_SECRET_KEY:-super_secret_change_me_in_production_32chars_min}
+      - TOTP_VAULT_KEY=ifE1qK3My3ZFDKEOqaT0SkXn/89qkpeXlaoIm13tLl4=
       - DATABASE_URL=postgres://plausible:plausible2026secure@plausible_db:5432/plausible
       - CLICKHOUSE_DATABASE_URL=http://plausible_events:8123/plausible_events
       - DISABLE_REGISTRATION=invite_only
