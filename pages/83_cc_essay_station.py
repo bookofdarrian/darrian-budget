@@ -5,7 +5,7 @@ AI-powered essay writing & coaching, trained on Darrian Belcher's winning essay 
 
 import os
 import streamlit as st
-from utils.db import get_conn, USE_POSTGRES, execute as db_exec, init_db, get_setting, set_setting
+from utils.db import get_conn, USE_POSTGRES, execute as db_exec, init_db, get_setting, set_setting, is_cc_ai_allowed
 
 st.set_page_config(
     page_title="Essay Station — College Confused",
@@ -366,7 +366,9 @@ def _save_story(user_email: str, background: str, challenges: str, achievements:
 
 # ── AI helpers ────────────────────────────────────────────────────────────────
 
-def _generate_essay_draft(prompt_text: str, essay_type: str, story: dict, darrian_style: bool) -> str:
+def _generate_essay_draft(prompt_text: str, essay_type: str, story: dict, darrian_style: bool, user_email: str = "") -> str:
+    if not is_cc_ai_allowed(user_email):
+        return "🚀 AI Essay Builder is coming soon to College Confused! Check the **Examples & Tips** tab for essay strategies and tips from Darrian's real winning essays."
     api_key = os.environ.get("CC_ANTHROPIC_API_KEY") or get_setting("cc_anthropic_api_key", "")
     if not api_key:
         return "⚠️ No API key configured. Please ask an admin to configure the Anthropic API key in Settings."
@@ -429,7 +431,9 @@ After the essay, provide 3 specific suggestions for how to make it even more per
         return f"AI Error: {e}"
 
 
-def _get_essay_feedback(essay_text: str, prompt_text: str, essay_type: str) -> str:
+def _get_essay_feedback(essay_text: str, prompt_text: str, essay_type: str, user_email: str = "") -> str:
+    if not is_cc_ai_allowed(user_email):
+        return "🚀 AI Feedback is coming soon! In the meantime, use the **7 Things That Make Essays Great** in the Examples & Tips tab to self-review your essay."
     api_key = os.environ.get("CC_ANTHROPIC_API_KEY") or get_setting("cc_anthropic_api_key", "")
     if not api_key:
         return "⚠️ No API key configured. Please ask an admin to configure the Anthropic API key in Settings."
@@ -678,7 +682,7 @@ with tab1:
                     st.error("Please write something first before getting feedback.")
                 else:
                     with st.spinner("🤖 AI is reading your essay..."):
-                        feedback = _get_essay_feedback(content, prompt_text, essay_type)
+                        feedback = _get_essay_feedback(content, prompt_text, essay_type, user_email)
                     if not is_new and editing_id:
                         _save_ai_feedback(editing_id, feedback)
                     st.session_state["cc_feedback_result"] = feedback
@@ -802,6 +806,7 @@ with tab2:
                         essay_type=build_essay_type,
                         story=story,
                         darrian_style=darrian_style,
+                        user_email=user_email,
                     )
                 st.session_state["cc_essay_draft_result"] = result
                 st.session_state["cc_builder_saved_id"] = None
@@ -897,7 +902,7 @@ with tab2:
                 st.error("Please paste your essay first.")
             else:
                 with st.spinner("🤖 Reading and analyzing your essay..."):
-                    fb_result = _get_essay_feedback(improve_essay, improve_prompt, improve_type)
+                    fb_result = _get_essay_feedback(improve_essay, improve_prompt, improve_type, user_email)
                 st.session_state["cc_feedback_result_b"] = fb_result
 
         if st.session_state.get("cc_feedback_result_b"):
