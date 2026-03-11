@@ -36,7 +36,7 @@ render_sidebar_user_widget()
 DARRIAN_ESSAY_CONTEXT = """
 DARRIAN BELCHER'S COLLEGE ESSAY STYLE & WINNING APPROACH:
 
-BACKGROUND: Darrian Belcher is the founder of College Confused. He applied to 30+ colleges his senior year, received 25 acceptances, 7 full rides, and $500,000+ in scholarships. He won the VISA Black Scholars program ($20,000/year), Trajectory Foundation Scholarship ($5,000/year), and multiple full rides including VCU, Virginia State, Alabama A&M, Fisk, Xavier University of Louisiana, Bethune Cookman, and William & Mary.
+BACKGROUND: Darrian Belcher is the founder of College Confused. He applied to 30+ colleges his senior year, received 25 acceptances, 10+ full rides, and $1M+ in scholarships. He won the VISA Black Scholars program ($20,000/year), Trajectory Foundation Scholarship ($5,000/year), and multiple full rides including VCU, Virginia State, Alabama A&M, Fisk, Xavier University of Louisiana, Bethune Cookman, and William & Mary.
 
 WRITING STYLE CHARACTERISTICS:
 1. Opens with a vivid, cinematic scene that pulls the reader in immediately (e.g., "Apron? Check. Work hat? Check. Slip-resistant shoes? Check.")
@@ -59,7 +59,6 @@ KEY ESSAY THEMES FROM HIS ESSAYS:
 - Being accepted to Governor's School of Science and Technology
 - Creating College Confused website during GSST fellowship
 - Volunteering at Virginia Peninsula Food Bank
-- Being first to attend HBCU in family (parents went to FAMU)
 - Track team — learning discipline, teamwork, overcoming setbacks
 
 STRUCTURAL APPROACH:
@@ -721,7 +720,7 @@ with tab2:
     st.markdown("### 🤖 AI Essay Builder")
     st.markdown(
         "This AI is trained on Darrian Belcher's winning essay style — "
-        "he won **$500,000+ in scholarships** and **7 full rides**. "
+        "he won **$1M+ in scholarships** and **10+ full rides**. "
         "Let it help you write and improve your essays."
     )
 
@@ -964,7 +963,7 @@ with tab3:
 
     elif section == "🏆 7 Things That Make Essays Great":
         st.markdown("#### 🏆 The 7 Things That Make an Essay GREAT")
-        st.caption("Inspired by real winning essays — including Darrian's $500,000+ in scholarships.")
+        st.caption("Inspired by real winning essays — including Darrian's $1M+ in scholarships.")
 
         tips = [
             {
