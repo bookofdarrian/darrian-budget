@@ -581,6 +581,7 @@ def _show_auth_page():
                         if user:
                             st.session_state["user"] = user
                             st.session_state["authenticated"] = True
+                            _send_welcome_email(email_clean)  # fire-and-forget
                             st.success(f"Account created! Welcome to {APP_NAME} {APP_EMOJI}")
                             st.rerun()
                         else:
@@ -604,6 +605,161 @@ def _show_auth_page():
     )
 
     st.stop()
+
+
+# ── Welcome Email ─────────────────────────────────────────────────────────────
+
+def _send_welcome_email(email: str):
+    """
+    Send a welcome email to new registrants via Gmail SMTP.
+    Fire-and-forget — runs in a background thread, never blocks the UI.
+    Silently skips if gmail credentials aren't configured.
+    """
+    import threading
+
+    def _send():
+        try:
+            gmail_user = get_setting("gmail_user")
+            gmail_pass = get_setting("gmail_app_password")
+            if not gmail_user or not gmail_pass:
+                return
+            import smtplib
+            from email.mime.multipart import MIMEMultipart
+            from email.mime.text import MIMEText as _MIMEText
+
+            app_url = os.environ.get("APP_URL", "https://peachstatesavings.com")
+
+            html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="margin:0;padding:0;background:#0e1117;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <div style="max-width:600px;margin:0 auto;padding:40px 24px;">
+
+    <!-- Header -->
+    <div style="text-align:center;padding:32px 0 24px;">
+      <div style="font-size:2.5rem;">🍑</div>
+      <h1 style="color:#FFAB76;font-size:1.8rem;font-weight:800;margin:8px 0 4px;letter-spacing:-0.02em;">
+        Welcome to Peach State Savings
+      </h1>
+      <p style="color:#8892a4;font-size:0.95rem;margin:0;">
+        Your AI-powered personal finance dashboard is ready.
+      </p>
+    </div>
+
+    <!-- Main Card -->
+    <div style="background:#12151c;border:1px solid #1e2330;border-radius:16px;padding:32px;margin-bottom:24px;">
+      <p style="color:#fafafa;font-size:1rem;margin:0 0 20px;">
+        Hey there 👋 — your <strong style="color:#FFAB76;">free account</strong> is all set.
+        Here's what you can do right now:
+      </p>
+
+      <div style="margin-bottom:24px;">
+        <div style="display:flex;align-items:flex-start;margin-bottom:12px;">
+          <span style="color:#FFAB76;font-weight:700;margin-right:8px;flex-shrink:0;">✓</span>
+          <span style="color:#c8d0dc;font-size:0.9rem;"><strong style="color:#fafafa;">Budget Tracking</strong> — Log expenses, income, and see where your money goes</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;margin-bottom:12px;">
+          <span style="color:#FFAB76;font-weight:700;margin-right:8px;flex-shrink:0;">✓</span>
+          <span style="color:#c8d0dc;font-size:0.9rem;"><strong style="color:#fafafa;">Bank Import</strong> — Upload CSV statements to auto-categorize transactions</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;margin-bottom:12px;">
+          <span style="color:#FFAB76;font-weight:700;margin-right:8px;flex-shrink:0;">✓</span>
+          <span style="color:#c8d0dc;font-size:0.9rem;"><strong style="color:#fafafa;">Financial Goals</strong> — Set and track savings targets</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;margin-bottom:12px;">
+          <span style="color:#FFAB76;font-weight:700;margin-right:8px;flex-shrink:0;">✓</span>
+          <span style="color:#c8d0dc;font-size:0.9rem;"><strong style="color:#fafafa;">Bill Calendar</strong> — Never miss a bill payment again</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;margin-bottom:12px;">
+          <span style="color:#FFAB76;font-weight:700;margin-right:8px;flex-shrink:0;">✓</span>
+          <span style="color:#c8d0dc;font-size:0.9rem;"><strong style="color:#fafafa;">Paycheck Calculator</strong> — See your exact take-home after taxes</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;">
+          <span style="color:#FFAB76;font-weight:700;margin-right:8px;flex-shrink:0;">✓</span>
+          <span style="color:#c8d0dc;font-size:0.9rem;"><strong style="color:#fafafa;">SoleOps Reseller Tools</strong> — Sneaker inventory, P&amp;L, arbitrage scanner</span>
+        </div>
+      </div>
+
+      <!-- CTA Button -->
+      <div style="text-align:center;margin-top:28px;">
+        <a href="{app_url}"
+           style="display:inline-block;background:linear-gradient(135deg,#FFAB76,#e8924f);
+                  color:#000;font-weight:700;font-size:1rem;padding:14px 36px;
+                  border-radius:10px;text-decoration:none;letter-spacing:-0.01em;">
+          Open My Dashboard →
+        </a>
+      </div>
+    </div>
+
+    <!-- Pro Upsell -->
+    <div style="background:linear-gradient(135deg,#3d2010 0%,#12151c 100%);
+                border:1px solid #FFAB76;border-radius:12px;padding:24px;margin-bottom:24px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <span style="font-size:1.2rem;">⭐</span>
+        <strong style="color:#FFAB76;font-size:1rem;">Unlock the full platform for $4.99/mo</strong>
+      </div>
+      <p style="color:#8892a4;font-size:0.85rem;margin:0 0 12px;">
+        Pro adds AI insights, net worth tracking, RSU/ESPP tools, portfolio analytics,
+        monthly financial reports, and 60+ advanced features.
+      </p>
+      <a href="{app_url}/pricing"
+         style="color:#FFAB76;font-size:0.85rem;font-weight:600;text-decoration:none;">
+        View Pro features →
+      </a>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center;color:#4a5568;font-size:0.78rem;padding-top:16px;">
+      <p style="margin:0 0 4px;">Peach State Savings · Atlanta, GA</p>
+      <p style="margin:0;">Questions? Reply to this email or visit
+        <a href="{app_url}" style="color:#FFAB76;">peachstatesavings.com</a>
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>"""
+
+            # Plain text fallback
+            text = f"""Welcome to Peach State Savings! 🍑
+
+Your free account is ready. Here's what you can do:
+
+✓ Budget Tracking — Log expenses, income, and see where your money goes
+✓ Bank Import — Upload CSV statements to auto-categorize transactions
+✓ Financial Goals — Set and track savings targets
+✓ Bill Calendar — Never miss a bill payment again
+✓ Paycheck Calculator — See your exact take-home after taxes
+✓ SoleOps Reseller Tools — Sneaker inventory, P&L, arbitrage scanner
+
+Open your dashboard: {app_url}
+
+Want more? Upgrade to Pro for $4.99/mo — AI insights, net worth tracking,
+RSU/ESPP tools, 60+ advanced features.
+
+— The Peach State Savings Team
+"""
+
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = "🍑 Welcome to Peach State Savings!"
+            msg["From"]    = f"Peach State Savings <{gmail_user}>"
+            msg["To"]      = email
+
+            msg.attach(_MIMEText(text, "plain"))
+            msg.attach(_MIMEText(html, "html"))
+
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                server.login(gmail_user, gmail_pass)
+                server.send_message(msg)
+
+        except Exception:
+            pass  # Email is best-effort — never block signup
+
+    threading.Thread(target=_send, daemon=True).start()
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
