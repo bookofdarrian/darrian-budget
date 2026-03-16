@@ -12,7 +12,7 @@ import plotly.graph_objects as go
 import requests
 import streamlit as st
 
-from utils.auth import inject_css, render_sidebar_brand, render_sidebar_user_widget, require_login
+from utils.auth import inject_soleops_css, render_sidebar_brand, render_sidebar_user_widget, require_login
 from utils.db import USE_POSTGRES, execute as db_exec, get_conn, get_setting, init_db, set_setting
 
 # ── Page config ───────────────────────────────────────────────────────────────
@@ -23,7 +23,7 @@ st.set_page_config(
     initial_sidebar_state="auto",
 )
 init_db()
-inject_css()
+inject_soleops_css()
 require_login()
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────

@@ -9,7 +9,7 @@ from datetime import date
 import json
 
 from utils.db import get_conn, USE_POSTGRES, execute as db_exec, init_db, get_setting, set_setting, is_cc_ai_allowed
-from utils.auth import require_login, render_sidebar_brand, render_sidebar_user_widget, inject_css
+from utils.auth import require_login, render_sidebar_brand, render_sidebar_user_widget, inject_cc_css
 
 st.set_page_config(
     page_title="SAT/ACT Prep — College Confused",
@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="auto",
 )
 init_db()
-inject_css()
+inject_cc_css()
 require_login()
 
 render_sidebar_brand()

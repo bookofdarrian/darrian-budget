@@ -3,7 +3,7 @@ import pandas as pd
 import altair as alt
 from datetime import datetime, date
 from utils.db import get_conn, USE_POSTGRES, execute as db_exec, init_db, get_setting, set_setting
-from utils.auth import require_login, render_sidebar_brand, render_sidebar_user_widget, inject_css
+from utils.auth import require_login, render_sidebar_brand, render_sidebar_user_widget, inject_soleops_css
 
 st.set_page_config(
     page_title="SoleOps P&L Dashboard — Peach State Savings",
@@ -12,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="auto",
 )
 init_db()
-inject_css()
+inject_soleops_css()
 require_login()
 
 # ── Sidebar ────────────────────────────────────────────────────────────────────

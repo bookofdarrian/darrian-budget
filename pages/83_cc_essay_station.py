@@ -15,9 +15,9 @@ st.set_page_config(
 )
 init_db()
 
-from utils.auth import require_login, render_sidebar_brand, render_sidebar_user_widget, inject_css
+from utils.auth import require_login, render_sidebar_brand, render_sidebar_user_widget, inject_cc_css
 
-inject_css()
+inject_cc_css()
 require_login()
 
 render_sidebar_brand()
