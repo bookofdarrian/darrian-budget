@@ -31,6 +31,11 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-budget}:${POSTGRES_PASSWORD:-changeme}@db:5432/${POSTGRES_DB:-budget}
     ports:
       - "8501:8501"
+    volumes:
+      # Bind-mount the repo so git pull → docker restart is all you need to deploy
+      - /opt/darrian-budget:/app
+      # Keep persistent DB/upload data separate from the code mount
+      - /opt/darrian-budget/data:/app/data
     networks:
       - budget-net
 
