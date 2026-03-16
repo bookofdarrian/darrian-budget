@@ -199,13 +199,23 @@ def _handler_stale_inventory_scan(task: dict) -> tuple[bool, str]:
 
         conn = get_conn()
         ph = "%s" if USE_POSTGRES else "?"
-        cur = conn.execute("""
-            SELECT id, shoe_name, size, cost_basis, listed_date, listed_price, listed_platform
-            FROM soleops_inventory
-            WHERE status = 'inventory'
-            ORDER BY listed_date ASC
-        """)
-        rows = cur.fetchall()
+
+        # Gracefully handle case where SoleOps tables don't exist yet
+        # (new install, or non-SoleOps user). Return True so the agent
+        # runner doesn't log a failure — this is not an error condition.
+        try:
+            cur = conn.execute("""
+                SELECT id, shoe_name, size, cost_basis, listed_date, listed_price, listed_platform
+                FROM soleops_inventory
+                WHERE status = 'inventory'
+                ORDER BY listed_date ASC
+            """)
+            rows = cur.fetchall()
+        except Exception as _tbl_err:
+            conn.close()
+            if "no such table" in str(_tbl_err).lower():
+                return True, "Stale scan: SoleOps inventory table not yet created — skipping."
+            raise
         conn.close()
 
         stale = []
