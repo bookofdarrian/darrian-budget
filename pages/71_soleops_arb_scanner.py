@@ -40,7 +40,7 @@ st.set_page_config(
     initial_sidebar_state="auto",
 )
 init_db()
-inject_css()
+inject_soleops_css()
 require_login()
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
