@@ -27,6 +27,24 @@ def tmp_db(tmp_path, monkeypatch):
     monkeypatch.setattr(_db, "USE_POSTGRES", False)
     monkeypatch.setattr(_db, "DB_PATH", db_path)
     monkeypatch.setattr(_db, "_active_db_path", db_path)
+
+    # Also patch get_conn on run_scheduled_agents directly.
+    # When that module imports `get_conn` via `from utils.db import get_conn`,
+    # Python creates a module-level name binding.  If another test file patched
+    # db_mod.get_conn while run_scheduled_agents was first imported, the module
+    # may hold a stale reference.  Patching it at the source guarantees the
+    # handler uses our test DB regardless of import order.
+    try:
+        import run_scheduled_agents as _agents
+        def _fake_get_conn():
+            import sqlite3 as _sq
+            _c = _sq.connect(db_path)
+            _c.row_factory = _sq.Row
+            return _c
+        monkeypatch.setattr(_agents, "get_conn", _fake_get_conn)
+    except ImportError:
+        pass
+
     _db.init_db()
     return db_path
 
