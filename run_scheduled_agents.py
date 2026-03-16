@@ -392,6 +392,131 @@ def _handler_weekly_reseller_report(task: dict) -> tuple[bool, str]:
         return False, f"Weekly reseller report error: {str(e)}"
 
 
+def _handler_weekly_health_insights(task: dict) -> tuple[bool, str]:
+    """
+    Analyze last 7 days of health data → Claude insight memo → pin to Notes (page 25).
+    Correlates mood, sleep, workouts, energy. Saves as pinned note.
+    """
+    try:
+        import anthropic as _ant
+
+        api_key = get_setting("anthropic_api_key")
+        if not api_key:
+            return False, "anthropic_api_key not configured"
+
+        conn = get_conn()
+        ph = "%s" if USE_POSTGRES else "?"
+
+        # Check if health_logs table exists
+        try:
+            if USE_POSTGRES:
+                cur = conn.execute("""
+                    SELECT log_date, mood_score, energy_level, workout_done, sleep_hours, notes
+                    FROM health_logs
+                    WHERE log_date >= NOW() - INTERVAL '7 days'
+                    ORDER BY log_date
+                """)
+            else:
+                cur = conn.execute("""
+                    SELECT log_date, mood_score, energy_level, workout_done, sleep_hours, notes
+                    FROM health_logs
+                    WHERE log_date >= date('now', '-7 days')
+                    ORDER BY log_date
+                """)
+            health_data = cur.fetchall()
+        except Exception as tbl_err:
+            conn.close()
+            if "no such table" in str(tbl_err).lower():
+                return True, "Health insights: health_logs table not yet created — skipping."
+            raise
+
+        if not health_data or len(health_data) < 2:
+            conn.close()
+            return True, "Health insights: not enough data (<2 days logged this week) — skipping."
+
+        data_str = "\n".join([
+            f"{row[0]}: mood={row[1] or '?'}/10, energy={row[2] or '?'}/10, "
+            f"workout={'yes' if row[3] else 'no'}, sleep={row[4] or '?'}hrs"
+            + (f", notes: {str(row[5])[:60]}" if row[5] else "")
+            for row in health_data
+        ])
+
+        client = _ant.Anthropic(api_key=api_key)
+        msg = client.messages.create(
+            model="claude-opus-4-5",
+            max_tokens=500,
+            messages=[{"role": "user", "content": f"""
+Analyze this week's health data for Darrian Belcher (TPM at Visa, entrepreneur):
+
+{data_str}
+
+Provide a brief health insight memo (150 words max) covering:
+1. KEY PATTERN: The single most important thing the data shows (be specific with numbers)
+2. CORRELATION: What correlates with high vs low mood/energy this week?
+3. ACTION: One specific recommendation for next week (not generic — based on THIS data)
+4. SMART HOME: One Home Assistant automation idea that could auto-improve one metric
+
+Format as 4 short bullet points. Direct, no fluff.
+"""}]
+        )
+
+        memo = msg.content[0].text.strip()
+
+        # Save as pinned note in the notes table
+        try:
+            week_label = datetime.now().strftime("%b %d, %Y")
+            title = f"Weekly Health Insight — {week_label}"
+            if USE_POSTGRES:
+                conn.execute("""
+                    INSERT INTO notes (title, content, category, is_pinned, created_at)
+                    VALUES (%s, %s, 'health', TRUE, NOW())
+                    ON CONFLICT DO NOTHING
+                """, (title, memo))
+            else:
+                conn.execute("""
+                    INSERT OR IGNORE INTO notes (title, content, category, is_pinned, created_at)
+                    VALUES (?, ?, 'health', 1, datetime('now'))
+                """, (title, memo))
+            conn.commit()
+        except Exception:
+            pass  # Notes table may not exist — still return success
+
+        conn.close()
+
+        # Also Telegram if configured
+        try:
+            import requests as _req
+            token   = get_setting("telegram_bot_token")
+            chat_id = get_setting("telegram_chat_id")
+            if token and chat_id:
+                _req.post(
+                    f"https://api.telegram.org/bot{token}/sendMessage",
+                    json={
+                        "chat_id": chat_id,
+                        "text": f"💪 <b>Weekly Health Insight</b>\n\n{memo}",
+                        "parse_mode": "HTML"
+                    },
+                    timeout=10,
+                )
+        except Exception:
+            pass
+
+        return True, f"Health insights memo saved for week of {datetime.now().strftime('%b %d')} ({len(health_data)} days of data)."
+
+    except Exception as e:
+        return False, f"Weekly health insights error: {str(e)}"
+
+
+def _handler_content_ideas(task: dict) -> tuple[bool, str]:
+    """
+    Run the content idea bot for all niches → saves to creator_ideas table.
+    """
+    script = PROJECT_ROOT / "agents" / "content_idea_bot.py"
+    if not script.exists():
+        return False, "agents/content_idea_bot.py not found"
+    return _run_subprocess(str(script))
+
+
 def _handler_generic(task: dict) -> tuple[bool, str]:
     """
     Fallback handler for custom tasks. Logs the task as due and
@@ -413,6 +538,10 @@ TASK_HANDLERS: list[tuple[str, callable]] = [
     ("monthly financial email report",  _handler_monthly_financial_report),
     ("stale inventory",                 _handler_stale_inventory_scan),
     ("weekly reseller report",          _handler_weekly_reseller_report),
+    ("weekly health insight",           _handler_weekly_health_insights),
+    ("health insight",                  _handler_weekly_health_insights),
+    ("content idea",                    _handler_content_ideas),
+    ("daily content",                   _handler_content_ideas),
 ]
 
 
