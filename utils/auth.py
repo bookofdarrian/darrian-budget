@@ -524,6 +524,7 @@ def inject_soleops_css():
         st.markdown("""
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+:root{--background-color:#090914!important;--secondary-background-color:#0F0F1E!important;--text-color:#E2E8F0!important;--primary-color:#00D4FF!important;}
 :root{--sole-bg:#090914;--sole-card:#0F0F1E;--sole-card2:#151527;--sole-border:#1E1E35;--sole-primary:#00D4FF;--sole-purple:#7B2FBE;--sole-profit:#00FF87;--sole-loss:#FF4757;--sole-text:#E2E8F0;--sole-muted:#94A3B8;}
 html,body,.stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"],section.main,.main,.block-container,.appview-container{background-color:var(--sole-bg)!important;color:var(--sole-text)!important;font-family:'Space Grotesk',-apple-system,sans-serif!important;}
 h1{background:linear-gradient(90deg,var(--sole-primary) 0%,var(--sole-purple) 100%)!important;-webkit-background-clip:text!important;-webkit-text-fill-color:transparent!important;background-clip:text!important;font-weight:700!important;letter-spacing:-0.02em!important;}
@@ -573,6 +574,7 @@ def inject_cc_css():
         st.markdown("""
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+:root{--background-color:#F8F7FF!important;--secondary-background-color:#FFFFFF!important;--text-color:#111827!important;--primary-color:#7C3AED!important;}
 :root{--cc-primary:#7C3AED;--cc-coral:#F97316;--cc-green:#10B981;--cc-gold:#F59E0B;--cc-bg:#F8F7FF;--cc-card:#FFFFFF;--cc-border:#E8E4FF;--cc-text:#111827;--cc-muted:#6B7280;--cc-sidebar:#F0ECFF;}
 html,body,.stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"],section.main,.main,.block-container,.appview-container,.reportview-container{background-color:var(--cc-bg)!important;color:var(--cc-text)!important;font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif!important;}
 p,span,li,td,th,label,div.stMarkdown{color:var(--cc-text)!important;}
