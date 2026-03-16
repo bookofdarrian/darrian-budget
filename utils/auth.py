@@ -26,14 +26,18 @@ from utils.db import (
 APP_NAME    = "Peach State Savings"
 APP_EMOJI   = "🍑"
 
-PEACH       = "#FFAB76"
-PEACH_DARK  = "#e8924f"
-PEACH_GLOW  = "#3d2010"
-BG_MAIN     = "#0e1117"
-BG_CARD     = "#12151c"
-BG_BORDER   = "#1e2330"
-TEXT_MUTED  = "#8892a4"
-TEXT_MAIN   = "#fafafa"
+# PSS 2.0 palette — warm peach-orange on near-black with navy + emerald accents
+PEACH       = "#FF6B35"   # primary — warm peach-orange
+PEACH_DARK  = "#d9541e"   # primary hover
+PEACH_GLOW  = "#2d1206"   # primary bg tint for cards/glow
+BG_MAIN     = "#0D1117"   # near-black background
+BG_CARD     = "#161B22"   # card background
+BG_BORDER   = "#30363D"   # border / divider
+TEXT_MUTED  = "#8B949E"   # muted text
+TEXT_MAIN   = "#E6EDF3"   # primary text
+PSS_ACCENT  = "#1A936F"   # emerald green — money / growth / success
+PSS_NAVY    = "#004E89"   # deep navy — trust / secondary
+PSS_AMBER   = "#F18F01"   # amber — warnings / highlights
 
 GLOBAL_CSS = f"""
 <style>
@@ -147,7 +151,118 @@ GLOBAL_CSS = f"""
     color: #000 !important;
 }}
 
-/* ── Mobile Responsiveness ─────────────────────────────────────────────────── */
+/* ── PSS 2.0 Enhancements ──────────────────────────────────────────────────── */
+
+/* App background */
+.stApp {{ background-color: {BG_MAIN}; color: {TEXT_MAIN}; }}
+
+/* Page headers */
+h1 {{ color: {PEACH}; font-weight: 700; letter-spacing: -0.02em; }}
+h2 {{ color: {TEXT_MAIN}; font-weight: 600; }}
+h3 {{ color: {TEXT_MUTED}; font-weight: 500; }}
+
+/* All regular buttons — lift on hover */
+.stButton > button {{
+    transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+    border-radius: 8px !important;
+}}
+.stButton > button:hover {{
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(255,107,53,0.25) !important;
+}}
+
+/* Input fields */
+.stTextInput input,
+.stNumberInput input,
+.stTextArea textarea {{
+    background: {BG_CARD} !important;
+    border: 1px solid {BG_BORDER} !important;
+    border-radius: 8px !important;
+    color: {TEXT_MAIN} !important;
+}}
+.stTextInput input:focus,
+.stNumberInput input:focus,
+.stTextArea textarea:focus {{
+    border-color: {PEACH} !important;
+    box-shadow: 0 0 0 2px rgba(255,107,53,0.2) !important;
+}}
+
+/* Selectbox */
+.stSelectbox [data-baseweb="select"] > div {{
+    background: {BG_CARD} !important;
+    border-color: {BG_BORDER} !important;
+    border-radius: 8px !important;
+    color: {TEXT_MAIN} !important;
+}}
+
+/* Tabs — primary color active indicator */
+[data-testid="stTabs"] [data-baseweb="tab"] {{
+    color: {TEXT_MUTED};
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s ease;
+}}
+[data-testid="stTabs"] [aria-selected="true"] {{
+    color: {PEACH} !important;
+    border-bottom-color: {PEACH} !important;
+    font-weight: 600 !important;
+}}
+[data-testid="stTabs"] [data-baseweb="tab"]:hover {{
+    color: {TEXT_MAIN} !important;
+}}
+
+/* Success / info / warning / error alerts */
+.stSuccess, [data-testid="stAlert"][kind="success"] {{
+    background: rgba(26,147,111,0.12) !important;
+    border: 1px solid {PSS_ACCENT} !important;
+    border-radius: 8px !important;
+    color: #7dd3b8 !important;
+}}
+.stInfo, [data-testid="stAlert"][kind="info"] {{
+    background: rgba(0,78,137,0.15) !important;
+    border: 1px solid {PSS_NAVY} !important;
+    border-radius: 8px !important;
+}}
+.stWarning, [data-testid="stAlert"][kind="warning"] {{
+    background: rgba(241,143,1,0.12) !important;
+    border: 1px solid {PSS_AMBER} !important;
+    border-radius: 8px !important;
+}}
+.stError, [data-testid="stAlert"][kind="error"] {{
+    background: rgba(255,69,58,0.12) !important;
+    border: 1px solid #FF453A !important;
+    border-radius: 8px !important;
+}}
+
+/* Expanders */
+[data-testid="stExpander"] {{
+    background: {BG_CARD};
+    border: 1px solid {BG_BORDER};
+    border-radius: 10px;
+}}
+[data-testid="stExpander"] summary {{
+    color: {TEXT_MAIN};
+    font-weight: 500;
+}}
+
+/* Metric delta positive/negative */
+[data-testid="stMetricDelta"] svg {{ display: none; }}
+[data-testid="stMetricDelta"][data-direction="up"] span {{ color: {PSS_ACCENT} !important; }}
+[data-testid="stMetricDelta"][data-direction="down"] span {{ color: #FF453A !important; }}
+
+/* Dataframe */
+[data-testid="stDataFrame"] {{
+    border: 1px solid {BG_BORDER};
+    border-radius: 8px;
+    overflow: hidden;
+}}
+
+/* Progress bar — peach fill */
+[data-testid="stProgressBar"] > div > div {{
+    background: linear-gradient(90deg, {PEACH}, {PSS_ACCENT}) !important;
+}}
+
+/* Mobile Responsiveness ─────────────────────────────────────────────────── */
 @media (max-width: 768px) {{
 
     /* ── Main content padding ── */
@@ -397,9 +512,298 @@ def inject_css():
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Peach State">
-<meta name="theme-color" content="#FFAB76">
+<meta name="theme-color" content="#FF6B35">
 """, unsafe_allow_html=True)
         st.session_state["_css_injected"] = True
+
+
+def inject_soleops_css():
+    """
+    Inject SoleOps brand CSS on top of the base PSS theme.
+    Call after inject_css() on any SoleOps page (65-73, 84-86).
+    Applies electric cyan / deep purple / neon green palette.
+    """
+    inject_css()
+    if not st.session_state.get("_soleops_css_injected"):
+        st.markdown("""
+<style>
+/* ── SoleOps Brand Theme ──────────────────────────────────────────── */
+:root {
+    --sole-primary:   #00D4FF;
+    --sole-secondary: #7B2FBE;
+    --sole-profit:    #00FF87;
+    --sole-loss:      #FF4757;
+    --sole-alert:     #FF3CAC;
+    --sole-bg:        #0A0A0F;
+    --sole-card:      #12121A;
+    --sole-border:    #1E1E2E;
+}
+
+/* Background */
+.stApp { background: var(--sole-bg) !important; }
+
+/* Gradient page title */
+h1 {
+    background: linear-gradient(90deg, var(--sole-primary), var(--sole-secondary)) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.03em !important;
+}
+
+/* Metric cards with cyan border glow */
+[data-testid="metric-container"] {
+    background: var(--sole-card) !important;
+    border: 1px solid rgba(0,212,255,0.2) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 0 20px rgba(0,212,255,0.05) !important;
+    transition: box-shadow 0.2s ease !important;
+}
+[data-testid="metric-container"]:hover {
+    box-shadow: 0 0 30px rgba(0,212,255,0.15) !important;
+}
+
+/* Profit positive = neon green */
+[data-testid="stMetricDelta"][data-direction="up"] span {
+    color: var(--sole-profit) !important;
+    text-shadow: 0 0 8px rgba(0,255,135,0.4) !important;
+}
+/* Loss = red */
+[data-testid="stMetricDelta"][data-direction="down"] span {
+    color: var(--sole-loss) !important;
+}
+
+/* Sidebar */
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0A0A0F 0%, #0D0D18 100%) !important;
+    border-right: 1px solid var(--sole-border) !important;
+}
+
+/* Buttons — cyan gradient */
+.stButton > button[kind="primary"] {
+    background: linear-gradient(135deg, var(--sole-primary), var(--sole-secondary)) !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+    border: none !important;
+}
+.stButton > button[kind="primary"]:hover {
+    box-shadow: 0 6px 24px rgba(0,212,255,0.35) !important;
+    transform: translateY(-1px) !important;
+}
+.stButton > button:hover {
+    box-shadow: 0 4px 16px rgba(0,212,255,0.2) !important;
+}
+
+/* Active tab — cyan */
+[data-testid="stTabs"] [aria-selected="true"] {
+    color: var(--sole-primary) !important;
+    border-bottom-color: var(--sole-primary) !important;
+}
+
+/* Input focus — cyan */
+.stTextInput input:focus,
+.stNumberInput input:focus,
+.stTextArea textarea:focus {
+    border-color: var(--sole-primary) !important;
+    box-shadow: 0 0 0 2px rgba(0,212,255,0.2) !important;
+}
+
+/* Progress bar — cyan to purple */
+[data-testid="stProgressBar"] > div > div {
+    background: linear-gradient(90deg, var(--sole-primary), var(--sole-secondary)) !important;
+}
+
+/* Alert — profit signal */
+.sole-signal-buy {
+    background: rgba(0,255,135,0.08);
+    border: 1px solid var(--sole-profit);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: #7dffc4;
+}
+.sole-signal-hold {
+    background: rgba(255,71,87,0.08);
+    border: 1px solid var(--sole-loss);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: #ffaaaa;
+}
+</style>
+""", unsafe_allow_html=True)
+        st.session_state["_soleops_css_injected"] = True
+
+
+def inject_cc_css():
+    """
+    Inject College Confused brand CSS on top of the base PSS theme.
+    Call after inject_css() on any CC page (80-88+).
+    Applies warm purple / coral / green light theme — friendly, accessible.
+    """
+    inject_css()
+    if not st.session_state.get("_cc_css_injected"):
+        st.markdown("""
+<style>
+/* ── College Confused Brand Theme ─────────────────────────────────── */
+:root {
+    --cc-primary:   #6C63FF;
+    --cc-secondary: #FF6584;
+    --cc-green:     #43E97B;
+    --cc-gold:      #FFC300;
+    --cc-bg:        #FAFAFA;
+    --cc-card:      #FFFFFF;
+    --cc-border:    #EDE9FF;
+    --cc-text:      #1A1A2E;
+    --cc-muted:     #6B7280;
+}
+
+/* Light background */
+.stApp { background: var(--cc-bg) !important; color: var(--cc-text) !important; }
+
+/* Sidebar — light with purple accent */
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #F0EEFF 0%, #F8F7FF 100%) !important;
+    border-right: 1px solid var(--cc-border) !important;
+}
+[data-testid="stSidebar"] .stMarkdown p { color: #9B8FD9 !important; }
+
+/* Brand name in sidebar */
+.brand-name { color: var(--cc-primary) !important; }
+
+/* Page headers */
+h1 {
+    color: var(--cc-primary) !important;
+    -webkit-text-fill-color: initial !important;
+    background: none !important;
+    font-weight: 700 !important;
+}
+h2 { color: var(--cc-text) !important; font-weight: 600 !important; }
+h3 { color: var(--cc-muted) !important; }
+
+/* Metric cards — white with purple shadow */
+[data-testid="metric-container"] {
+    background: var(--cc-card) !important;
+    border: 1px solid var(--cc-border) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 16px rgba(108,99,255,0.08) !important;
+}
+[data-testid="metric-container"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(108,99,255,0.15) !important;
+    transition: all 0.2s ease;
+}
+
+/* Buttons — pill shape, purple gradient */
+.stButton > button {
+    border-radius: 25px !important;
+}
+.stButton > button[kind="primary"] {
+    background: linear-gradient(135deg, var(--cc-primary), #7B78FF) !important;
+    color: #fff !important;
+    font-weight: 600 !important;
+    border: none !important;
+    border-radius: 25px !important;
+}
+.stButton > button[kind="primary"]:hover {
+    box-shadow: 0 6px 20px rgba(108,99,255,0.35) !important;
+    transform: translateY(-1px) !important;
+}
+.stButton > button:hover {
+    box-shadow: 0 4px 14px rgba(108,99,255,0.2) !important;
+}
+
+/* Input fields — white with purple focus */
+.stTextInput input,
+.stNumberInput input,
+.stTextArea textarea {
+    background: #fff !important;
+    border: 1px solid var(--cc-border) !important;
+    color: var(--cc-text) !important;
+}
+.stTextInput input:focus,
+.stNumberInput input:focus,
+.stTextArea textarea:focus {
+    border-color: var(--cc-primary) !important;
+    box-shadow: 0 0 0 2px rgba(108,99,255,0.15) !important;
+}
+
+/* Selectbox */
+.stSelectbox [data-baseweb="select"] > div {
+    background: #fff !important;
+    border-color: var(--cc-border) !important;
+    color: var(--cc-text) !important;
+}
+
+/* Active tab — purple */
+[data-testid="stTabs"] [data-baseweb="tab"] {
+    color: var(--cc-muted) !important;
+}
+[data-testid="stTabs"] [aria-selected="true"] {
+    color: var(--cc-primary) !important;
+    border-bottom-color: var(--cc-primary) !important;
+    font-weight: 600 !important;
+}
+
+/* Progress bar — purple to green (journey from start to acceptance) */
+[data-testid="stProgressBar"] > div > div {
+    background: linear-gradient(90deg, var(--cc-primary), var(--cc-green)) !important;
+}
+
+/* Success — green */
+.stSuccess, [data-testid="stAlert"][kind="success"] {
+    background: rgba(67,233,123,0.1) !important;
+    border: 1px solid var(--cc-green) !important;
+    color: #1a6b3a !important;
+}
+
+/* Expanders */
+[data-testid="stExpander"] {
+    background: var(--cc-card);
+    border: 1px solid var(--cc-border);
+    border-radius: 12px;
+}
+
+/* Custom CC utility classes */
+.cc-hero {
+    background: linear-gradient(135deg, #6C63FF 0%, #FF6584 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 2rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+.cc-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 16px rgba(108,99,255,0.08);
+    border: 1px solid #F0EEFF;
+    margin-bottom: 1rem;
+}
+.cc-badge {
+    display: inline-block;
+    background: #FFC300;
+    color: #1A1A2E;
+    border-radius: 20px;
+    padding: 0.2rem 0.75rem;
+    font-weight: 700;
+    font-size: 0.82rem;
+}
+.cc-scholarship-amount {
+    color: #1a6b3a;
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+.cc-timeline-step {
+    border-left: 3px solid var(--cc-primary);
+    padding-left: 1rem;
+    margin-bottom: 1rem;
+}
+.cc-timeline-step.done { border-color: var(--cc-green); }
+.cc-timeline-step.upcoming { border-color: var(--cc-secondary); }
+</style>
+""", unsafe_allow_html=True)
+        st.session_state["_cc_css_injected"] = True
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
