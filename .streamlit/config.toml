@@ -1,10 +1,11 @@
 [theme]
-# PSS base dark theme — overridden per-brand via inject_cc_css() / inject_soleops_css()
-base = "dark"
-primaryColor = "#FF6B35"
-backgroundColor = "#0F1629"
-secondaryBackgroundColor = "#1A2744"
-textColor = "#E2E8F0"
+# Light base — CC pages look correct natively.
+# PSS + SoleOps force dark via :root CSS variable overrides in inject_css().
+base = "light"
+primaryColor = "#7C3AED"
+backgroundColor = "#F8F7FF"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#111827"
 font = "sans serif"
 
 [server]

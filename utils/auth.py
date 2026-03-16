@@ -41,6 +41,10 @@ PSS_AMBER   = "#F18F01"   # amber — warnings / highlights
 
 GLOBAL_CSS = f"""
 <style>
+/* ── PSS: Force dark navy over the light base theme ── */
+:root{{--background-color:#0F1629!important;--secondary-background-color:#1A2744!important;--text-color:#E2E8F0!important;--primary-color:#FF6B35!important;}}
+html,body,.stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"],section.main,.main,.block-container,.appview-container{{background-color:#0F1629!important;color:#E2E8F0!important;}}
+p,span,label,li,div.stMarkdown{{color:#E2E8F0!important;}}
 /* ── Hide Streamlit's auto-generated page nav (we use our own) ── */
 [data-testid="stSidebarNav"] {{ display: none !important; }}
 
