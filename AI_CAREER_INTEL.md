@@ -110,13 +110,13 @@
 ## 💡 CAREER POSITIONING MOVES
 
 ### Immediate (This Week)
-- [ ] Add "Peach State Savings — AI-Powered Personal Finance Platform" to LinkedIn Experience with live URL
-- [ ] Add overnight autonomous AI dev system to LinkedIn Featured with architecture screenshot
+- [x] Add "Peach State Savings — AI-Powered Personal Finance Platform" to LinkedIn — **DONE** (posted with link, 1-year Visa anniversary post, 2026-03-09)
+- [ ] Add overnight autonomous AI dev system to LinkedIn Featured with architecture screenshot — **NEXT POST (draft below)**
 - [ ] Start a brag doc in `pages/25_notes.py` — log every Visa project win this week
 - [ ] Verify MSDA progress section is on LinkedIn with current course list
 
 ### 30 Days
-- [ ] Publish a LinkedIn post showing the overnight agent system in action (screenshot of overnight Telegram summary + PR created)
+- [ ] **Publish the overnight AI dev system post** — draft below, ready to post (see LinkedIn Post Drafts section)
 - [ ] Update GitHub README with architecture diagram of overnight dev system
 - [ ] Add SoleOps to LinkedIn as a side project with MRR context when it hits $100+
 - [ ] Know your RSU vesting schedule cold — log in PSS page 35 (RSU Vest Calendar)
@@ -283,6 +283,74 @@ No recruiter at Stripe, Plaid, or a fintech AI startup has heard that sentence f
 2. "Attention Is All You Need" original paper — read the abstract + conclusion only, skip the math
 3. Simon Willison's blog (simonwillison.net) — best practical LLM engineering writing on the internet
 4. Anthropic's model documentation — he's already using it; now understand WHY prompts work
+
+---
+
+---
+
+## ✍️ LINKEDIN POST DRAFTS
+
+### ✅ POSTED — Year 1 Anniversary Post (2026-03-09)
+*Set the stage: "Year 2 is about building with it." Audience is primed. Next post closes the loop.*
+
+---
+
+### 📝 DRAFT — The Overnight AI Dev System Post
+**Goal:** Show the sequel to Year 1. Make the overnight agent system real and visual.
+**Tone:** Direct, specific, a little proud but not braggy. No buzzwords. Show the thing.
+**When to post:** When you have a Telegram screenshot and a GitHub PR screenshot to attach. Two images max.
+
+---
+
+**POST DRAFT:**
+
+Last week I set a task for my AI dev system before I went to sleep.
+
+By the time I woke up, it had already:
+— Read my feature backlog
+— Planned the architecture
+— Written the database schema
+— Built the full Streamlit page
+— Ran 58 unit tests (all passing)
+— Committed to a feature branch with conventional commit messages
+— Opened a GitHub PR waiting for my review
+
+I just had to approve it.
+
+Here's how the system actually works:
+
+Every night at 11 PM, a cron job fires on my homelab — a $300 Beelink Mini PC running Proxmox, sitting on my desk. It reads a markdown file called BACKLOG.md (my feature queue) and wakes up a team of Claude AI sub-agents, each with a specific role:
+
+→ **Planner** reads the backlog and designs the feature
+→ **Backend Engineer** writes the database helpers and business logic
+→ **UI Engineer** builds the Streamlit page
+→ **Test Engineer** writes and runs the pytest suite
+→ **Git Agent** branches, commits, and opens the PR
+
+The whole system costs about $0.50–$1.50 in API tokens per feature. I have a compression server running that cuts that by about 40%.
+
+Nothing ships to production automatically. The final merge to main is always manual — me, reviewing the PR in the morning over coffee.
+
+I've built 88+ production pages this way. Each one is tested, committed through a full dev → QA → staging pipeline, and deployed to a live site with real users.
+
+Year 1 was learning the language of enterprise software delivery at Visa.
+Year 2 is applying it everywhere — including making the machine do the building while I sleep.
+
+If you're a TPM, an engineer, or a builder figuring out how to use AI in your actual work (not just talk about it) — feel free to connect.
+
+[ATTACH: Screenshot of Telegram morning summary message]
+[ATTACH: Screenshot of GitHub PR created overnight — file changes visible]
+
+#AIAgents #Python #Streamlit #TechnicalProjectManager #Fintech #PersonalBranding #BlackInTech #HomeLabTech
+
+---
+
+**POST NOTES FOR DARRIAN:**
+- The two images are what make this land. The Telegram notification + the PR diff = proof it's real, not just a story.
+- To get the Telegram screenshot: check your Telegram for the overnight summary message from the CT100 bot. Screenshot that.
+- To get the GitHub PR screenshot: go to github.com/bookofdarrian/darrian-budget/pulls, open any overnight PR, screenshot the Files Changed tab showing the new page + test file.
+- If you want to trim it down: cut the agent list in the middle and go straight from "how it works" to the cost ($0.50–$1.50/feature). The list is good context but the post works without it.
+- Do NOT lead with "I built an AI agent." Lead with what it DID — the morning result. That's the hook.
 
 ---
 
