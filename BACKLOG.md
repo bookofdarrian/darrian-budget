@@ -1,5 +1,5 @@
 # Feature Backlog — Autonomous AI Dev Queue
-**Owner: Darrian Belcher | Updated: 2026-03-10**
+**Owner: Darrian Belcher | Updated: 2026-03-16 — Manual run triggered 11:45 PM**
 
 > The overnight AI dev system reads this file every night and picks the
 > highest-priority uncompleted item to build autonomously.
@@ -7,30 +7,21 @@
 
 ---
 
-## 🚨 AGENT DIRECTIVE — 2026-03-10
+## HIGHEST PRIORITY — Focus on SoleOps + College Confused
 
-> **Agents: Focus ONLY on SoleOps and College Confused until all items below are complete.**
-> Pick the TOP uncompleted item from whichever product has the highest-priority open task.
-> Do NOT build general personal finance pages (74–79) until SoleOps + CC backlogs are cleared.
+> **Agents: Build these in order. Do NOT build anything else until these are complete.**
 
-### 🔥 SoleOps Build Queue (pick top uncompleted — in order)
-| Priority | Feature | Page | Status |
-|----------|---------|------|--------|
-| 1 | SoleOps: User Registration Flow | update auth | ⬜ TODO ← START HERE |
-| 2 | SoleOps: AI Listing Generator Polish | page 34 | ⬜ TODO |
-| 3 | SoleOps: Weekly Reseller Report Email | cron/agent | ⬜ TODO |
-| 4 | SoleOps: Stale Inventory Alert System | page 84 | ⬜ TODO (skeleton exists) |
-| 5 | SoleOps: Customer CRM | page 82 | ⬜ TODO |
-
-### 🎓 College Confused Build Queue (pick top uncompleted — in order)
-| Priority | Feature | Page | Status |
-|----------|---------|------|--------|
-| 1 | CC: College List Builder | page 85 | ⬜ TODO ← START HERE |
-| 2 | CC: FAFSA Guide + EFC Calculator | page 86 | ⬜ TODO |
-| 3 | CC: Application Tracker | page 87 | ⬜ TODO |
-| 4 | CC: Recommendation Letter Tracker | page 88 | ⬜ TODO |
-| 5 | CC: Interview Prep AI | page 89 | ⬜ TODO |
-| 6 | CC: Financial Aid Appeal Generator | page 90 | ⬜ TODO |
+- [ ] **SoleOps: User Registration Flow** — Email/password registration page for new SoleOps users. Stripe checkout integration → subscription active → unlock features. Welcome email via Gmail SMTP. (update auth system)
+- [ ] **CC: College List Builder** — Search/filter colleges by major, location, cost, acceptance rate, HBCU; save to personal list; compare side-by-side. (page 87)
+- [ ] **CC: FAFSA Guide + EFC Calculator** — Step-by-step FAFSA walkthrough, plain-English EFC/SAI calculator, dependency status guide, deadline tracker. (page 88)
+- [ ] **CC: Application Tracker** — Track all schools applied to, deadlines, requirements, decisions, scholarship status; Common App checklist. (page 89)
+- [ ] **CC: Recommendation Letter Tracker** — Log recommenders, send reminders, track submission status, thank-you note generator. (page 90)
+- [ ] **CC: Interview Prep AI** — Mock interview Q&A with Claude, college-specific interview tips, behavioral question bank, confidence score. (page 91)
+- [ ] **CC: Financial Aid Appeal Generator** — Claude drafts professional financial aid appeal letters, comparator award letter analyzer. (page 92)
+- [ ] **SoleOps: AI Listing Generator Polish** — Connect eBay market data to auto-suggest price. Add "Mercari variant" of the description. One-click eBay API draft (Sell API). Add listing performance tracker. (page 34)
+- [ ] **SoleOps: Weekly Reseller Report Email** — Claude-generated weekly summary emailed to each user. "You have 3 stale pairs. eBay market is up 8% on Jordan 1s. Best opportunity this week: [X]." Cron job on CT100.
+- [ ] **SoleOps: Stale Inventory Alert System** — Full build-out of existing skeleton. (page 84)
+- [ ] **SoleOps: Customer CRM** — Repeat buyer tracking, VIP buyers, ban list. (page 82)
 
 ### 📊 Web Analytics / Traffic Monitoring
 | Priority | Feature | Where | Status |
@@ -284,3 +275,4 @@ TODAY (73 pages built):
   Revenue: SoleOps SaaS ($500+ MRR) + Peach State Pro tier ($9.99/mo)
   Autonomy: 90% of financial reviews automated via AI agents
 ```
+  `1
