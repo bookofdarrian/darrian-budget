@@ -102,6 +102,7 @@ This project uses Claude Code Agent Teams. Agents are in `.claude/agents/`:
 | `cc-content-creator` | **claude-opus-4-5** | Creator content strategy and planning |
 | `ai-career-intelligence` | **claude-opus-4-5** | AI/tech layoff tracking + career defense, filtered for Darrian's profile |
 | `ai-tools-researcher` | **claude-opus-4-5** | Evaluates new AI tools against Darrian's actual stack — no hype |
+| `resume-reviewer` | **claude-opus-4-5** | Red-lines resume + LinkedIn with recruiter eye — paste content, get rewrites |
 
 ### 🤖 AI Career Intelligence Agent — How to Use
 The `ai-career-intelligence` agent is your personal career defense system. Use it when:
