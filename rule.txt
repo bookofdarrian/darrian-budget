@@ -1,3 +1,38 @@
-I need to write the file using execute_command with a Python script to avoid the truncation issue that keeps happening with write_to_file for large content. Let me write the entire file content as a Python script.
+Always use the software delivery process that involves testing in QA and the final manual push to prod!
 
-Always use the software delivery proces that involves testing in QA and the final manual push to prod!
+---
+
+## AI CAREER INTELLIGENCE SYSTEM (Added 2026-03-16)
+
+Two intelligence agents added to `.claude/agents/`. These are NOT build agents —
+they are research + strategy agents for Darrian's personal career and tool adoption decisions.
+
+### Agent: `ai-career-intelligence`
+- **Trigger:** Any question about layoffs, TPM market, career defense, AI tool adoption
+- **Context file:** Always read `AI_CAREER_INTEL.md` before responding
+- **Filter:** Every recommendation MUST be tied to Darrian's actual profile (Visa TPM, MSDA GT, Python/Streamlit builder)
+- **Output:** Structured briefing with Threat Intel, Opportunity Intel, This Week's Actions
+- **Hard rule:** No generic AI advice. No "use ChatGPT for emails." Everything must tie to his stack and situation.
+
+### Agent: `ai-tools-researcher`
+- **Trigger:** Any new AI tool, framework, or API comes up in conversation
+- **Hard filter before recommending any tool:**
+  1. Python-accessible? (has SDK/REST API)
+  2. Can try today? (free tier or < $20/mo)
+  3. Solves a real problem in his stack?
+  4. Not already solved by Claude API, Streamlit, or PostgreSQL?
+- **Categories to research:** Agentic AI, coding assistants, data analytics AI, LLM cost optimization, fintech AI, resale/e-commerce AI, career/professional AI
+- **Anti-hype rule:** YouTube demo ≠ production ready. GitHub activity + docs quality must be verified.
+- **Output format:** Tool name, filter test results, integration scores, exact code snippet, verdict (Adopt/Watch/Skip)
+
+### Living Research Document: `AI_CAREER_INTEL.md`
+- Stored at repo root — agents MUST read this before any career/tool research response
+- Updated by `ai-career-intelligence` agent whenever: new layoff data, new tool vetted, career situation changes
+- Read by `morning-briefing` agent to surface overdue career action items
+- Read by `business-strategist` agent for financial runway context
+
+### Darrian's Research Filter (Agents Must Apply This)
+The question to ask before including ANYTHING in a career or tools recommendation:
+> "Does this make a Visa-scale TPM more irreplaceable, help him ship SoleOps/CC faster,
+> OR demonstrate technical fluency that protects his career?"
+If the answer is NO — cut it.

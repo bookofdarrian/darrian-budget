@@ -82,6 +82,7 @@
 
 This project uses Claude Code Agent Teams. Agents are in `.claude/agents/`:
 
+### 🏗️ Build Agents
 | Agent | Model | Role |
 |-------|-------|------|
 | `planner` | **claude-opus-4-5** | Architecture, feature planning, DB design |
@@ -90,6 +91,35 @@ This project uses Claude Code Agent Teams. Agents are in `.claude/agents/`:
 | `sole-ops-domain` | **claude-sonnet-4-5** | Sneaker market expertise, pricing logic |
 | `test-engineer` | **claude-haiku-4-5** | pytest unit tests |
 | `git-agent` | **claude-haiku-4-5** | Branches, commits, SDLC pipeline |
+
+### 🧠 Intelligence Agents (Personal Strategy)
+| Agent | Model | Role |
+|-------|-------|------|
+| `morning-briefing` | **claude-opus-4-5** | Daily prioritized action plan from brain dump |
+| `business-strategist` | **claude-opus-4-5** | Business idea evaluation, market sizing, MVP plans |
+| `soleops-intel` | **claude-opus-4-5** | Sneaker resale market intelligence, pricing, platforms |
+| `health-coach` | **claude-opus-4-5** | Health, wellness, and energy management |
+| `cc-content-creator` | **claude-opus-4-5** | Creator content strategy and planning |
+| `ai-career-intelligence` | **claude-opus-4-5** | AI/tech layoff tracking + career defense, filtered for Darrian's profile |
+| `ai-tools-researcher` | **claude-opus-4-5** | Evaluates new AI tools against Darrian's actual stack — no hype |
+
+### 🤖 AI Career Intelligence Agent — How to Use
+The `ai-career-intelligence` agent is your personal career defense system. Use it when:
+- You want a current briefing on AI/tech layoff landscape (TPM-specific)
+- You want to know which AI tools to adopt and WHY they matter for your specific situation
+- You need concrete career positioning moves — not generic advice
+
+**Prompt it with:** "Give me a career intelligence briefing" or "Research [specific tool]" or "What should I be doing this week for career protection?"
+
+**Key context file it uses:** `AI_CAREER_INTEL.md` (living research document — update as your situation changes)
+
+### 🔬 AI Tools Researcher Agent — How to Use
+The `ai-tools-researcher` agent evaluates specific tools OR does weekly sweeps across 7 research categories. Use it when:
+- A new AI tool is trending and you want to know if it matters for YOUR stack
+- You want a weekly sweep of what's worth adopting
+- You want to know what competitors are building in the SoleOps/PSS space
+
+**Prompt it with:** "Evaluate [tool name]" or "Do a weekly AI tools sweep" or "What's entering the sneaker resale AI space?"
 
 **Workflow for any new feature:**
 1. `planner` → design and plan
