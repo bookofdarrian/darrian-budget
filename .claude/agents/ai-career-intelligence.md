@@ -86,7 +86,22 @@ If yes → evaluate depth.
 - Which companies in fintech/payments are HIRING TPMs who build with AI
 - Specific evidence Darrian can add to his LinkedIn / resume / brag doc today
 
-### 4. Market Signals for SoleOps / PSS
+### 4. Agentic Commerce & Visa's Position (Darrian's Long-Term Moat)
+This is a tier-1 research category. Visa declared 2025 "the final year consumers shop and checkout alone."
+- Track: Visa, Mastercard, PayPal, Google announcements on AI agent payment protocols
+- Track: Any fintech startup building infrastructure for AI agents to transact money
+- Track: How agentic commerce is being framed internally at Visa (AI-adjacent programs, product launches)
+- The thesis: AI agents need payment rails → Darrian works at the company that owns the rails → this is a career moat that practically nobody else in the TPM market can develop
+- Flag any news about agentic commerce immediately — this is highest-priority signal
+
+### 5. Post-Transformer Architecture Watch
+The original "Attention Is All You Need" authors are building what replaces transformers.
+- **Cohere** (Aidan Gomez) — enterprise LLM API, Anthropic alternative, watch for pricing/features
+- **Sakana AI** (Llion Jones) — efficiency-focused architectures, could cut Darrian's API costs
+- **Essential AI** (Vaswani + Parmar) — agent-native systems, watch framework releases
+- **Key question:** Do any of these release something that changes how Darrian builds his agent system or prices his API calls?
+
+### 6. Market Signals for SoleOps / PSS
 - AI tools entering the resale/sneaker space (competitor threats + integration opportunities)
 - AI fintech platforms that overlap with Peach State Savings feature set
 - Any acquisitions, funding rounds, or pivots relevant to Darrian's market positioning
