@@ -176,6 +176,39 @@ def _load_resources(goal_id):
     return [dict(zip(cols, r)) for r in rows]
 
 
+def _push_to_todo(title: str, notes_text: str = "") -> bool:
+    """Cross-integration: send a learning task to the Todo (pa_tasks) table."""
+    try:
+        conn = get_conn()
+        c = conn.cursor()
+        c.execute(
+            f"INSERT INTO pa_tasks (title, priority, status, source, notes) VALUES ({PH},{PH},{PH},{PH},{PH})",
+            (title, "high", "open", "learning_system", (notes_text or "")[:500])
+        )
+        conn.commit()
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+
+def _push_to_notes(title: str, content: str) -> bool:
+    """Cross-integration: save session recap to the Notes (notes) table."""
+    try:
+        conn = get_conn()
+        word_count = len(content.split())
+        c = conn.cursor()
+        c.execute(
+            f"INSERT INTO notes (title,content,category,tags,color,word_count) VALUES ({PH},{PH},{PH},{PH},{PH},{PH})",
+            (title, content, "Learning", "learning,session,study", "#1a936f", word_count)
+        )
+        conn.commit()
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+
 def _log_session(goal_id, energy, duration, stage, notes):
     conn = get_conn()
     c = conn.cursor()
@@ -706,7 +739,42 @@ with tab4:
                 goal_id = next((g['id'] for g in goals if g['title'] == ls_goal), None)
                 if goal_id:
                     _log_session(goal_id, ls_energy, ls_duration, ls_stage, ls_notes)
+                    st.session_state["_last_session"] = {
+                        "goal": ls_goal, "stage": ls_stage,
+                        "duration": ls_duration, "notes": ls_notes
+                    }
                     st.success(f"✅ Session logged! {ls_duration} minutes on '{ls_goal}'")
+
+        # ── Cross-integration: send last session to Todo / Notes ──────────────
+        last_sess = st.session_state.get("_last_session")
+        if last_sess:
+            st.markdown("---")
+            st.markdown("**📤 Send to other PSS tools:**")
+            ic1, ic2, ic3 = st.columns(3)
+            with ic1:
+                if st.button("📋 Add to Todo", key="sess_to_todo", help="Creates a task in your Todo list for this stage"):
+                    todo_title = f"[{last_sess['stage'].title()}] {last_sess['goal']}"
+                    if _push_to_todo(todo_title, last_sess.get("notes", "")):
+                        st.success("✅ Added to Todo!")
+                        st.page_link("pages/22_todo.py", label="→ Open Todo")
+                    else:
+                        st.error("Couldn't write to Todo table")
+            with ic2:
+                if st.button("📝 Save to Notes", key="sess_to_notes", help="Saves session recap to your Notes page"):
+                    note_title = f"Learning: {last_sess['goal']} ({last_sess['stage'].title()})"
+                    note_content = (
+                        f"**Stage:** {last_sess['stage'].title()}\n"
+                        f"**Duration:** {last_sess['duration']} min\n\n"
+                        f"### Session Notes\n{last_sess.get('notes', '(no notes)')}"
+                    )
+                    if _push_to_notes(note_title, note_content):
+                        st.success("✅ Saved to Notes!")
+                        st.page_link("pages/25_notes.py", label="→ Open Notes")
+                    else:
+                        st.error("Couldn't write to Notes table")
+            with ic3:
+                if st.button("✖️ Dismiss", key="sess_dismiss"):
+                    del st.session_state["_last_session"]
                     st.rerun()
 
 # ── TAB 5: Framework Guide ────────────────────────────────────────────────────
