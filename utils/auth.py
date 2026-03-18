@@ -1160,6 +1160,24 @@ def render_sidebar_nav():
         st.sidebar.page_link("pages/10_rsu_espp.py",         label="📊 RSU/ESPP",         icon="📊")
         st.sidebar.page_link("pages/11_portfolio.py",        label="🗂️ Portfolio",        icon="🗂️")
         st.sidebar.page_link("pages/12_market_news.py",      label="📰 Market News",      icon="📰")
+        st.sidebar.markdown("---")
+        st.sidebar.markdown(
+            f"<div style='font-size:0.72rem; color:{TEXT_MUTED}; text-transform:uppercase; "
+            f"letter-spacing:0.06em; padding:4px 0 2px 4px;'>🎓 Learning</div>",
+            unsafe_allow_html=True
+        )
+        st.sidebar.page_link("pages/89_learning_system.py", label="🧠 Learning System", icon="🧠")
+        st.sidebar.page_link("pages/90_ai_workflow_hub.py", label="⚡ AI Workflow Hub",  icon="⚡")
+        st.sidebar.markdown("---")
+        st.sidebar.markdown(
+            f"<div style='font-size:0.72rem; color:{TEXT_MUTED}; text-transform:uppercase; "
+            f"letter-spacing:0.06em; padding:4px 0 2px 4px;'>🛠️ Tools</div>",
+            unsafe_allow_html=True
+        )
+        st.sidebar.page_link("pages/22_todo.py",                label="✅ Todo",                icon="✅")
+        st.sidebar.page_link("pages/25_notes.py",               label="📝 Notes",               icon="📝")
+        st.sidebar.page_link("pages/24_creator_companion.py",   label="🎬 Creator Companion",   icon="🎬")
+        st.sidebar.page_link("pages/17_personal_assistant.py",  label="🤖 AI Assistant",        icon="🤖")
     else:
         # ── Upgrade prompt for free users ─────────────────────────────────────
         st.sidebar.markdown("---")

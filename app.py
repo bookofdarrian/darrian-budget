@@ -213,3 +213,27 @@ if not expense_df.empty:
             st.success("On track — no categories over budget!")
 else:
     st.info("No expense data yet for this month.")
+
+# ── Learning System Quick View ─────────────────────────────────────────────────
+try:
+    _lconn = get_conn()
+    _lc = _lconn.cursor()
+    _lc.execute("SELECT COUNT(*) FROM learning_goals WHERE completed_at IS NULL")
+    _active_goals = int(_lc.fetchone()[0] or 0)
+    _lc.execute("SELECT COUNT(*) FROM learning_goals WHERE completed_at IS NOT NULL")
+    _done_goals = int(_lc.fetchone()[0] or 0)
+    _lc.execute("SELECT COALESCE(SUM(duration_minutes),0) FROM learning_sessions")
+    _total_mins = int(_lc.fetchone()[0] or 0)
+    _lconn.close()
+
+    if _active_goals > 0 or _done_goals > 0:
+        st.markdown("---")
+        st.subheader("🧠 Learning System")
+        _lc1, _lc2, _lc3, _lc4 = st.columns(4)
+        _lc1.metric("🎯 Active Goals", _active_goals)
+        _lc2.metric("✅ Completed", _done_goals)
+        _lc3.metric("⏱️ Total Study Time", f"{_total_mins // 60}h {_total_mins % 60}m")
+        _lc4.metric("📚 Sessions Logged", _total_mins // 60 + (1 if _total_mins % 60 else 0))
+        st.page_link("pages/89_learning_system.py", label="→ Open Learning System", icon="🧠")
+except Exception:
+    pass  # Learning tables may not exist yet — silently skip
