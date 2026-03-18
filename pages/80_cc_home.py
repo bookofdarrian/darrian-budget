@@ -394,8 +394,8 @@ with stat2:
 with stat3:
     st.markdown("""
     <div class="cc-stat">
-        <div class="cc-stat-number">$1M+</div>
-        <div class="cc-stat-label">In scholarships earned by our founder — now sharing the playbook</div>
+        <div class="cc-stat-number">$1.5M+</div>
+        <div class="cc-stat-label">In merit-based scholarships earned by our founder — now sharing the playbook</div>
     </div>
     """, unsafe_allow_html=True)
 with stat4:
@@ -432,8 +432,8 @@ with mission_col:
             As a <strong>low-income student</strong>, Darrian navigated
             the college process largely on his own — figuring out FAFSA, scholarship essays,
             test prep, and application timelines with almost no guidance. That confusion turned
-            into a superpower: <strong>25+ college acceptances, 10+ full rides, and over $1M+
-            in scholarships earned.</strong>
+            into a superpower: <strong>25+ college acceptances, 10+ full rides, and over $1.5M+
+            in merit-based scholarships earned.</strong>
         </p>
         <p style="color:#c8d0dc; font-size:1rem; line-height:1.7; margin:0;">
             Now, College Confused exists to make sure <em>no student goes through that alone</em>.
@@ -454,7 +454,7 @@ with founder_col:
             He applied to college the hard way — no college counselor, no prep courses,
             no roadmap. But through relentless research and trial-and-error, he built a
             system that worked.<br><br>
-            <strong style="color:#FF6B6B;">25 acceptances. 10+ full rides. $1M+ in scholarships.</strong><br><br>
+            <strong style="color:#FF6B6B;">25+ acceptances. 10+ full rides. $1.5M+ in merit-based scholarships.</strong><br><br>
             Now he's teaching everyone else how to do it.
         </div>
     </div>
