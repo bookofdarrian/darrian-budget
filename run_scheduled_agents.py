@@ -58,6 +58,18 @@ def _r(s): return f"\033[0;31m{s}\033[0m" if _IS_TTY else s
 def _b(s): return f"\033[0;34m{s}\033[0m" if _IS_TTY else s
 
 
+def _conn_exec(conn, sql, params=None):
+    """Execute SQL returning a cursor — compatible with both SQLite and psycopg2."""
+    if USE_POSTGRES:
+        cur = conn.cursor()
+        cur.execute(sql, params or ())
+        return cur
+    else:
+        if params:
+            return conn.execute(sql, params)
+        return conn.execute(sql)
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # ── Logging ───────────────────────────────────────────────────────────────────
 # ══════════════════════════════════════════════════════════════════════════════
@@ -204,7 +216,7 @@ def _handler_stale_inventory_scan(task: dict) -> tuple[bool, str]:
         # (new install, or non-SoleOps user). Return True so the agent
         # runner doesn't log a failure — this is not an error condition.
         try:
-            cur = conn.execute("""
+            cur = _conn_exec(conn, """
                 SELECT id, shoe_name, size, cost_basis, listed_date, listed_price, listed_platform
                 FROM soleops_inventory
                 WHERE status = 'inventory'
@@ -304,25 +316,28 @@ def _handler_weekly_reseller_report(task: dict) -> tuple[bool, str]:
 
         conn = get_conn()
         # Last 7 days sold
-        cur = conn.execute("""
-            SELECT shoe_name, size, sell_price, cost_basis, sold_platform, sold_date
-            FROM soleops_inventory
-            WHERE status = 'sold' AND sold_date >= ?
-            ORDER BY sold_date DESC
-        """, (str(week_ago),)) if not USE_POSTGRES else conn.execute("""
-            SELECT shoe_name, size, sell_price, cost_basis, sold_platform, sold_date
-            FROM soleops_inventory
-            WHERE status = 'sold' AND sold_date >= %s
-            ORDER BY sold_date DESC
-        """, (str(week_ago),))
+        if USE_POSTGRES:
+            cur = _conn_exec(conn, """
+                SELECT shoe_name, size, sell_price, cost_basis, sold_platform, sold_date
+                FROM soleops_inventory
+                WHERE status = 'sold' AND sold_date >= %s
+                ORDER BY sold_date DESC
+            """, (str(week_ago),))
+        else:
+            cur = _conn_exec(conn, """
+                SELECT shoe_name, size, sell_price, cost_basis, sold_platform, sold_date
+                FROM soleops_inventory
+                WHERE status = 'sold' AND sold_date >= ?
+                ORDER BY sold_date DESC
+            """, (str(week_ago),))
         sold_rows = cur.fetchall()
 
         # Current inventory count
-        cur2 = conn.execute("SELECT COUNT(*) FROM soleops_inventory WHERE status = 'inventory'")
+        cur2 = _conn_exec(conn, "SELECT COUNT(*) FROM soleops_inventory WHERE status = 'inventory'")
         inv_count = cur2.fetchone()[0]
 
         # Stale pairs
-        cur3 = conn.execute("""
+        cur3 = _conn_exec(conn, """
             SELECT shoe_name, size, listed_date, listed_price, listed_platform
             FROM soleops_inventory
             WHERE status = 'inventory' AND listed_date IS NOT NULL
@@ -410,14 +425,14 @@ def _handler_weekly_health_insights(task: dict) -> tuple[bool, str]:
         # Check if health_logs table exists
         try:
             if USE_POSTGRES:
-                cur = conn.execute("""
+                cur = _conn_exec(conn, """
                     SELECT log_date, mood_score, energy_level, workout_done, sleep_hours, notes
                     FROM health_logs
                     WHERE log_date >= NOW() - INTERVAL '7 days'
                     ORDER BY log_date
                 """)
             else:
-                cur = conn.execute("""
+                cur = _conn_exec(conn, """
                     SELECT log_date, mood_score, energy_level, workout_done, sleep_hours, notes
                     FROM health_logs
                     WHERE log_date >= date('now', '-7 days')
@@ -467,13 +482,13 @@ Format as 4 short bullet points. Direct, no fluff.
             week_label = datetime.now().strftime("%b %d, %Y")
             title = f"Weekly Health Insight — {week_label}"
             if USE_POSTGRES:
-                conn.execute("""
+                _conn_exec(conn, """
                     INSERT INTO notes (title, content, category, is_pinned, created_at)
                     VALUES (%s, %s, 'health', TRUE, NOW())
                     ON CONFLICT DO NOTHING
                 """, (title, memo))
             else:
-                conn.execute("""
+                _conn_exec(conn, """
                     INSERT OR IGNORE INTO notes (title, content, category, is_pinned, created_at)
                     VALUES (?, ?, 'health', 1, datetime('now'))
                 """, (title, memo))
@@ -613,7 +628,7 @@ def _get_due_tasks() -> list[dict]:
     """Return all enabled tasks whose next_run is in the past."""
     conn = get_conn()
     if USE_POSTGRES:
-        c = conn.execute("""
+        c = _conn_exec(conn, """
             SELECT * FROM agent_scheduled_tasks
             WHERE enabled = TRUE
               AND next_run IS NOT NULL
@@ -621,7 +636,7 @@ def _get_due_tasks() -> list[dict]:
             ORDER BY next_run ASC
         """)
     else:
-        c = conn.execute("""
+        c = _conn_exec(conn, """
             SELECT * FROM agent_scheduled_tasks
             WHERE enabled = 1
               AND next_run IS NOT NULL
@@ -653,7 +668,7 @@ def _create_agent_run(task_name: str) -> int:
     conn = get_conn()
     ph = "%s" if USE_POSTGRES else "?"
     if USE_POSTGRES:
-        c = db_exec(conn, f"""
+        c = _conn_exec(conn, f"""
             INSERT INTO agent_runs (feature_name, display_name, status)
             VALUES ({ph}, {ph}, 'running')
             RETURNING id
@@ -664,7 +679,7 @@ def _create_agent_run(task_name: str) -> int:
             INSERT INTO agent_runs (feature_name, display_name, status)
             VALUES ({ph}, {ph}, 'running')
         """, (f"scheduled:{task_name}", task_name))
-        run_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        run_id = _conn_exec(conn, "SELECT last_insert_rowid()").fetchone()[0]
     conn.commit()
     conn.close()
     return run_id
@@ -702,7 +717,7 @@ def main(dry_run: bool = False, verbose: bool = False, force_task: str | None = 
     if force_task:
         # Load all tasks and filter by name
         conn = get_conn()
-        rows = conn.execute("SELECT * FROM agent_scheduled_tasks").fetchall()
+        rows = _conn_exec(conn, "SELECT * FROM agent_scheduled_tasks").fetchall()
         conn.close()
         all_tasks = [dict(r) for r in rows]
         due_tasks = [t for t in all_tasks if force_task.lower() in t["task_name"].lower()]
