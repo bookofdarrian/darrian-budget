@@ -281,7 +281,7 @@ body, .stApp {{
 # ── HERO ─────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="hero">
-    <div class="hero-badge">🚀 Built by a TPM at Visa · Deployed on a self-hosted homelab</div>
+    <div class="hero-badge">🚀 Built by a TPM at Visa · 73+ tools · Runs on a self-hosted homelab</div>
     <div class="hero-logo">🍑 Peach State Savings</div>
     <div class="hero-sub">
         Import your bank statement in seconds, auto-categorize every transaction,
@@ -305,7 +305,7 @@ with col_c:
 st.markdown("""
 <div class="stat-row">
     <div class="stat-pill">
-        <div class="stat-num">11+</div>
+        <div class="stat-num">73+</div>
         <div class="stat-label">Finance Tools</div>
     </div>
     <div class="stat-pill">
@@ -379,13 +379,17 @@ st.markdown("""
         I needed something custom. So I built it."
     </div>
     <div style="color: #c8d0dc; font-size: 0.9rem; line-height: 1.8; margin-top: 16px;">
-        Every feature in this app was built from a real need. The bank import came from 
-        spending 2 hours manually copying transactions into a spreadsheet. The RSU tracker 
-        came from not understanding my Visa stock vests. The sneaker P&amp;L came from 
+        Every feature in this app was built from a real need. The bank import came from
+        spending 2 hours manually copying transactions into a spreadsheet. The RSU tracker
+        came from not understanding my Visa stock vests. The sneaker P&amp;L came from
         losing track of what I actually made flipping shoes.<br><br>
-        This runs 24/7 on a self-hosted homelab in my apartment — Proxmox, Docker, PostgreSQL,
-        and an AI dev pipeline that ships new features overnight. It's production software
-        I use every day to manage my own financial life.
+        This isn't just a side project. It runs 24/7 on a self-hosted homelab in my apartment —
+        Proxmox, Nginx, Docker, and PostgreSQL. New features are built and shipped by an
+        <strong style="color: #FFAB76;">autonomous AI dev pipeline</strong> that runs every night at 11PM:
+        6 AI agents that plan, build, test, and open a GitHub PR while I sleep.
+        I wake up, review it, and merge. That's why you see 73+ tools instead of 11.<br><br>
+        The pipeline does the building. The human makes the decisions.
+        That's how one person ships like a team.
     </div>
 </div>
 """, unsafe_allow_html=True)
