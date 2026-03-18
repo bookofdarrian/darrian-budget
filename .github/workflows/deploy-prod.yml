@@ -7,64 +7,41 @@ on:
   workflow_dispatch:
 
 env:
-  PROD_HOST: 100.95.125.112
   APP_DIR: /opt/darrian-budget
   CONTAINER: darrian-budget
 
 jobs:
   deploy:
     name: Deploy main → Production (peachstatesavings.com)
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Verify main branch
+      - name: Deployment info
         run: |
           echo "🚀 Deploying to https://www.peachstatesavings.com"
           echo "Commit: ${{ github.sha }}"
           echo "Author: ${{ github.actor }}"
 
-      - name: Deploy via SSH (if secrets configured)
-        env:
-          TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
-          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull latest code
         run: |
-          if [ -z "$TAILSCALE_AUTHKEY" ] || [ -z "$SSH_PRIVATE_KEY" ]; then
-            echo "ℹ️  Secrets not set — skipping auto-deploy."
-            echo "   ✅ Code is on main branch. Manual deploy:"
-            echo "   ssh homelab 'cd /opt/darrian-budget && git pull origin main && docker restart darrian-budget'"
-            exit 0
-          fi
+          cd ${{ env.APP_DIR }}
+          git fetch origin
+          git checkout main
+          git pull origin main
 
-          curl -fsSL https://tailscale.com/install.sh | sh
-          sudo tailscale up --authkey="$TAILSCALE_AUTHKEY" --hostname=gha-prod --accept-routes --timeout=30s
+      - name: Restart container
+        run: sudo docker restart ${{ env.CONTAINER }}
 
-          mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ env.PROD_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
-
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no root@${{ env.PROD_HOST }} \
-            "cd ${{ env.APP_DIR }} && git pull origin main && docker restart ${{ env.CONTAINER }} && echo 'PRODUCTION DEPLOYED ✅'"
-
-      - name: Health Check
-        env:
-          TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
+      - name: Health check
         run: |
-          if [ -z "$TAILSCALE_AUTHKEY" ]; then
-            echo "ℹ️  Skipping health check (Tailscale not connected)"
-            exit 0
-          fi
           sleep 10
-          curl -sf http://${{ env.PROD_HOST }}:8501/_stcore/health \
+          curl -sf http://localhost:8501/_stcore/health \
             && echo "✅ Production is healthy at https://www.peachstatesavings.com" \
-            || echo "⚠️  Health check failed — container may still be starting"
+            || echo "⚠️ Health check failed — container may still be starting"
         continue-on-error: true
 
       - name: Summary
         if: always()
         run: |
-          echo "✅ Production workflow complete"
+          echo "✅ Production deployment complete"
           echo "Site: https://www.peachstatesavings.com"
           echo "Commit: ${{ github.sha }}"
