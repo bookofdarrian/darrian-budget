@@ -52,6 +52,8 @@ st.sidebar.page_link("pages/81_cc_timeline.py",       label="📅 My Timeline", 
 st.sidebar.page_link("pages/82_cc_scholarships.py",   label="💰 Scholarships",      icon="💰")
 st.sidebar.page_link("pages/83_cc_essay_station.py",  label="✍️ Essay Station",     icon="✍️")
 st.sidebar.page_link("pages/84_cc_test_prep.py",      label="📚 SAT/ACT Prep",      icon="📚")
+st.sidebar.page_link("pages/87_cc_college_list.py",   label="🏫 College List",      icon="🏫")
+st.sidebar.page_link("pages/88_cc_fafsa_guide.py",    label="📋 FAFSA Guide",       icon="📋")
 st.sidebar.markdown("---")
 render_sidebar_user_widget()
 
@@ -349,7 +351,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Hero CTA buttons
-hero_col1, hero_col2, hero_col3, hero_col4 = st.columns([1, 1, 1, 1])
+hero_col1, hero_col2, hero_col3, hero_col4, hero_col5, hero_col6 = st.columns(6)
 with hero_col1:
     st.page_link("pages/81_cc_timeline.py", label="📅 Build My Timeline", use_container_width=True)
 with hero_col2:
@@ -358,6 +360,10 @@ with hero_col3:
     st.page_link("pages/83_cc_essay_station.py", label="✍️ Write My Essays", use_container_width=True)
 with hero_col4:
     st.page_link("pages/84_cc_test_prep.py", label="📚 SAT/ACT Prep", use_container_width=True)
+with hero_col5:
+    st.page_link("pages/87_cc_college_list.py", label="🏫 My College List", use_container_width=True)
+with hero_col6:
+    st.page_link("pages/88_cc_fafsa_guide.py", label="📋 FAFSA Guide", use_container_width=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -603,6 +609,37 @@ with fc5:
     </div>
     """, unsafe_allow_html=True)
     st.page_link("pages/84_cc_test_prep.py", label="📚 Start Prepping →", use_container_width=True)
+
+# Second row of feature cards
+fc6, fc7, _ = st.columns(3, gap="medium")
+
+with fc6:
+    st.markdown("""
+    <div class="cc-card">
+        <span class="cc-card-icon">🏫</span>
+        <div class="cc-card-title">My College List</div>
+        <div class="cc-card-body">
+            Build and manage your college list with safety, target, and reach schools.
+            Track deadlines, application status, financial aid offers, and decisions
+            — all in one place.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    st.page_link("pages/87_cc_college_list.py", label="🏫 Build My College List →", use_container_width=True)
+
+with fc7:
+    st.markdown("""
+    <div class="cc-card">
+        <span class="cc-card-icon">📋</span>
+        <div class="cc-card-title">FAFSA Guide</div>
+        <div class="cc-card-body">
+            Step-by-step FAFSA walkthrough written in plain English — for students,
+            parents, and grandparents. Covers every section, every document you need,
+            and how to avoid the most common mistakes.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    st.page_link("pages/88_cc_fafsa_guide.py", label="📋 Open FAFSA Guide →", use_container_width=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
