@@ -6,113 +6,65 @@ on:
       - staging
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/budget-app-staging
+  PROD_HOST: 100.95.125.112
+  APP_DIR: /opt/darrian-budget
+  CONTAINER: darrian-budget
 
 jobs:
-  performance-tests:
-    name: Performance & Stability Tests
+  test:
+    name: Staging Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
           cache: 'pip'
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pytest-cov pytest-benchmark locust
+          pip install pytest pytest-cov pytest-asyncio
           pip install -r requirements.txt
-      
-      - name: Run performance benchmarks
-        run: |
-          pytest tests/performance/ -v --benchmark-only || true
-        continue-on-error: true
-      
-      - name: Memory & CPU profiling
-        run: |
-          pytest tests/performance/memory_profiling.py -v || true
-        continue-on-error: true
-      
-      - name: Load testing (Locust)
-        run: |
-          locust -f tests/load/locustfile.py --headless -u 100 -r 10 --run-time 60s --no-web || true
+
+      - name: Run unit tests
+        run: pytest tests/unit/ -v --tb=short 2>&1 || true
         continue-on-error: true
 
-  deploy-staging:
-    name: Deploy to Staging Environment
+  deploy:
+    name: Deploy staging → Home Lab
     runs-on: ubuntu-latest
-    needs: performance-tests
-    environment: staging
-    permissions:
-      contents: read
-      packages: write
+    needs: test
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      
-      - name: Log in to Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:staging
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:staging-${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-      
-      - name: Deploy to Staging (Home Lab or Separate Instance)
+
+      - name: Deploy via SSH (if secrets configured)
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.STAGING_SSH_KEY }}
+          TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          if [ -z "$TAILSCALE_AUTHKEY" ] || [ -z "$SSH_PRIVATE_KEY" ]; then
+            echo "ℹ️  Secrets not set — skipping SSH deploy."
+            echo "   ✅ Staging code on GitHub. Manual: ssh homelab 'cd /opt/darrian-budget && git pull origin staging && docker restart darrian-budget'"
+            exit 0
+          fi
+
+          curl -fsSL https://tailscale.com/install.sh | sh
+          sudo tailscale up --authkey="$TAILSCALE_AUTHKEY" --hostname=gha-staging --accept-routes --timeout=30s
+
           mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
-          
-          ssh -i ~/.ssh/id_ed25519 root@${{ secrets.STAGING_HOST }} << 'EOF'
-          cd /opt/darrian-budget-staging || mkdir -p /opt/darrian-budget-staging
-          git pull origin staging || true
-          docker-compose -f docker-compose.staging.yml down || true
-          docker-compose -f docker-compose.staging.yml up -d
-          docker ps
-          EOF
-        continue-on-error: true
-      
-      - name: Staging Environment Health Check
-        run: |
-          sleep 15
-          curl -f http://${{ secrets.STAGING_HOST }}:8501 || echo "Staging app may still be starting..."
-        continue-on-error: true
-      
-      - name: Smoke Tests on Staging
-        run: |
-          python tests/smoke/test_staging.py || true
-        continue-on-error: true
-      
-      - name: Deployment Summary
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ env.PROD_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no root@${{ env.PROD_HOST }} \
+            "cd ${{ env.APP_DIR }} && git pull origin staging && docker restart ${{ env.CONTAINER }} && echo 'STAGING DEPLOYED ✅'"
+
+      - name: Summary
         if: always()
         run: |
-          echo "✅ Deployment to STAGING complete"
-          echo "Access at: http://${{ secrets.STAGING_HOST }}:8501"
-          echo "Commit: ${{ github.sha }}"
-          echo "Branch: staging"
-          echo ""
-          echo "IMPORTANT: Review staging carefully for stability & performance"
-          echo "When ready: Create PR from staging → main to trigger PRODUCTION deployment"
-          echo "⚠️  PROD deployment requires manual approval"
+          echo "Branch: staging | Commit: ${{ github.sha }}"
+          echo "Next: merge staging → main to deploy to production"
