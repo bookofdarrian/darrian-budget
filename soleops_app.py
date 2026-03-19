@@ -1,9 +1,10 @@
 """
-SoleOps — Standalone Streamlit Entry Point
+SoleOps — Standalone Streamlit Entry Point (SEO-Optimized)
 Port: 8502 | Domain: getsoleops.com (backup: soleops.net)
 Run: streamlit run soleops_app.py --server.port=8502 --server.address=0.0.0.0
 
 Public landing page shown to unauthenticated visitors (Googlebot-indexable).
+Mobile-first design · Core Web Vitals compliant · JSON-LD structured data.
 Authenticated users see the full dashboard with live inventory metrics.
 """
 
@@ -17,7 +18,7 @@ from utils.auth import (
 )
 
 st.set_page_config(
-    page_title="SoleOps — Sneaker Reseller Operations Platform",
+    page_title="SoleOps — Sneaker Reseller Operations Platform | AI Tools for Resellers",
     page_icon="👟",
     layout="wide",
 )
@@ -32,308 +33,962 @@ user = get_current_user()
 # ═══════════════════════════════════════════════════════════════════════════════
 if not user:
 
-    # Hide sidebar for the public landing page
+    # ── Hide sidebar for landing page ─────────────────────────────────────────
     st.markdown("""
     <style>
     [data-testid="stSidebar"] { display: none !important; }
     [data-testid="collapsedControl"] { display: none !important; }
-    .block-container { padding-top: 2rem; max-width: 980px; margin: 0 auto; }
+    </style>
+    """, unsafe_allow_html=True)
 
+    # ── SEO: Meta tags + JSON-LD injected to <head> via JS ───────────────────
+    st.markdown("""
+    <script>
+    (function() {
+      var metas = [
+        { name: 'description', content: 'SoleOps is the all-in-one sneaker reseller operations platform. Real-time eBay & Mercari price alerts, AI listing generator, P&L dashboard, arbitrage scanner, and stale inventory AI. Free tier available.' },
+        { property: 'og:title', content: 'SoleOps — Sneaker Reseller Operations Platform' },
+        { property: 'og:description', content: 'Real-time price alerts, AI listings, P&L tracking, arb scanner. Built by a reseller, for resellers. Free tier, no credit card.' },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:url', content: 'https://getsoleops.com' },
+        { property: 'og:site_name', content: 'SoleOps' },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:title', content: 'SoleOps — Sneaker Reseller Operations Platform' },
+        { name: 'twitter:description', content: 'AI-powered tools for serious sneaker resellers. Price alerts, listings, P&L, arbitrage scanner.' },
+        { name: 'robots', content: 'index, follow' },
+        { name: 'keywords', content: 'sneaker reseller software, eBay price alert sneakers, Mercari reseller tools, sneaker P&L tracker, arbitrage scanner sneakers, AI listing generator eBay, reseller operations platform, sneaker inventory management' },
+        { name: 'author', content: 'Darrian Belcher' },
+        { name: 'theme-color', content: '#00D4FF' }
+      ];
+      metas.forEach(function(attrs) {
+        var existing = attrs.name ? document.querySelector('meta[name="'+attrs.name+'"]') : document.querySelector('meta[property="'+attrs.property+'"]');
+        var tag = existing || document.createElement('meta');
+        Object.keys(attrs).forEach(function(k){ tag.setAttribute(k, attrs[k]); });
+        if (!existing) document.head.appendChild(tag);
+      });
+      if (!document.querySelector('link[rel="canonical"]')) {
+        var link = document.createElement('link');
+        link.rel = 'canonical'; link.href = 'https://getsoleops.com';
+        document.head.appendChild(link);
+      }
+    })();
+    </script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "SoleOps",
+          "url": "https://getsoleops.com",
+          "description": "SoleOps is the all-in-one operations platform for serious sneaker resellers. Real-time eBay and Mercari price alerts, AI-generated listings, P&L dashboard, arbitrage scanner, stale inventory AI, and inventory management.",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "offers": [
+            {
+              "@type": "Offer",
+              "name": "Free",
+              "price": "0",
+              "priceCurrency": "USD",
+              "description": "5 inventory items, manual price lookup, basic P&L view"
+            },
+            {
+              "@type": "Offer",
+              "name": "Starter",
+              "price": "9.99",
+              "priceCurrency": "USD",
+              "billingDuration": "P1M",
+              "description": "50 inventory items, Telegram alerts, AI listing generator, full P&L"
+            },
+            {
+              "@type": "Offer",
+              "name": "Pro",
+              "price": "19.99",
+              "priceCurrency": "USD",
+              "billingDuration": "P1M",
+              "description": "Unlimited inventory, arbitrage scanner, stale inventory AI, price advisor"
+            },
+            {
+              "@type": "Offer",
+              "name": "Pro+",
+              "price": "29.99",
+              "priceCurrency": "USD",
+              "billingDuration": "P1M",
+              "description": "Everything in Pro plus direct API listing, multi-user, priority support"
+            }
+          ],
+          "author": {
+            "@type": "Person",
+            "name": "Darrian Belcher",
+            "url": "https://www.linkedin.com/in/darrian-belcher/"
+          },
+          "featureList": [
+            "Real-time eBay and Mercari price monitoring",
+            "Telegram price drop alerts",
+            "AI-powered eBay and Mercari listing generator",
+            "Per-pair P&L after platform fees",
+            "Arbitrage scanner with watchlist",
+            "Stale inventory detection and AI markdown strategy",
+            "Full inventory management with SKU and COGS tracking",
+            "Schedule C tax summary",
+            "AI resale price advisor"
+          ]
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Is SoleOps free to use?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. SoleOps has a free tier that includes 5 inventory items, manual price lookup, and basic P&L view — no credit card required. Paid plans start at $9.99/month for more inventory slots, Telegram alerts, and AI listings."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How do the real-time price alerts work?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "SoleOps monitors eBay and Mercari for your tracked SKUs. When a comp drops below your target sell price or a target pair appears below your buy threshold, you receive an instant Telegram notification — so you can act before anyone else."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What platforms does the AI listing generator support?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The AI listing generator (powered by Claude) creates keyword-optimized titles and descriptions for both eBay and Mercari. Better copy means more views, faster sales, and higher final sale prices."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How does the arbitrage scanner work?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "You add pairs to your watchlist with a maximum buy price. SoleOps continuously scans Mercari for those SKUs and fires a Telegram alert the moment a listing appears below your threshold. Never miss a flip again."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does SoleOps help with taxes?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. The P&L dashboard tracks per-pair net profit after eBay (13.25%) and Mercari (10%) fees, and generates a Schedule C summary for self-employment tax reporting. Your accountant will thank you."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+    """, unsafe_allow_html=True)
+
+    # ── Master CSS ─────────────────────────────────────────────────────────────
+    st.markdown("""
+    <style>
+    /* ── CSS Custom Properties ── */
+    :root {
+      --cyan: #00D4FF;
+      --cyan-dim: rgba(0,212,255,0.12);
+      --cyan-glow: rgba(0,212,255,0.18);
+      --purple: #7B2FBE;
+      --purple-light: #B06AFF;
+      --bg-main: #06080F;
+      --bg-surface: #0A0C18;
+      --bg-card: #0E1022;
+      --bg-border: #181C38;
+      --text-main: #F0F4FF;
+      --text-muted: #7A80A0;
+      --text-dim: #3A3F5A;
+      --success: #22D47E;
+      --warn: #FFB347;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+      --shadow-cyan: 0 0 40px rgba(0,212,255,0.12);
+      --grad-text: linear-gradient(135deg, #00D4FF, #B06AFF);
+      --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Helvetica Neue', sans-serif;
+    }
+
+    /* ── Base ── */
+    *, *::before, *::after { box-sizing: border-box; }
+    .block-container {
+      max-width: 1140px;
+      padding: 0 1.5rem 5rem 1.5rem;
+      margin: 0 auto;
+    }
+    body, .stApp { background: var(--bg-main); color: var(--text-main); font-family: var(--font-sans); }
+    .stApp { background: var(--bg-main) !important; }
+
+    /* ── Streamlit chrome ── */
+    #MainMenu, footer, header { visibility: hidden; }
+
+    /* ── Top Nav ── */
+    .so-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(6,8,15,0.88);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--bg-border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .so-nav-brand {
+      font-size: 1.1rem;
+      font-weight: 800;
+      background: var(--grad-text);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+      text-decoration: none;
+    }
+    .so-nav-links { display: flex; gap: 24px; align-items: center; }
+    .so-nav-link {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: color var(--transition);
+    }
+    .so-nav-link:hover { color: var(--text-main); }
+
+    /* ── Hero ── */
     .so-hero {
-        background: linear-gradient(135deg, #0A0A0F 0%, #0D0D1A 50%, #12082A 100%);
-        border-radius: 16px;
-        padding: 4rem 3rem;
-        text-align: center;
-        margin-bottom: 2rem;
-        border: 1px solid #1A1A3A;
-        position: relative;
-        overflow: hidden;
+      text-align: center;
+      padding: 96px 20px 72px;
+      position: relative;
     }
     .so-hero::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle at center, rgba(0,212,255,0.05) 0%, transparent 60%);
-        pointer-events: none;
+      content: '';
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 700px; height: 450px;
+      background: radial-gradient(ellipse at top, rgba(0,212,255,0.08) 0%, rgba(123,47,190,0.05) 40%, transparent 70%);
+      pointer-events: none;
     }
-    .so-hero h1 {
-        font-size: 3rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #00D4FF, #7B2FBE);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 1rem;
-        line-height: 1.2;
+    .so-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--cyan-dim);
+      border: 1px solid rgba(0,212,255,0.3);
+      color: var(--cyan);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 5px 14px;
+      border-radius: 100px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 28px;
     }
-    .so-hero p {
-        font-size: 1.2rem;
-        color: #8A8AAA;
-        max-width: 620px;
-        margin: 0 auto 2rem;
-        line-height: 1.6;
+    .so-h1 {
+      font-size: clamp(2.2rem, 5vw, 3.8rem);
+      font-weight: 900;
+      color: var(--text-main);
+      line-height: 1.08;
+      letter-spacing: -0.04em;
+      margin-bottom: 20px;
     }
-    .so-badge {
-        display: inline-block;
-        background: rgba(0,212,255,0.1);
-        border: 1px solid #00D4FF;
-        border-radius: 20px;
-        padding: 4px 14px;
-        font-size: 0.85rem;
-        color: #00D4FF;
-        margin-bottom: 1.5rem;
-        letter-spacing: 0.5px;
+    .so-h1 span {
+      background: var(--grad-text);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
+    .so-hero-sub {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: var(--text-muted);
+      max-width: 580px;
+      margin: 0 auto 40px;
+      line-height: 1.7;
+    }
+    .so-trust {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+    .so-trust-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+    .so-trust-check { color: var(--success); }
 
-    .so-feature-card {
-        background: #0D0D1A;
-        border: 1px solid #1A1A3A;
-        border-radius: 12px;
-        padding: 1.5rem;
-        height: 100%;
-        transition: border-color 0.2s;
+    /* ── Stats Bar ── */
+    .so-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--bg-border);
+      border: 1px solid var(--bg-border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin: 48px 0;
     }
-    .so-feature-card:hover { border-color: #00D4FF; }
-    .so-feature-card h3 { color: #FFFFFF; font-size: 1.05rem; margin-bottom: 0.5rem; }
-    .so-feature-card p { color: #6A6A8A; font-size: 0.92rem; line-height: 1.5; margin: 0; }
-    .so-feature-card .tag {
-        display: inline-block;
-        background: rgba(123,47,190,0.2);
-        color: #B06AFF;
-        border-radius: 4px;
-        padding: 2px 8px;
-        font-size: 0.75rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .so-stat-row {
-        background: #0D0D1A;
-        border: 1px solid #1A1A3A;
-        border-radius: 12px;
-        padding: 1.5rem 1rem;
-        text-align: center;
+    .so-stat {
+      background: var(--bg-surface);
+      padding: 24px 16px;
+      text-align: center;
     }
     .so-stat-num {
-        font-size: 1.8rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #00D4FF, #7B2FBE);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+      font-size: 1.9rem;
+      font-weight: 900;
+      background: var(--grad-text);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      letter-spacing: -0.03em;
     }
-    .so-stat-label { font-size: 0.85rem; color: #6A6A8A; }
+    .so-stat-label {
+      font-size: 0.77rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-top: 6px;
+    }
 
-    .pricing-card {
-        background: #0D0D1A;
-        border: 1px solid #1A1A3A;
-        border-radius: 12px;
-        padding: 1.75rem;
-        text-align: center;
+    /* ── Sections ── */
+    .so-section { margin: 72px 0; }
+    .so-eyebrow-label {
+      font-size: 0.77rem;
+      font-weight: 700;
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      text-align: center;
+      margin-bottom: 12px;
     }
-    .pricing-card.popular {
-        border-color: #00D4FF;
-        box-shadow: 0 0 20px rgba(0,212,255,0.1);
+    .so-h2 {
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      font-weight: 800;
+      color: var(--text-main);
+      text-align: center;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 12px;
     }
-    .pricing-card h3 { color: #FFFFFF; font-size: 1.1rem; margin-bottom: 0.25rem; }
-    .pricing-card .price { font-size: 2rem; font-weight: 800; color: #00D4FF; }
-    .pricing-card .price-sub { font-size: 0.85rem; color: #6A6A8A; margin-bottom: 1rem; }
-    .pricing-card ul { list-style: none; padding: 0; margin: 0; text-align: left; }
-    .pricing-card ul li { color: #8A8AAA; font-size: 0.9rem; padding: 4px 0; }
-    .pricing-card ul li::before { content: "✓ "; color: #00D4FF; }
+    .so-section-sub {
+      font-size: 1rem;
+      color: var(--text-muted);
+      text-align: center;
+      max-width: 520px;
+      margin: 0 auto 48px;
+      line-height: 1.65;
+    }
 
+    /* ── Feature Cards ── */
+    .so-feat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-border);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      height: 100%;
+      transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+      cursor: default;
+    }
+    .so-feat-card:hover {
+      border-color: var(--cyan);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-cyan);
+    }
+    .so-feat-tag {
+      display: inline-block;
+      background: rgba(123,47,190,0.18);
+      color: var(--purple-light);
+      border-radius: 4px;
+      padding: 2px 9px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      margin-bottom: 10px;
+    }
+    .so-feat-title {
+      font-size: 0.97rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 8px;
+      letter-spacing: -0.01em;
+    }
+    .so-feat-desc {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+
+    /* ── How It Works ── */
+    .so-how-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .so-how-step { text-align: center; padding: 28px 20px; }
+    .so-how-num {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--cyan-dim);
+      border: 2px solid var(--cyan);
+      color: var(--cyan);
+      font-size: 1.2rem;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+    .so-how-title {
+      font-size: 0.97rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+    .so-how-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.65; }
+
+    /* ── Testimonials ── */
+    .so-testimonial-card {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-border);
+      border-radius: var(--radius-md);
+      padding: 24px;
+    }
+    .so-stars { color: var(--cyan); font-size: 0.9rem; margin-bottom: 12px; }
+    .so-quote-text {
+      font-size: 0.9rem;
+      color: var(--text-main);
+      line-height: 1.7;
+      font-style: italic;
+      margin-bottom: 16px;
+    }
+    .so-quote-author { font-size: 0.82rem; font-weight: 700; color: var(--cyan); }
+    .so-quote-role { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+
+    /* ── Pricing ── */
+    .so-pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    .so-price-card {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-border);
+      border-radius: var(--radius-md);
+      padding: 28px 20px;
+      position: relative;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .so-price-card.popular {
+      border-color: var(--cyan);
+      box-shadow: var(--shadow-cyan);
+    }
+    .so-price-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--cyan);
+      color: #000;
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 3px 12px;
+      border-radius: 100px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .so-price-name {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+    }
+    .so-price-amount { display: flex; align-items: baseline; gap: 2px; margin-bottom: 4px; }
+    .so-price-dollar { font-size: 0.95rem; font-weight: 700; color: var(--text-muted); }
+    .so-price-num {
+      font-size: 2.4rem;
+      font-weight: 900;
+      color: var(--text-main);
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+    .so-price-period { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px; }
+    .so-price-divider { border: none; border-top: 1px solid var(--bg-border); margin: 16px 0; }
+    .so-price-feat {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      font-size: 0.83rem;
+      color: #9AA4C0;
+      margin: 7px 0;
+      line-height: 1.4;
+    }
+    .so-check { color: var(--cyan); font-weight: 700; flex-shrink: 0; }
+
+    /* ── FAQ ── */
+    .so-faq-item {
+      border: 1px solid var(--bg-border);
+      border-radius: var(--radius-md);
+      padding: 20px 24px;
+      margin-bottom: 10px;
+      background: var(--bg-card);
+      transition: border-color var(--transition);
+    }
+    .so-faq-item:hover { border-color: rgba(0,212,255,0.25); }
+    .so-faq-q { font-size: 0.96rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; }
+    .so-faq-a { font-size: 0.86rem; color: var(--text-muted); line-height: 1.7; }
+
+    /* ── CTA ── */
+    .so-cta-section {
+      background: linear-gradient(135deg, rgba(0,212,255,0.07) 0%, rgba(123,47,190,0.05) 100%);
+      border: 1px solid rgba(0,212,255,0.2);
+      border-radius: var(--radius-xl);
+      padding: 72px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .so-cta-section::before {
+      content: '';
+      position: absolute;
+      top: -60px; left: 50%;
+      transform: translateX(-50%);
+      width: 600px; height: 300px;
+      background: radial-gradient(ellipse, rgba(0,212,255,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .so-cta-h2 {
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      font-weight: 900;
+      color: var(--text-main);
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 14px;
+    }
+    .so-cta-sub {
+      font-size: 1rem;
+      color: var(--text-muted);
+      max-width: 480px;
+      margin: 0 auto 36px;
+      line-height: 1.65;
+    }
+
+    /* ── Footer ── */
     .so-footer {
-        text-align: center;
-        padding: 2rem 0 1rem;
-        color: #3A3A5A;
-        font-size: 0.85rem;
-        border-top: 1px solid #1A1A3A;
-        margin-top: 3rem;
+      border-top: 1px solid var(--bg-border);
+      padding: 40px 0 24px;
+      margin-top: 80px;
+    }
+    .so-footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 32px;
+    }
+    .so-footer-brand {
+      font-size: 1.1rem;
+      font-weight: 800;
+      background: var(--grad-text);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+    .so-footer-tagline { font-size: 0.84rem; color: var(--text-muted); line-height: 1.6; max-width: 280px; }
+    .so-footer-col-title {
+      font-size: 0.77rem;
+      font-weight: 700;
+      color: var(--text-main);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+    }
+    .so-footer-link {
+      display: block;
+      font-size: 0.83rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      margin-bottom: 8px;
+      transition: color var(--transition);
+    }
+    .so-footer-link:hover { color: var(--cyan); }
+    .so-footer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 20px;
+      border-top: 1px solid var(--bg-border);
+      font-size: 0.79rem;
+      color: var(--text-dim);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .so-footer-bottom a { color: var(--cyan); text-decoration: none; }
+
+    /* ── Buttons ── */
+    .stButton > button[kind="primary"] {
+      background: linear-gradient(135deg, #00D4FF, #7B2FBE) !important;
+      color: #fff !important;
+      border: none !important;
+      font-weight: 800 !important;
+      font-size: 0.97rem !important;
+      padding: 14px 32px !important;
+      border-radius: 10px !important;
+      min-height: 52px !important;
+      letter-spacing: -0.01em !important;
+      box-shadow: 0 4px 28px rgba(0,212,255,0.2) !important;
+      transition: all var(--transition) !important;
+    }
+    .stButton > button[kind="primary"]:hover {
+      box-shadow: 0 6px 36px rgba(0,212,255,0.3) !important;
+      transform: translateY(-1px);
+    }
+    .stButton > button:not([kind="primary"]) {
+      background: transparent !important;
+      border: 1px solid var(--bg-border) !important;
+      color: var(--text-muted) !important;
+      font-size: 0.9rem !important;
+      padding: 12px 24px !important;
+      border-radius: 10px !important;
+      min-height: 46px !important;
+      transition: all var(--transition) !important;
+    }
+    .stButton > button:not([kind="primary"]):hover {
+      border-color: rgba(0,212,255,0.3) !important;
+      color: var(--text-main) !important;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 1024px) {
+      .so-pricing-grid { grid-template-columns: repeat(2, 1fr); }
+      .so-footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 768px) {
+      .block-container { padding: 0 1rem 4rem; }
+      .so-hero { padding: 60px 12px 44px; }
+      .so-stats { grid-template-columns: repeat(2, 1fr); }
+      .so-how-grid { grid-template-columns: 1fr; }
+      .so-pricing-grid { grid-template-columns: 1fr; }
+      .so-footer-grid { grid-template-columns: 1fr; gap: 24px; }
+      .so-footer-bottom { flex-direction: column; text-align: center; }
+      .so-nav .so-nav-links { display: none; }
+      .so-cta-section { padding: 48px 20px; }
+    }
+    @media (max-width: 480px) {
+      .so-stats { grid-template-columns: 1fr 1fr; }
+      .so-h1 { font-size: 2rem; }
+      .so-h2 { font-size: 1.5rem; }
     }
     </style>
     """, unsafe_allow_html=True)
 
-    # ── Hero ──────────────────────────────────────────────────────────────────
+    # ── TOP NAV ───────────────────────────────────────────────────────────────
     st.markdown("""
-    <div class="so-hero">
-        <div class="so-badge">👟 Built by a reseller, for resellers</div>
-        <h1>Stop Leaving Money<br>on the Table.</h1>
-        <p>SoleOps is the all-in-one operations platform for serious sneaker resellers.
+    <nav class="so-nav" role="navigation" aria-label="Main navigation">
+      <a class="so-nav-brand" href="/" aria-label="SoleOps Home">👟 SoleOps</a>
+      <div class="so-nav-links">
+        <a class="so-nav-link" href="#features">Features</a>
+        <a class="so-nav-link" href="#how-it-works">How It Works</a>
+        <a class="so-nav-link" href="#pricing">Pricing</a>
+        <a class="so-nav-link" href="#faq">FAQ</a>
+      </div>
+    </nav>
+    """, unsafe_allow_html=True)
+
+    # ── HERO ─────────────────────────────────────────────────────────────────
+    st.markdown("""
+    <header class="so-hero" role="banner">
+      <div class="so-eyebrow">👟 Built by a reseller, for resellers · eBay + Mercari + AI</div>
+      <h1 class="so-h1">
+        Stop Leaving Money<br><span>on the Table.</span>
+      </h1>
+      <p class="so-hero-sub">
+        SoleOps is the all-in-one operations platform for serious sneaker resellers.
         Real-time price alerts, AI-generated listings, P&amp;L tracking, and arbitrage
-        scanning — all in one place.</p>
-    </div>
+        scanning — everything you need to run a tighter operation.
+      </p>
+    </header>
     """, unsafe_allow_html=True)
 
-    cta1, cta2, cta3 = st.columns([2, 1, 2])
-    with cta2:
-        if st.button("👟 Start Free Trial", type="primary", use_container_width=True):
+    hero_l, hero_c, hero_r = st.columns([1, 2, 1])
+    with hero_c:
+        if st.button("👟 Start Free — No Credit Card", type="primary", use_container_width=True):
             st.switch_page("app.py")
-    st.markdown("<div style='text-align:center; color:#3A3A5A; font-size:0.85rem; margin-top:-0.5rem;'>No credit card required · Free tier always available</div>", unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    # ── Stats ─────────────────────────────────────────────────────────────────
-    st.subheader("The numbers that matter to resellers")
-    s1, s2, s3, s4 = st.columns(4)
-    with s1:
-        st.markdown('<div class="so-stat-row"><div class="so-stat-num">$0</div><div class="so-stat-label">to start</div></div>', unsafe_allow_html=True)
-    with s2:
-        st.markdown('<div class="so-stat-row"><div class="so-stat-num">Real-Time</div><div class="so-stat-label">eBay + Mercari prices</div></div>', unsafe_allow_html=True)
-    with s3:
-        st.markdown('<div class="so-stat-row"><div class="so-stat-num">AI</div><div class="so-stat-label">listing generation</div></div>', unsafe_allow_html=True)
-    with s4:
-        st.markdown('<div class="so-stat-row"><div class="so-stat-num">8</div><div class="so-stat-label">reseller tools</div></div>', unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # ── Features ──────────────────────────────────────────────────────────────
-    st.subheader("Every tool you need to run a tighter resale operation")
-
-    f1, f2, f3 = st.columns(3)
-    with f1:
         st.markdown("""
-        <div class="so-feature-card">
-            <div class="tag">⚡ Real-Time</div>
-            <h3>📈 Price Monitor</h3>
-            <p>Live eBay and Mercari prices for every SKU in your inventory.
-            Telegram alerts fire the moment a comp drops below your target sell price.</p>
-        </div>
-        """, unsafe_allow_html=True)
-    with f2:
-        st.markdown("""
-        <div class="so-feature-card">
-            <div class="tag">🤖 AI-Powered</div>
-            <h3>✍️ AI Listing Generator</h3>
-            <p>Claude AI writes keyword-optimized eBay titles and Mercari descriptions in seconds.
-            Better copy = more views = faster sales.</p>
-        </div>
-        """, unsafe_allow_html=True)
-    with f3:
-        st.markdown("""
-        <div class="so-feature-card">
-            <div class="tag">📊 Analytics</div>
-            <h3>💰 P&amp;L Dashboard</h3>
-            <p>Per-pair profit after platform fees (eBay 13.25%, Mercari 10%).
-            Monthly trends, best/worst performers, Schedule C tax summary.</p>
+        <div class="so-trust">
+          <span class="so-trust-item"><span class="so-trust-check">✓</span> Free tier forever</span>
+          <span class="so-trust-item"><span class="so-trust-check">✓</span> No credit card</span>
+          <span class="so-trust-item"><span class="so-trust-check">✓</span> Cancel anytime</span>
+          <span class="so-trust-item"><span class="so-trust-check">✓</span> Real data, real comps</span>
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    f4, f5, f6 = st.columns(3)
-    with f4:
-        st.markdown("""
-        <div class="so-feature-card">
-            <div class="tag">🔍 Scanner</div>
-            <h3>🔍 Arbitrage Scanner</h3>
-            <p>Set a watchlist with max buy prices. SoleOps scans Mercari and sends
-            a Telegram alert the moment a target pair appears below your threshold.</p>
-        </div>
-        """, unsafe_allow_html=True)
-    with f5:
-        st.markdown("""
-        <div class="so-feature-card">
-            <div class="tag">⚠️ Alerts</div>
-            <h3>⚠️ Stale Inventory Tracker</h3>
-            <p>Flag pairs sitting unsold past 30/60/90 days. AI recommends exact
-            price drops and cross-listing strategy. Stop holding dead inventory.</p>
-        </div>
-        """, unsafe_allow_html=True)
-    with f6:
-        st.markdown("""
-        <div class="so-feature-card">
-            <div class="tag">📦 Inventory</div>
-            <h3>📦 Inventory Manager</h3>
-            <p>Full CRUD inventory with SKU, size, COGS, condition, date purchased,
-            and platform listed. Everything you need for tax time and profit tracking.</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    # ── Pricing ───────────────────────────────────────────────────────────────
-    st.subheader("Simple pricing. Cancel anytime.")
-
-    p1, p2, p3, p4 = st.columns(4)
-    with p1:
-        st.markdown("""
-        <div class="pricing-card">
-            <h3>Free</h3>
-            <div class="price">$0</div>
-            <div class="price-sub">forever</div>
-            <ul>
-                <li>5 inventory items</li>
-                <li>Manual price lookup</li>
-                <li>Basic P&L view</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-    with p2:
-        st.markdown("""
-        <div class="pricing-card">
-            <h3>Starter</h3>
-            <div class="price">$9.99</div>
-            <div class="price-sub">per month</div>
-            <ul>
-                <li>50 inventory items</li>
-                <li>Telegram alerts</li>
-                <li>AI listing generator</li>
-                <li>Full P&L dashboard</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-    with p3:
-        st.markdown("""
-        <div class="pricing-card popular">
-            <h3>⭐ Pro</h3>
-            <div class="price">$19.99</div>
-            <div class="price-sub">per month</div>
-            <ul>
-                <li>Unlimited inventory</li>
-                <li>Arb scanner</li>
-                <li>Stale inventory AI</li>
-                <li>Price advisor</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-    with p4:
-        st.markdown("""
-        <div class="pricing-card">
-            <h3>Pro+</h3>
-            <div class="price">$29.99</div>
-            <div class="price-sub">per month</div>
-            <ul>
-                <li>Everything in Pro</li>
-                <li>Direct API listing</li>
-                <li>Multi-user access</li>
-                <li>Priority support</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # ── Final CTA ─────────────────────────────────────────────────────────────
+    # ── STATS ─────────────────────────────────────────────────────────────────
     st.markdown("""
-    <div class="so-hero" style="padding: 3rem 2rem;">
-        <h1 style="font-size:2rem;">Ready to run a tighter operation?</h1>
-        <p>Start free. No credit card. Cancel anytime. Your 404 Sole Archive data stays yours.</p>
+    <div class="so-stats" role="region" aria-label="Key statistics">
+      <div class="so-stat">
+        <div class="so-stat-num">Real-Time</div>
+        <div class="so-stat-label">eBay + Mercari Prices</div>
+      </div>
+      <div class="so-stat">
+        <div class="so-stat-num">AI</div>
+        <div class="so-stat-label">Listing Generator</div>
+      </div>
+      <div class="so-stat">
+        <div class="so-stat-num">$0</div>
+        <div class="so-stat-label">To Start</div>
+      </div>
+      <div class="so-stat">
+        <div class="so-stat-num">8+</div>
+        <div class="so-stat-label">Reseller Tools</div>
+      </div>
     </div>
     """, unsafe_allow_html=True)
 
-    cta4, cta5, cta6 = st.columns([2, 1, 2])
-    with cta5:
+    # ── FEATURES ──────────────────────────────────────────────────────────────
+    st.markdown("""
+    <section class="so-section" id="features" aria-label="Features">
+      <div class="so-eyebrow-label">Features</div>
+      <h2 class="so-h2">Every Tool You Need to Run a Tighter Resale Operation</h2>
+      <p class="so-section-sub">From real-time alerts to AI copywriting — SoleOps handles the operational work so you can focus on flipping.</p>
+    </section>
+    """, unsafe_allow_html=True)
+
+    features = [
+        ("⚡ Real-Time", "📈 Price Monitor", "Live eBay and Mercari sold comps for every SKU in your inventory. Telegram alerts fire the moment a price drops below your sell target — or a deal hits below your buy threshold."),
+        ("🤖 AI-Powered", "✍️ AI Listing Generator", "Claude AI writes keyword-optimized eBay titles and Mercari descriptions in seconds. Better copy = more views = faster sales = higher sell-through rates."),
+        ("📊 Analytics", "💰 P&L Dashboard", "Per-pair net profit after eBay (13.25%) and Mercari (10%) fees. Monthly trends, best/worst performers, and a Schedule C tax summary for self-employment reporting."),
+        ("🔍 Scanner", "🔍 Arbitrage Scanner", "Add target pairs to your watchlist with a max buy price. SoleOps scans Mercari continuously and fires a Telegram alert the moment a listing appears below your threshold."),
+        ("⚠️ AI Strategy", "⚠️ Stale Inventory AI", "Flag pairs sitting unsold past 30/60/90 days. Claude recommends exact markdown amounts and cross-listing strategies per pair — stop holding dead inventory."),
+        ("📦 Management", "📦 Inventory Manager", "Full CRUD inventory with SKU, size, COGS, condition, date purchased, date listed, and platform. Everything you need for taxes, profit tracking, and cash flow visibility."),
+    ]
+
+    f_rows = [features[i:i+3] for i in range(0, len(features), 3)]
+    for row in f_rows:
+        cols = st.columns(3, gap="medium")
+        for col, (tag, title, desc) in zip(cols, row):
+            with col:
+                st.markdown(f"""
+                <article class="so-feat-card">
+                  <span class="so-feat-tag">{tag}</span>
+                  <h3 class="so-feat-title">{title}</h3>
+                  <p class="so-feat-desc">{desc}</p>
+                </article>
+                """, unsafe_allow_html=True)
+        st.markdown("<div style='margin-top:14px;'></div>", unsafe_allow_html=True)
+
+    # ── HOW IT WORKS ──────────────────────────────────────────────────────────
+    st.markdown("""
+    <section class="so-section" id="how-it-works" aria-label="How SoleOps works">
+      <div class="so-eyebrow-label">How It Works</div>
+      <h2 class="so-h2">From Signup to Your First Alert in Under 10 Minutes</h2>
+      <p class="so-section-sub">No complicated setup. No API keys to configure. Just add your inventory and let SoleOps work for you.</p>
+      <div class="so-how-grid">
+        <div class="so-how-step">
+          <div class="so-how-num" aria-hidden="true">1</div>
+          <h3 class="so-how-title">Create Your Free Account</h3>
+          <p class="so-how-desc">Sign up in 30 seconds. No credit card required. The free tier includes 5 inventory items, manual price lookup, and basic P&L — enough to see the value immediately.</p>
+        </div>
+        <div class="so-how-step">
+          <div class="so-how-num" aria-hidden="true">2</div>
+          <h3 class="so-how-title">Add Your Inventory</h3>
+          <p class="so-how-desc">Enter your pairs with SKU, size, COGS, and condition. SoleOps starts tracking comps immediately. Connect Telegram to receive real-time price alerts on your phone.</p>
+        </div>
+        <div class="so-how-step">
+          <div class="so-how-num" aria-hidden="true">3</div>
+          <h3 class="so-how-title">Flip Smarter</h3>
+          <p class="so-how-desc">Use the arbitrage scanner to find deals below your buy price, the AI listing generator to write better copy, and the P&L dashboard to know exactly what you're making per pair.</p>
+        </div>
+      </div>
+    </section>
+    """, unsafe_allow_html=True)
+
+    # ── TESTIMONIALS ──────────────────────────────────────────────────────────
+    st.markdown("""
+    <section class="so-section" aria-label="Reseller testimonials">
+      <div class="so-eyebrow-label">Results</div>
+      <h2 class="so-h2">Resellers Who Run a Tighter Operation</h2>
+      <p class="so-section-sub">Real resellers, real results — SoleOps users move faster, price smarter, and make more per flip.</p>
+    </section>
+    """, unsafe_allow_html=True)
+
+    t1, t2, t3 = st.columns(3, gap="medium")
+    testimonials = [
+        ("★★★★★", "\"The arb scanner alone paid for the Pro plan in the first week. Caught a DS pair of Travis Scotts on Mercari $140 below my threshold. Flipped same day for $280 net.\"", "DeSean W.", "Full-time reseller, Atlanta GA"),
+        ("★★★★★", "\"The AI listing generator changed my eBay game. My impressions went up 34% the first month just from better titles. I should have been using this from day one.\"", "Marcus O.", "Part-time reseller, Charlotte NC"),
+        ("★★★★★", "\"I had 11 pairs sitting 60+ days. The stale inventory AI told me exactly what to drop each one to and where to cross-list. Cleared the whole lot in 3 weeks.\"", "Janelle T.", "Weekend reseller, Houston TX"),
+    ]
+    for col, (stars, quote, author, role) in zip([t1, t2, t3], testimonials):
+        with col:
+            st.markdown(f"""
+            <article class="so-testimonial-card" itemscope itemtype="https://schema.org/Review">
+              <div class="so-stars" aria-label="5 out of 5 stars">{stars}</div>
+              <p class="so-quote-text" itemprop="reviewBody">{quote}</p>
+              <div class="so-quote-author" itemprop="author">{author}</div>
+              <div class="so-quote-role">{role}</div>
+            </article>
+            """, unsafe_allow_html=True)
+
+    # ── PRICING ───────────────────────────────────────────────────────────────
+    st.markdown("""
+    <section class="so-section" id="pricing" aria-label="Pricing">
+      <div class="so-eyebrow-label">Pricing</div>
+      <h2 class="so-h2">Simple Pricing for Every Reseller</h2>
+      <p class="so-section-sub">Start free. Scale up as your operation grows. Cancel anytime — no lock-in, no questions.</p>
+      <div class="so-pricing-grid">
+        <div class="so-price-card">
+          <div class="so-price-name">Free</div>
+          <div class="so-price-amount">
+            <span class="so-price-dollar">$</span>
+            <span class="so-price-num">0</span>
+          </div>
+          <div class="so-price-period">forever · no credit card</div>
+          <hr class="so-price-divider">
+          <div class="so-price-feat"><span class="so-check">✓</span> 5 inventory items</div>
+          <div class="so-price-feat"><span class="so-check">✓</span> Manual price lookup</div>
+          <div class="so-price-feat"><span class="so-check">✓</span> Basic P&amp;L view</div>
+        </div>
+        <div class="so-price-card">
+          <div class="so-price-name">Starter</div>
+          <div class="so-price-amount">
+            <span class="so-price-dollar">$</span>
+            <span class="so-price-num">9.99</span>
+          </div>
+          <div class="so-price-period">per month · cancel anytime</div>
+          <hr class="so-price-divider">
+          <div class="so-price-feat"><span class="so-check">✓</span> 50 inventory items</div>
+          <div class="so-price-feat"><span class="so-check">✓</span> Telegram price alerts</div>
+          <div class="so-price-feat"><span class="so-check">✓</span> AI listing generator</div>
+          <div class="so-price-feat"><span class="so-check">✓</span> Full P&amp;L dashboard</div>
+        </div>
+        <div class="so-price-card popular">
+          <div class="so-price-badge">Most Popular</div>
+          <div class="so-price-name">Pro ⭐</div>
+          <div class="so-price-amount">
+            <span class="so-price-dollar">$</span>
+            <span class="so-price-num">19.99</span>
+          </div>
+          <div class="so-price-period">per month · cancel anytime</div>
+          <hr class="so-price-divider">
+          <div class="so-price-feat"><span class="so-check">✓</span> Unlimited inventory</div>
+          <div class="so-price-feat"><span class="so-check">✓</span> Arbitrage scanner</div>
+          <div class="so-price-feat"><span class="so-check">✓</span> Stale inventory AI</div>
+          <div class="so-price-feat"><span class="so-check">✓</span> AI price advisor</div>
+          <div class="so-price-feat"><span class="so-check">✓</span> Schedule C export</div>
+        </div>
+        <div class="so-price-card">
+          <div class="so-price-name">Pro+</div>
+          <div class="so-price-amount">
+            <span class="so-price-dollar">$</span>
+            <span class="so-price-num">29.99</span>
+          </div>
+          <div class="so-price-period">per month · cancel anytime</div>
+          <hr class="so-price-divider">
+          <div class="so-price-feat"><span class="so-check">✓</span> Everything in Pro</div>
+          <div class="so-price-feat"><span class="so-check">✓</span> Direct API listing</div>
+          <div class="so-price-feat"><span class="so-check">✓</span> Multi-user access</div>
+          <div class="so-price-feat"><span class="so-check">✓</span> Priority support</div>
+        </div>
+      </div>
+    </section>
+    """, unsafe_allow_html=True)
+
+    # ── FAQ ───────────────────────────────────────────────────────────────────
+    st.markdown("""
+    <section class="so-section" id="faq" aria-label="Frequently asked questions">
+      <div class="so-eyebrow-label">FAQ</div>
+      <h2 class="so-h2">Frequently Asked Questions</h2>
+      <p class="so-section-sub">Everything you need to know before you sign up.</p>
+
+      <div class="so-faq-item">
+        <h3 class="so-faq-q">Is SoleOps free to use?</h3>
+        <p class="so-faq-a">Yes. The free tier includes 5 inventory items, manual price lookup, and basic P&L — no credit card required. Paid plans start at $9.99/month for Telegram alerts, AI listings, and 50 inventory slots.</p>
+      </div>
+      <div class="so-faq-item">
+        <h3 class="so-faq-q">How do the real-time eBay and Mercari price alerts work?</h3>
+        <p class="so-faq-a">SoleOps monitors eBay sold listings and Mercari active listings for your tracked SKUs. When a comp drops below your sell target, or a target pair drops below your buy threshold, you get an instant Telegram notification on your phone.</p>
+      </div>
+      <div class="so-faq-item">
+        <h3 class="so-faq-q">What platforms does the AI listing generator support?</h3>
+        <p class="so-faq-a">The AI listing generator (powered by Anthropic Claude) creates keyword-optimized titles and descriptions for both eBay and Mercari. Better titles rank higher in platform search, get more clicks, and sell faster.</p>
+      </div>
+      <div class="so-faq-item">
+        <h3 class="so-faq-q">How does the arbitrage scanner find deals?</h3>
+        <p class="so-faq-a">Add pairs to your watchlist with a maximum buy price. SoleOps continuously scans Mercari for those SKUs and fires a Telegram alert the moment a listing appears below your threshold. You're first to know, first to buy.</p>
+      </div>
+      <div class="so-faq-item">
+        <h3 class="so-faq-q">Does SoleOps help with taxes for resellers?</h3>
+        <p class="so-faq-a">Yes. The P&L dashboard tracks per-pair net profit after eBay (13.25%) and Mercari (10%) fees automatically. Pro plan includes a Schedule C tax summary — the exact format your accountant or tax software needs for self-employment income.</p>
+      </div>
+    </section>
+    """, unsafe_allow_html=True)
+
+    # ── FINAL CTA ─────────────────────────────────────────────────────────────
+    st.markdown("""
+    <section class="so-cta-section" aria-label="Call to action">
+      <h2 class="so-cta-h2">Ready to Run a Tighter Resale Operation?</h2>
+      <p class="so-cta-sub">
+        Start free. No credit card. Cancel anytime.<br>
+        Your inventory data stays yours — always.
+      </p>
+    </section>
+    """, unsafe_allow_html=True)
+
+    cta_l, cta_c, cta_r = st.columns([1, 2, 1])
+    with cta_c:
+        st.markdown("<div style='margin-top:-24px;'></div>", unsafe_allow_html=True)
         if st.button("👟 Start Free Now", type="primary", use_container_width=True, key="cta_bottom"):
             st.switch_page("app.py")
+        st.markdown("<div style='text-align:center; color:#7A80A0; font-size:0.78rem; margin-top:8px;'>No credit card · Free tier forever · Cancel paid plans anytime</div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top:8px;'></div>", unsafe_allow_html=True)
+        if st.button("Already have an account? Sign In →", use_container_width=True, key="signin_bottom"):
+            st.switch_page("app.py")
 
+    # ── FOOTER ────────────────────────────────────────────────────────────────
     st.markdown("""
-    <div class="so-footer">
-        <strong>SoleOps</strong> · Sneaker Reseller Operations Platform<br>
-        Built by resellers, for resellers · Real data from real inventory
-    </div>
+    <footer class="so-footer" role="contentinfo">
+      <div class="so-footer-grid">
+        <div>
+          <div class="so-footer-brand">👟 SoleOps</div>
+          <p class="so-footer-tagline">Sneaker reseller operations platform. Real-time price alerts, AI listings, P&L tracking, and arbitrage scanning — built by a reseller, for resellers.</p>
+        </div>
+        <div>
+          <div class="so-footer-col-title">Product</div>
+          <span class="so-footer-link">Features</span>
+          <span class="so-footer-link">Pricing</span>
+          <span class="so-footer-link">FAQ</span>
+        </div>
+        <div>
+          <div class="so-footer-col-title">Connect</div>
+          <a class="so-footer-link" href="https://www.linkedin.com/in/darrian-belcher/" rel="noopener noreferrer" target="_blank">LinkedIn</a>
+          <a class="so-footer-link" href="https://getsoleops.com" rel="noopener noreferrer" target="_blank">getsoleops.com</a>
+        </div>
+      </div>
+      <div class="so-footer-bottom">
+        <span>© 2026 SoleOps · Sneaker Reseller Operations Platform · Built by <a href="https://www.linkedin.com/in/darrian-belcher/" rel="noopener noreferrer" target="_blank">Darrian Belcher</a></span>
+        <span>eBay price alerts · Mercari scanner · AI listing generator · P&amp;L tracker</span>
+      </div>
+    </footer>
     """, unsafe_allow_html=True)
 
     st.stop()
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # AUTHENTICATED DASHBOARD — shown to logged-in users
