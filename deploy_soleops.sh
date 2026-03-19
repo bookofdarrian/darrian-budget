@@ -1,24 +1,24 @@
 #!/bin/bash
 # ============================================================
-# College Confused — One-Click Deployment Script
+# SoleOps — One-Click Deployment Script
 # Run this on CT100 (100.95.125.112) after git pull origin main
-# Usage: bash deploy_college_confused.sh
+# Usage: bash deploy_soleops.sh [--domain soleops.io]
 #
-# Starts College Confused on port 8503, configures Nginx, SSL
+# Starts SoleOps on port 8502, configures Nginx, requests SSL
 # ============================================================
 
 set -e  # Exit on any error
 
 # ── Config ────────────────────────────────────────────────────
-DOMAIN="collegeconfused.org"
-PORT=8503
+DOMAIN="${1:-soleops.io}"           # Override: bash deploy_soleops.sh --domain 404soleops.com
+PORT=8502
 APP_DIR="/opt/darrian-budget"
-APP_FILE="cc_app.py"
-SERVICE_NAME="college-confused"
+APP_FILE="soleops_app.py"
+SERVICE_NAME="soleops"
 
 echo ""
-echo "🎓 College Confused — Deployment Script"
-echo "========================================"
+echo "👟 SoleOps — Deployment Script"
+echo "================================"
 echo "  Domain : $DOMAIN"
 echo "  Port   : $PORT"
 echo "  App    : $APP_DIR/$APP_FILE"
@@ -46,13 +46,14 @@ fi
 echo ""
 
 # ── 3. Create systemd service ────────────────────────────────
-echo "⚙️  Step 3/5: Creating systemd service for College Confused..."
+echo "⚙️  Step 3/5: Creating systemd service for SoleOps..."
 
+VENV_PYTHON="$APP_DIR/venv/bin/python"
 STREAMLIT="$APP_DIR/venv/bin/streamlit"
 
 sudo tee "/etc/systemd/system/${SERVICE_NAME}.service" > /dev/null << SERVICE_EOF
 [Unit]
-Description=College Confused AI College Prep (port $PORT)
+Description=SoleOps Sneaker Reseller Platform (port $PORT)
 After=network.target
 
 [Service]
@@ -80,7 +81,7 @@ sudo systemctl restart "$SERVICE_NAME"
 # Wait a moment then check
 sleep 3
 if sudo systemctl is-active --quiet "$SERVICE_NAME"; then
-    echo "✅ College Confused service running on port $PORT."
+    echo "✅ SoleOps service running on port $PORT."
 else
     echo "⚠️  Service may have failed. Check: sudo journalctl -u $SERVICE_NAME -n 50"
 fi
@@ -91,10 +92,10 @@ echo "🌐 Step 4/5: Configuring Nginx for $DOMAIN..."
 
 NGINX_CONF="/etc/nginx/sites-available/$DOMAIN"
 
-sudo tee "$NGINX_CONF" > /dev/null << 'NGINX_EOF'
+sudo tee "$NGINX_CONF" > /dev/null << NGINX_EOF
 server {
     listen 80;
-    server_name collegeconfused.org www.collegeconfused.org;
+    server_name $DOMAIN www.$DOMAIN;
 
     # Security headers
     add_header X-Frame-Options "SAMEORIGIN";
@@ -102,36 +103,35 @@ server {
     add_header X-XSS-Protection "1; mode=block";
 
     location / {
-        proxy_pass http://127.0.0.1:8503;
+        proxy_pass http://127.0.0.1:$PORT;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_read_timeout 86400;
         proxy_buffering off;
     }
 
-    # Streamlit websocket support
+    # Streamlit websocket stream
     location /_stcore/stream {
-        proxy_pass http://127.0.0.1:8503/_stcore/stream;
+        proxy_pass http://127.0.0.1:$PORT/_stcore/stream;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
         proxy_read_timeout 86400;
     }
 
-    # SEO: robots.txt
     location = /robots.txt {
         add_header Content-Type text/plain;
-        return 200 "User-agent: *\nAllow: /\nSitemap: https://collegeconfused.org/sitemap.xml\n";
+        return 200 "User-agent: *\nAllow: /\nSitemap: https://$DOMAIN/sitemap.xml\n";
     }
 }
 NGINX_EOF
 
-# Enable the site
+# Enable site
 if [ ! -f "/etc/nginx/sites-enabled/$DOMAIN" ]; then
     sudo ln -s "$NGINX_CONF" "/etc/nginx/sites-enabled/$DOMAIN"
     echo "✅ Nginx site enabled."
@@ -139,7 +139,7 @@ else
     echo "✅ Nginx site already enabled."
 fi
 
-# Test and reload Nginx
+# Test and reload
 sudo nginx -t
 sudo systemctl reload nginx
 echo "✅ Nginx reloaded."
@@ -153,15 +153,15 @@ if ! command -v certbot &> /dev/null; then
     sudo apt-get install -y certbot python3-certbot-nginx -q
 fi
 
-if sudo certbot certificates 2>/dev/null | grep -q "collegeconfused.org"; then
+if sudo certbot certificates 2>/dev/null | grep -q "$DOMAIN"; then
     echo "✅ SSL certificate already exists. Renewing if needed..."
     sudo certbot renew --quiet
 else
-    echo "  Requesting new SSL certificate..."
+    echo "  Requesting new SSL certificate for $DOMAIN..."
     read -p "  Enter your email for SSL certificate notifications: " SSL_EMAIL
     sudo certbot --nginx \
-        -d collegeconfused.org \
-        -d www.collegeconfused.org \
+        -d "$DOMAIN" \
+        -d "www.$DOMAIN" \
         --non-interactive \
         --agree-tos \
         --email "$SSL_EMAIL" \
@@ -171,28 +171,19 @@ fi
 echo ""
 
 # ── Done ──────────────────────────────────────────────────────
-echo "========================================"
-echo "🎉 College Confused deployment complete!"
+echo "================================"
+echo "🎉 SoleOps deployment complete!"
 echo ""
-echo "📍 Pages live at:"
-echo "   https://collegeconfused.org              → 🏠 Landing"
-echo "   https://collegeconfused.org/cc_home      → 🎓 Dashboard"
-echo "   https://collegeconfused.org/My_Timeline  → 📅 Timeline"
-echo "   https://collegeconfused.org/Scholarships → 💰 Scholarships"
-echo "   https://collegeconfused.org/Essay_Station → ✍️ Essays"
-echo "   https://collegeconfused.org/SATACT_Prep  → 📚 SAT/ACT Prep"
-echo "   https://collegeconfused.org/College_List → 🏫 College List"
-echo "   https://collegeconfused.org/FAFSA_Guide  → 📋 FAFSA Guide"
+echo "📍 Live at:"
+echo "   https://$DOMAIN"
 echo ""
 echo "🔧 Service management:"
-echo "   sudo systemctl status college-confused"
-echo "   sudo systemctl restart college-confused"
-echo "   sudo journalctl -u college-confused -f"
+echo "   sudo systemctl status $SERVICE_NAME"
+echo "   sudo systemctl restart $SERVICE_NAME"
+echo "   sudo journalctl -u $SERVICE_NAME -f"
 echo ""
 echo "⚠️  DNS REQUIRED — Add these records at your registrar:"
-echo "   A    @      → <your public IP>  (run: curl ifconfig.me)"
+echo "   A    @      → <your public IP>  (curl ifconfig.me)"
 echo "   A    www    → <your public IP>"
-echo "   Or add both as Cloudflare proxied A records."
-echo ""
-echo "⏰ DNS propagation can take up to 24h if records are new."
-echo "========================================"
+echo "   CNAME or A via Cloudflare if using Cloudflare DNS"
+echo "================================"
