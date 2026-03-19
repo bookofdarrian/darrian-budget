@@ -10,7 +10,7 @@
 set -e  # Exit on any error
 
 # ── Config ────────────────────────────────────────────────────
-DOMAIN="${1:-soleops.io}"           # Override: bash deploy_soleops.sh --domain 404soleops.com
+DOMAIN="${1:-getsoleops.com}"       # Override: bash deploy_soleops.sh --domain soleops.net
 PORT=8502
 APP_DIR="/opt/darrian-budget"
 APP_FILE="soleops_app.py"

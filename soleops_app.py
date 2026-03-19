@@ -1,6 +1,6 @@
 """
 SoleOps — Standalone Streamlit Entry Point
-Port: 8502 | Domain: soleops.io (or 404soleops.com)
+Port: 8502 | Domain: getsoleops.com (backup: soleops.net)
 Run: streamlit run soleops_app.py --server.port=8502 --server.address=0.0.0.0
 
 Public landing page shown to unauthenticated visitors (Googlebot-indexable).

@@ -200,7 +200,7 @@ DATABASE_URL: postgresql://budget:budget2026secure@budget-postgres:5432/budget
 - **Monitoring:** Grafana at http://100.95.125.112:3000 (CPU, RAM, disk, container health)
 - **Uptime alerts:** Pushover push notifications → iPhone
 
-### soleops.io / 404soleops.com (PLANNED)
+### getsoleops.com (REGISTERED — primary domain)
 - **Plan:** Separate Streamlit app on CT100 port 8502 behind Nginx
 - **Timeline:** Week 2 of 30-day sprint
 - **Auth:** Email/password + Stripe subscription check
