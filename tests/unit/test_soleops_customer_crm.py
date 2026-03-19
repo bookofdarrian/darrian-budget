@@ -2,7 +2,7 @@ import os
 
 # ── Repo root ─────────────────────────────────────────────────────────────────
 ROOT      = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-PAGE_PATH = os.path.join(ROOT, "pages/108_soleops_customer_crm.py")
+PAGE_PATH = os.path.join(ROOT, "pages/115_soleops_customer_crm.py")
 
 
 def _source() -> str:
@@ -21,7 +21,7 @@ def test_page_file_exists_and_syntax():
 
 # ── Test 2: required coding-standard patterns present ────────────────────────
 def test_required_patterns():
-    """SoleOps Customer CRM page follows peachstatesavings.com coding standards."""
+    """SoleOps: Customer CRM page follows peachstatesavings.com coding standards."""
     src = _source()
     assert "def _ensure_tables" in src,    "Missing _ensure_tables() function"
     assert "get_conn"           in src,    "Missing get_conn import/usage"
@@ -33,7 +33,7 @@ def test_required_patterns():
 
 # ── Test 3: no hardcoded secrets ─────────────────────────────────────────────
 def test_no_hardcoded_secrets():
-    """SoleOps Customer CRM page must not contain hardcoded API keys or passwords."""
+    """SoleOps: Customer CRM page must not contain hardcoded API keys or passwords."""
     src = _source()
     forbidden = ["sk-ant-", "password=", "secret=", "Bearer ", "hardcoded"]
     for token in forbidden:
@@ -42,7 +42,7 @@ def test_no_hardcoded_secrets():
 
 # ── Test 4: feature metadata ──────────────────────────────────────────────────
 def test_feature_metadata():
-    """SoleOps Customer CRM — basic file sanity."""
+    """SoleOps: Customer CRM — basic file sanity."""
     assert "soleops_customer_crm" != ""
     assert os.path.basename(PAGE_PATH).endswith(".py")
     assert os.path.getsize(PAGE_PATH) > 1000
