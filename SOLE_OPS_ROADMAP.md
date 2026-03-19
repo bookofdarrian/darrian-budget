@@ -65,7 +65,7 @@ Everything exists in darrian-budget. Phase 1 is extraction + Stripe paywall.
   - Subscription status check on every page load
 
 - [ ] Deploy as standalone app (separate from darrian-budget)
-  - New Streamlit app: soleops.io (or 404soleops.com)
+  - New Streamlit app: getsoleops.com (backup: soleops.net)
   - CT100 homelab: separate port (8502) behind Nginx
 
 ---
@@ -185,7 +185,7 @@ SoleOps App (Streamlit, port 8502)
 ├── AI: Claude claude-opus-4-5 via Anthropic API
 ├── Payments: Stripe (monthly subscriptions)
 ├── Alerts: Telegram bot (existing infrastructure)
-└── Hosting: CT100 homelab → Nginx → soleops.io
+└── Hosting: CT100 homelab → Nginx → getsoleops.com
 ```
 
 **Reused from darrian-budget:**
@@ -203,7 +203,7 @@ SoleOps App (Streamlit, port 8502)
 | Week | Focus | Deliverable |
 |------|-------|-------------|
 | Week 1 | Polish core features | Inventory analyzer + price dashboard working |
-| Week 2 | Stripe paywall + deploy | soleops.io live with free + paid tiers |
+| Week 2 | Stripe paywall + deploy | getsoleops.com live with free + paid tiers |
 | Week 3 | Beta launch | Post in r/flipping + 3 Discord servers |
 | Week 4 | Iterate on feedback | Fix top 3 complaints, add most-requested feature |
 
