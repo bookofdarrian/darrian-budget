@@ -1,0 +1,126 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  CLEAR LINKEDIN TEXT BOX (Cmd+A → Delete) BEFORE PASTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+POST TEXT — PASTE THIS INTO LINKEDIN (~1,050 chars):
+────────────────────────────────────────────────────
+
+I built a system that ships production code while I sleep.
+
+I run a personal finance platform, sneaker resale op, and college prep product — on top of my day job at Visa. More ideas than hours. The bottleneck was shipping.
+
+I took the gated SDLC I learned at Visa and gave it to AI agents.
+
+feature → dev → qa → staging → main (prod)
+
+6 agents run every night at 11PM on my home lab:
+🧠 Planner → ⚙️ Backend → 🎨 UI → 🧪 Tests → ✅ QA → 🚀 Git Bot → PR
+
+I wake up, review the PR, and merge. That's it.
+
+What makes it different: guardrails are embedded in the system — not repeated every session. It knows my codebase. If tests fail, nothing commits.
+
+73+ pages shipped · ~$1/night (Claude Opus 4) · $0/month infra
+
+The pipeline is the product. Guardrails aren't bureaucracy — they're trust.
+
+The system doesn't replace my judgment. It amplifies it. A human still drives. The AI handles the road.
+
+Shoutout to Hank Green, Edan Meyer, and Tina Huang — their content on AI agents, autonomous systems, and vibe coding shaped this architecture. 🙏
+
+Drop a comment for the orchestrator code. Diagram in the image. 👇
+
+#AI #SDLC #ProductManagement #BuildInPublic #IndieHacker
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TECHNICAL DIAGRAM — SCREENSHOT THIS, ATTACH AS IMAGE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌────────────────────────────────────────────────────────────────────┐
+│           AUTONOMOUS AI SDLC PIPELINE — TECHNICAL ARCHITECTURE     │
+│           Darrian Belcher · peachstatesavings.com · March 2026     │
+├────────────────────────────────────────────────────────────────────┤
+│  STACK: Python · Streamlit · SQLite/PostgreSQL · Claude Opus 4     │
+│  INFRA: Proxmox CT100 · Tailscale · Nginx · GitHub Actions         │
+└────────────────────────────────────────────────────────────────────┘
+
+  ⏰  CRON: 11PM DAILY  (CT100 · run_scheduled_agents.py)
+                │
+                ▼
+  ┌──────────────────────────────────────────────────────────┐
+  │  orchestrator.py  —  MULTI-AGENT COORDINATOR             │
+  │  reads: BACKLOG.md  ·  git log  ·  pages/ directory     │
+  └───────────────────┬──────────────────────────────────────┘
+                      │
+         ┌────────────┼─────────────┐
+         ▼            ▼             ▼
+  ┌────────────┐  ┌────────────┐  ┌────────────┐
+  │ 🧠 PLANNER │  │ ⚙️ BACKEND │  │  🎨  UI    │
+  │  AGENT     │  │  AGENT     │  │  AGENT     │
+  │            │  │            │  │            │
+  │ → reads    │  │ → db.py    │  │ → Streamlit│
+  │   backlog  │  │   patterns │  │   sidebar  │
+  │ → writes   │  │ → _ensure  │  │   layout   │
+  │   spec.md  │  │   _tables()│  │   std      │
+  └─────┬──────┘  └─────┬──────┘  └─────┬──────┘
+        └────────────────┼───────────────┘
+                         │
+                         ▼
+  ┌──────────────────────────────────────────────────────────┐
+  │  🧪  TEST AGENT                                          │
+  │  → python3 -m py_compile pages/XX.py                    │
+  │  → pytest tests/unit/  -v                               │
+  │  → bandit -r pages/XX.py  (security scan)               │
+  └───────────────────────┬──────────────────────────────────┘
+                          │
+                          ▼
+  ┌──────────────────────────────────────────────────────────┐
+  │  ✅  QA AGENT  —  QUALITY GATE                           │
+  │  ✓ No hardcoded credentials    ✓ get_conn() / init_db()  │
+  │  ✓ require_login() present     ✓ inject_css() called     │
+  │  ✓ Sidebar standard followed   ✓ Tests: ALL PASS         │
+  │  ✓ No st.experimental_*        ✓ USE_POSTGRES flag used  │
+  └────────────────────┬─────────────────────────────────────┘
+                       │
+                 ┌─────┴──────┐
+               PASS          FAIL
+                 │              │
+                 ▼              ▼
+  ┌───────────────────┐   ┌─────────────────────┐
+  │  🚀  GIT AGENT    │   │  error_log.txt       │
+  │                   │   │  BACKLOG.md updated  │
+  │  git checkout -b  │   │  No commit, no PR    │
+  │  feature/auto-*   │   │  Retry next night    │
+  │                   │   └─────────────────────┘
+  │  git commit -m    │
+  │  "feat: auto-*"   │
+  │                   │
+  │  gh pr create     │
+  │  --base dev       │
+  └─────────┬─────────┘
+            │
+            ▼
+  ┌─────────────────────────────────────────────────────────┐
+  │  👤  HUMAN REVIEW  —  ALWAYS REQUIRED (Morning)         │
+  │  Darrian applies product judgment · Merges or revises   │
+  └──────────────────────┬──────────────────────────────────┘
+                         │
+                         ▼
+  ┌─────────────────────────────────────────────────────────┐
+  │             VISA-STYLE GATED BRANCH PIPELINE            │
+  ├─────────────────────────────────────────────────────────┤
+  │                                                         │
+  │  feature/* → dev → qa → staging → main                  │
+  │     │          │      │      │        │                  │
+  │   unit       smoke  integ  regres   prod                 │
+  │   tests      test   test   sion   peachstatesavings.com  │
+  │                                                         │
+  │  GitHub Actions: ci.yml · promote-qa.yml · deploy.yml   │
+  │  Branch protection: require PR + passing checks         │
+  └─────────────────────────────────────────────────────────┘
+
+  INSPIRED BY: Hank Green (focused agents) · Edan Meyer (self-learning loops)
+               Tina Huang (TFCDC framework · hyper-specific app architecture)
+  ─────────────────────────────────────────────────────────────────────────
+  COST: ~$0.50–$2/night  ·  PAGES SHIPPED: 73+  ·  INFRA: $0/month
