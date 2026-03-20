@@ -1,0 +1,26 @@
+I've been building in silence for a while. Today I'm sharing everything.
+
+Over the past year — while working full-time as a Technical Program Manager at Visa and finishing my Georgia Tech data analytics degree — I've been building three AI-powered platforms from a home server in my house.
+
+📊 Peach State Savings (peachstatesavings.com) — 140+ page personal finance OS. Free for everyone.
+
+👟 SoleOps (getsoleops.com — April 2026) — AI listing generator, inventory manager, P&L dashboard, ARB scanner with Telegram alerts. First 25 signups get 30 free Pro days.
+
+🎓 College Confused (collegeconfused.org) — Free AI college prep for first-gen students. FAFSA walkthrough, essay assistant, scholarship tracker, AI mock interviews. Always free.
+
+I could not have done this without:
+
+❤️ Anthropic / Claude AI — genuine co-creator on every feature
+❤️ The Streamlit framework team
+❤️ Georgia Tech for teaching me to build in systems
+❤️ My colleagues at Visa for the program discipline I apply to every build
+❤️ My family — every sacrifice, every "go do what you gotta do" — this is for you
+❤️ Dr. Bedir — for promoting the growth of beautiful minds. Thank you for seeing us.
+❤️ Josh, Keona, Nylah, Omar, Noah, Liddon, Nauri, Metri, Joa, Juan + the whole Menace2 GC
+❤️ Vine — you were there from the start. Still building for you.
+❤️ 252 // 525 — you already know. Always.
+❤️ RIP Danny 🕊️ — gone too soon. This one's for you too.
+
+One year ago I had a spreadsheet. Today I have three live products and a server that builds features while I sleep.
+
+This is just the beginning. 🍑
