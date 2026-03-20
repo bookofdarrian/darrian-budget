@@ -143,6 +143,8 @@ def _make_auth_stub():
     auth.render_sidebar_brand       = MagicMock(return_value=None)
     auth.render_sidebar_user_widget = MagicMock(return_value=None)
     auth.inject_css                 = MagicMock(return_value=None)
+    auth.inject_soleops_css         = MagicMock(return_value=None)
+    auth.inject_cc_css              = MagicMock(return_value=None)
     return auth
 
 
