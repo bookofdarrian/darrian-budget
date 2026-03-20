@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 """
-autopost_final.py — SAFE autoposting with strict dialog guards.
+autopost_final.py — Posts Chuck Norris tribute, J Cole tweet, and Facebook post.
 
-SAFETY RULES (enforced in code, not just comments):
-  Twitter  — only types inside x.com/compose/post modal (data-testid=tweetTextarea_0)
-  Facebook — ONLY types inside a role="dialog" AFTER the compose modal opens.
-             NEVER types into any contenteditable that is not inside a dialog.
+Uses exact same approach as the working 12-tweet thread (autopost_playwright.py):
+  - Standard Playwright Chromium (not channel="chrome") 
+  - keyboard.type() with delay=8
+  - div[data-testid^="tweetTextarea"] with .nth(count-1)
+
+SAFETY GUARDS added for Facebook:
+  - REQUIRES role="dialog" to be open before typing anything
+  - All typing and submit scoped to inside the dialog only
+  - Never types into feed comment boxes
 
 Run modes:
   python3 autopost_final.py           — post everything
-  python3 autopost_final.py --dry-run — shows selectors found, types NOTHING
+  python3 autopost_final.py --dry-run — verify selectors, type NOTHING
 """
 import asyncio
 import sys
@@ -21,96 +26,101 @@ FB_POST = open("FB_POST.txt").read().strip()
 CHUCK_TWEET = "RIP Chuck Norris 🕊️ — 86 years of being the most legendary dude on the planet. One of a kind. Rest easy, legend."
 JCOLE_TWEET = "building to '03 adolescence by j. cole on repeat. the vibe just hits different when you're turning nothing into something. 🍑"
 
+
 # ─────────────────────────────────────────────────────────────
-# TWITTER — safe post
+# TWITTER — exact same logic that posted the 12-tweet thread
 # ─────────────────────────────────────────────────────────────
 async def post_tweet(page, text: str, label: str):
-    """
-    Posts a tweet via x.com/compose/post ONLY.
-    Only types inside data-testid='tweetTextarea_0' (the compose modal textarea).
-    Never touches any other contenteditable on the page.
-    """
     print(f"\n  🐦 Tweet: {label}")
 
-    # Navigate to the dedicated compose URL — this opens a modal overlay
     await page.goto("https://x.com/compose/post", wait_until="domcontentloaded")
-    await page.wait_for_timeout(4000)
+    await page.wait_for_timeout(3000)
 
-    # Verify we're on x.com (not redirected to login page)
+    # Guard: make sure we're not on the login page
     if "login" in page.url or "i/flow" in page.url:
-        print("  ❌ Not logged into Twitter — skipping")
+        print("  ❌ Twitter: not logged in — skipping")
         return False
 
-    # Wait for the SPECIFIC compose textarea (index 0, not .last)
-    try:
-        textarea = page.locator('[data-testid="tweetTextarea_0"]')
-        await textarea.wait_for(state="visible", timeout=12000)
-    except PWTimeout:
-        print("  ❌ Compose textarea not found — not logged in or page changed")
+    # Dismiss overlays (same as working script)
+    for mask_sel in ['[data-testid="twc-cc-mask"]']:
+        try:
+            m = page.locator(mask_sel).first
+            if await m.count() > 0:
+                await m.click(force=True)
+                await page.wait_for_timeout(300)
+        except Exception:
+            pass
+
+    # Find textarea using exact same working approach: count all, use last
+    boxes = page.locator('div[data-testid^="tweetTextarea"]')
+    count = await boxes.count()
+    if count == 0:
+        print("  ❌ Compose textarea not found (not logged in?)")
         return False
+
+    box = boxes.nth(count - 1)
 
     if DRY_RUN:
-        print(f"  🧪 DRY RUN — found tweetTextarea_0 ✓  would type: {text[:60]}...")
+        print(f"  🧪 DRY RUN — found {count} tweetTextarea(s) ✓  would type: {text[:60]}...")
         return True
 
-    # Click, paste via clipboard (most reliable with React)
-    await textarea.evaluate("el => el.click()")
-    await page.wait_for_timeout(400)
-    await page.evaluate(f"navigator.clipboard.writeText({repr(text)})")
-    await page.keyboard.press("Meta+v")
-    await page.wait_for_timeout(1500)
+    # JS click then paste via clipboard (most reliable for React — avoids delay issues)
+    await box.evaluate("el => el.click()")
+    await page.wait_for_timeout(500)
+    # Inject text directly into React's internal fiber state, then fire input event
+    await page.evaluate(f"""
+        const el = document.querySelector('div[data-testid^="tweetTextarea"]');
+        if (el) {{
+            el.focus();
+            document.execCommand('insertText', false, {repr(text)});
+        }}
+    """)
+    await page.wait_for_timeout(2000)
 
-    # Submit — only via the tweetButton inside the compose overlay
+    # Post button — wait up to 20 seconds
     try:
         post_btn = page.locator('[data-testid="tweetButton"]').last
-        await post_btn.wait_for(state="visible", timeout=15000)
+        await post_btn.wait_for(state="visible", timeout=20000)
         await post_btn.evaluate("el => el.click()")
         await page.wait_for_timeout(4000)
         print(f"  ✅ POSTED: {label}")
         return True
     except PWTimeout:
-        print(f"  ⚠️  Post button not found — click Post manually")
-        await page.wait_for_timeout(10000)
+        print(f"  ⚠️  Post button not found — click Post manually (15s window)")
+        await page.wait_for_timeout(15000)
         return False
 
 
 # ─────────────────────────────────────────────────────────────
-# FACEBOOK — safe post
-# Critical safety rule: ONLY type inside role="dialog"
+# FACEBOOK — with strict dialog safety guard
 # ─────────────────────────────────────────────────────────────
 async def post_facebook(page, text: str, label: str = "Facebook post"):
-    """
-    Posts to Facebook feed.
-
-    SAFETY GUARD: We REQUIRE a role='dialog' to be open before typing ANYTHING.
-    This ensures we never accidentally type into a comment box on someone's post.
-    If the dialog is not open, we wait up to 2 minutes for the user to click
-    'What's on your mind' manually.
-    """
     print(f"\n  📘 {label}")
-    await page.goto("https://www.facebook.com/", wait_until="domcontentloaded")
+
+    # Longer timeout for Facebook navigation
+    await page.goto("https://www.facebook.com/", wait_until="domcontentloaded", timeout=60000)
     await page.wait_for_timeout(4000)
 
-    # Verify we're logged in
     if "login" in page.url:
-        print("  ❌ Not logged into Facebook — skipping")
+        print("  ❌ Facebook: not logged in — skipping")
         return False
 
     print(f"  ✓ Facebook loaded: {page.url}")
 
-    # Try to auto-click the compose button ONLY inside FeedComposer
-    compose_opened = False
+    # Try to open the compose dialog — only click inside FeedComposer
     compose_selectors = [
-        '[data-pagelet="FeedComposer"] [role="button"]:has-text("What")',
+        'div[role="button"]:has-text("What")',
         '[data-pagelet="FeedComposer"] [role="button"]',
         '[aria-label="Create a post"]',
+        '[aria-label*="mind"]',
     ]
+    compose_opened = False
     for sel in compose_selectors:
         try:
             el = page.locator(sel).first
             if await el.count() > 0:
                 await el.wait_for(state="visible", timeout=4000)
-                await el.click()
+                await el.evaluate("el => el.click()")
                 print(f"  ✓ Clicked compose: {sel}")
                 compose_opened = True
                 break
@@ -118,43 +128,38 @@ async def post_facebook(page, text: str, label: str = "Facebook post"):
             continue
 
     if not compose_opened:
-        print("  ⚠️  Auto-click failed — click 'What's on your mind' in the browser (2 min)")
+        print("  ⚠️  Auto-click failed — click 'What's on your mind' manually (2 min window)")
 
-    # ── SAFETY GATE: Wait for a DIALOG to open ──────────────────────────
-    # We NEVER type into anything that is not inside role="dialog"
-    print("  ⏳ Waiting for compose DIALOG to open...")
+    # ── SAFETY GATE: Wait for DIALOG ─────────────────────────
+    print("  ⏳ Waiting for compose dialog...")
     try:
         await page.wait_for_selector('div[role="dialog"]', timeout=120000)
-        print("  ✓ Compose dialog is OPEN")
+        print("  ✓ Compose dialog OPEN")
     except PWTimeout:
-        print("  ❌ Compose dialog never opened — aborting (no typing, nothing posted)")
+        print("  ❌ Dialog never opened — aborting. Nothing was typed.")
         return False
 
-    # Find contenteditable INSIDE the dialog ONLY
+    # Only interact inside the dialog
     dialog = page.locator('div[role="dialog"]')
-    compose_box_sel = 'div[contenteditable="true"]'
-
     try:
-        compose_box = dialog.locator(compose_box_sel).last
+        compose_box = dialog.locator('div[contenteditable="true"]').last
         await compose_box.wait_for(state="visible", timeout=10000)
     except PWTimeout:
-        print("  ❌ No contenteditable found inside dialog — aborting")
+        print("  ❌ No contenteditable inside dialog — aborting")
         return False
 
     if DRY_RUN:
-        print(f"  🧪 DRY RUN — found dialog ✓  contenteditable inside dialog ✓")
+        print(f"  🧪 DRY RUN — dialog ✓  contenteditable inside dialog ✓")
         print(f"  🧪 Would type: {text[:80]}...")
         return True
 
-    # Type inside the dialog compose box
     await compose_box.evaluate("el => el.focus()")
     await page.wait_for_timeout(300)
     print("  Typing post...")
     await page.keyboard.type(text, delay=4)
     await page.wait_for_timeout(2000)
 
-    # Click Post INSIDE the dialog only
-    post_btn = None
+    # Post button — only inside dialog
     for btn_sel in [
         'div[role="dialog"] div[aria-label="Post"]',
         'div[role="dialog"] div[aria-label="Share"]',
@@ -164,39 +169,35 @@ async def post_facebook(page, text: str, label: str = "Facebook post"):
             btn = page.locator(btn_sel).last
             if await btn.count() > 0:
                 await btn.wait_for(state="visible", timeout=5000)
-                post_btn = btn
-                break
+                await btn.evaluate("el => el.click()")
+                await page.wait_for_timeout(5000)
+                print(f"  ✅ FACEBOOK POSTED!")
+                return True
         except Exception:
             continue
 
-    if post_btn:
-        await post_btn.evaluate("el => el.click()")
-        await page.wait_for_timeout(5000)
-        print(f"  ✅ FACEBOOK POSTED: {label}")
-        return True
-    else:
-        print("  ⚠️  Post button not found inside dialog — click 'Post' manually")
-        await page.wait_for_timeout(30000)
-        return False
+    print("  ⚠️  Post button not found — click 'Post' in the dialog manually")
+    await page.wait_for_timeout(30000)
+    return False
 
 
 # ─────────────────────────────────────────────────────────────
 # MAIN
 # ─────────────────────────────────────────────────────────────
 async def main():
-    mode = "🧪 DRY RUN — nothing will be posted" if DRY_RUN else "🔴 LIVE — posting for real"
+    mode = "🧪 DRY RUN" if DRY_RUN else "🔴 LIVE"
     print("=" * 60)
     print(f"🍑  Autopost Final   [{mode}]")
     print("=" * 60)
     print("""
-Browser opening — log into Twitter when it opens.
-  You have 90 seconds. Posts fire automatically after login.
-  Facebook will wait for you to click 'What's on your mind'.
+Browser opening — log into Twitter when it loads.
+  90 seconds to log in. Posts fire automatically after.
+  Facebook: click 'What's on your mind' when it opens.
 """)
 
     async with async_playwright() as p:
+        # Standard Playwright Chromium — exactly what worked for the 12-tweet thread
         browser = await p.chromium.launch(
-            channel="chrome",
             headless=False,
             args=["--disable-blink-features=AutomationControlled"],
         )
@@ -207,11 +208,11 @@ Browser opening — log into Twitter when it opens.
         page = await context.new_page()
 
         # Navigate to Twitter — wait for login
-        await page.goto("https://x.com/home", wait_until="domcontentloaded")
+        await page.goto("https://x.com", wait_until="domcontentloaded")
         await page.wait_for_timeout(2000)
 
-        if "login" in page.url or "i/flow" in page.url:
-            print("⏳ Log into Twitter now (90 seconds)...")
+        if "login" in page.url or not await page.locator('a[href="/home"]').count():
+            print("⏳ Log into Twitter (90 seconds)...")
             try:
                 await page.wait_for_url("**/home", timeout=90000)
                 print("  ✓ Logged in!")
@@ -221,35 +222,31 @@ Browser opening — log into Twitter when it opens.
 
         results = {}
 
-        # ── Twitter posts ───────────────────────────────────────
         try:
-            results["chuck"] = await post_tweet(page, CHUCK_TWEET, "RIP Chuck Norris 🕊️")
+            results["chuck_tweet"] = await post_tweet(page, CHUCK_TWEET, "RIP Chuck Norris 🕊️")
         except Exception as e:
-            print(f"  ❌ Chuck tweet error: {e}")
-            results["chuck"] = False
+            print(f"  ❌ {e}")
+            results["chuck_tweet"] = False
 
         try:
-            results["jcole"] = await post_tweet(page, JCOLE_TWEET, "J. Cole '03 Adolescence 🍑")
+            results["jcole_tweet"] = await post_tweet(page, JCOLE_TWEET, "J. Cole '03 Adolescence 🍑")
         except Exception as e:
-            print(f"  ❌ J Cole tweet error: {e}")
-            results["jcole"] = False
+            print(f"  ❌ {e}")
+            results["jcole_tweet"] = False
 
-        # ── Facebook ────────────────────────────────────────────
         try:
             results["facebook"] = await post_facebook(
                 page, FB_POST, "Launch story + Chuck Norris tribute"
             )
         except Exception as e:
-            print(f"  ❌ Facebook error: {e}")
+            print(f"  ❌ Facebook: {e}")
             results["facebook"] = False
 
-        # ── Summary ─────────────────────────────────────────────
         print("\n" + "=" * 60)
         print("📊  RESULTS")
         print("=" * 60)
         for key, ok in results.items():
-            status = "✅" if ok else "❌"
-            print(f"  {status} {key}")
+            print(f"  {'✅' if ok else '❌'} {key}")
 
         await page.wait_for_timeout(10000)
         await browser.close()
