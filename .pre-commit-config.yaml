@@ -43,6 +43,17 @@ repos:
         args: ['-c', '.bandit']
         files: ^pages/|^utils/|^aura/|^.*\.py$
 
+  # ── Local guard: no duplicate Streamlit page slugs ──────────────────────
+  - repo: local
+    hooks:
+      - id: check-duplicate-page-slugs
+        name: "No duplicate Streamlit page slugs"
+        entry: python3 scripts/check_duplicate_slugs.py
+        language: python
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
 ci:
   autofix_commit_msg: |
     [pre-commit.ci] auto fixes from pre-commit hooks
