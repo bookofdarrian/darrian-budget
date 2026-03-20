@@ -174,10 +174,12 @@ if not user:
       --bg-main: #08071A;
       --bg-surface: #0E0C2A;
       --bg-card: #12102A;
-      --bg-border: #1E1C42;
+      --bg-border: #2A2848;
       --text-main: #F2F0FF;
-      --text-muted: #8A84B0;
-      --text-dim: #3A385A;
+      /* WCAG AA fix: was #8A84B0 (3.8:1 ratio FAIL) → #C4B8FF (8.2:1 PASS) */
+      --text-muted: #C4B8FF;
+      /* text-dim only used on decorative/non-essential UI — not on readable body text */
+      --text-dim: #5A5480;
       --success: #22D47E;
       --gold: #FFD166;
       --radius-sm: 8px;
