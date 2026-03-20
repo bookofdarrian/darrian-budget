@@ -976,6 +976,107 @@ def is_pro_user(user: dict) -> bool:
     return plan == "pro" and status in ("active", "trialing")
 
 
+# ── Token usage tracking ──────────────────────────────────────────────────────
+def _ensure_token_usage_table():
+    """Create token_usage table in the shared auth DB if it doesn't exist."""
+    conn = get_auth_conn()
+    c = conn.cursor()
+    if USE_POSTGRES:
+        c.execute('''CREATE TABLE IF NOT EXISTS token_usage (
+            id SERIAL PRIMARY KEY,
+            user_email TEXT NOT NULL,
+            site TEXT NOT NULL DEFAULT 'pss',
+            page TEXT NOT NULL DEFAULT '',
+            model TEXT NOT NULL DEFAULT '',
+            input_tokens INTEGER DEFAULT 0,
+            output_tokens INTEGER DEFAULT 0,
+            total_tokens INTEGER DEFAULT 0,
+            used_byok INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (to_char(now(), 'YYYY-MM-DD HH24:MI:SS'))
+        )''')
+    else:
+        c.execute('''CREATE TABLE IF NOT EXISTS token_usage (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_email TEXT NOT NULL,
+            site TEXT NOT NULL DEFAULT 'pss',
+            page TEXT NOT NULL DEFAULT '',
+            model TEXT NOT NULL DEFAULT '',
+            input_tokens INTEGER DEFAULT 0,
+            output_tokens INTEGER DEFAULT 0,
+            total_tokens INTEGER DEFAULT 0,
+            used_byok INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now'))
+        )''')
+    conn.commit()
+    conn.close()
+
+
+def log_token_usage(user_email: str, page: str, model: str,
+                    input_tokens: int, output_tokens: int,
+                    site: str = "pss", used_byok: bool = False):
+    """
+    Record a single AI API call's token consumption in the shared auth DB.
+    Call this after every successful Anthropic response.
+    """
+    _ensure_token_usage_table()
+    conn = get_auth_conn()
+    total = input_tokens + output_tokens
+    execute(conn,
+        "INSERT INTO token_usage (user_email, site, page, model, input_tokens, output_tokens, total_tokens, used_byok) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (user_email.strip().lower(), site, page, model,
+         input_tokens, output_tokens, total, 1 if used_byok else 0)
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_token_usage_summary() -> list:
+    """Return per-user token usage totals from the shared auth DB."""
+    _ensure_token_usage_table()
+    conn = get_auth_conn()
+    c = execute(conn,
+        """SELECT user_email, site,
+                  COUNT(*) as calls,
+                  SUM(input_tokens) as total_input,
+                  SUM(output_tokens) as total_output,
+                  SUM(total_tokens) as total_tokens,
+                  SUM(used_byok) as byok_calls,
+                  MAX(created_at) as last_call
+           FROM token_usage
+           GROUP BY user_email, site
+           ORDER BY total_tokens DESC"""
+    )
+    rows = c.fetchall()
+    conn.close()
+    if USE_POSTGRES:
+        cols = [d[0] for d in c.description]
+        return [dict(zip(cols, r)) for r in rows]
+    return [dict(r) for r in rows]
+
+
+def get_token_usage_detail(user_email: str = None, limit: int = 200) -> list:
+    """Return raw token usage rows, optionally filtered by user."""
+    _ensure_token_usage_table()
+    conn = get_auth_conn()
+    if user_email:
+        c = execute(conn,
+            "SELECT * FROM token_usage WHERE user_email = ? ORDER BY created_at DESC LIMIT ?",
+            (user_email.strip().lower(), limit)
+        )
+    else:
+        c = execute(conn,
+            "SELECT * FROM token_usage ORDER BY created_at DESC LIMIT ?",
+            (limit,)
+        )
+    rows = c.fetchall()
+    conn.close()
+    if USE_POSTGRES:
+        cols = [d[0] for d in c.description]
+        return [dict(zip(cols, r)) for r in rows]
+    return [dict(r) for r in rows]
+
+
 def add_to_waitlist(email: str, name: str = "", source: str = "") -> bool:
     """Add an email to the waitlist (shared auth DB)."""
     email = email.strip().lower()
