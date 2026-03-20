@@ -9,7 +9,7 @@ import json
 from utils.db import get_conn, USE_POSTGRES, execute as db_exec, init_db, get_setting, set_setting
 from utils.auth import require_login, render_sidebar_brand, render_sidebar_user_widget, inject_css
 
-st.set_page_config(page_title="404 Sole Archive P&L Dashboard", page_icon="🍑", layout="wide")
+st.set_page_config(page_title="Sole PnL Dashboard", page_icon="🍑", layout="wide")
 init_db()
 inject_css()
 require_login()
@@ -182,7 +182,7 @@ def _ensure_tables():
 
 _ensure_tables()
 
-st.title("🍑 404 Sole Archive P&L Dashboard")
+st.title("🍑 Sole PnL Dashboard")
 
 # Main tabs
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Dashboard", "📦 Inventory", "💰 Sales", "💸 Expenses", "⚙️ Settings"])
