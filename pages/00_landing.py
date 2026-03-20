@@ -797,6 +797,117 @@ body, .stApp {{ background: var(--bg-main); color: var(--text-main); font-family
   .section-h2 {{ font-size: 1.5rem; }}
   .cta-h2 {{ font-size: 1.5rem; }}
 }}
+
+/* ── For Business / Agency / Download Cards ── */
+.biz-section {{
+  background: linear-gradient(160deg, rgba(255,140,66,0.07) 0%, rgba(8,11,18,0) 55%);
+  border: 1px solid rgba(255,140,66,0.2);
+  border-radius: var(--radius-xl);
+  padding: 60px 48px;
+  margin-top: 16px;
+}}
+.biz-grid {{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 40px;
+}}
+.biz-card {{
+  background: var(--bg-card);
+  border: 1px solid var(--bg-border);
+  border-radius: var(--radius-md);
+  padding: 32px 28px;
+  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}}
+.biz-card:hover {{
+  border-color: var(--peach);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(255,140,66,0.15);
+}}
+.biz-card.highlight {{
+  border-color: rgba(255,140,66,0.5);
+  background: linear-gradient(135deg, rgba(255,140,66,0.08) 0%, var(--bg-card) 100%);
+  box-shadow: 0 4px 24px rgba(255,140,66,0.1);
+}}
+.biz-badge {{
+  display: inline-block;
+  background: linear-gradient(135deg, var(--peach), var(--peach-dark));
+  color: #000;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 100px;
+  margin-bottom: 16px;
+  width: fit-content;
+}}
+.biz-icon {{
+  font-size: 2.2rem;
+  margin-bottom: 12px;
+  display: block;
+}}
+.biz-name {{
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}}
+.biz-price {{
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--peach);
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin-bottom: 4px;
+}}
+.biz-price-sub {{
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}}
+.biz-desc {{
+  font-size: 0.87rem;
+  color: var(--text-muted);
+  line-height: 1.65;
+  margin-bottom: 20px;
+  flex: 1;
+}}
+.biz-feature {{
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.84rem;
+  color: #B0BACE;
+  margin-bottom: 8px;
+  line-height: 1.45;
+}}
+.biz-check {{
+  color: var(--success);
+  font-weight: 900;
+  flex-shrink: 0;
+  margin-top: 1px;
+}}
+.biz-divider {{
+  border: none;
+  border-top: 1px solid var(--bg-border);
+  margin: 18px 0;
+}}
+.biz-cta-note {{
+  margin-top: 20px;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  font-style: italic;
+  text-align: center;
+}}
+@media (max-width: 900px) {{
+  .biz-grid {{ grid-template-columns: 1fr; gap: 16px; }}
+  .biz-section {{ padding: 40px 24px; }}
+}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -811,6 +922,7 @@ st.markdown("""
     <a class="nav-link" href="#features">Features</a>
     <a class="nav-link" href="#how-it-works">How It Works</a>
     <a class="nav-link" href="#pricing">Pricing</a>
+    <a class="nav-link" href="#for-business">For Business</a>
     <a class="nav-link" href="#faq">FAQ</a>
   </div>
 </nav>
@@ -1053,6 +1165,101 @@ st.markdown("""
       <div class="price-feature"><span class="price-check">✓</span> Business income tracker</div>
       <div class="price-feature"><span class="price-check">✓</span> All 73+ Pro tools unlocked</div>
     </div>
+  </div>
+</section>
+""", unsafe_allow_html=True)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FOR BUSINESS — AGENCY LICENSE & DOWNLOAD
+# ═══════════════════════════════════════════════════════════════════════════════
+st.markdown("""
+<section class="section" id="for-business" aria-label="For businesses and developers">
+  <div class="section-eyebrow">For Business &amp; Developers</div>
+  <h2 class="section-h2">Use Peach State Savings as Your Own AI Finance System</h2>
+  <p class="section-sub">
+    Beyond personal use — license the full platform, run it under your own brand,
+    or download the complete source code and own it outright.
+  </p>
+  <div class="biz-section">
+    <div class="biz-grid">
+
+      <!-- SaaS Access License -->
+      <div class="biz-card">
+        <span class="biz-badge">SaaS Access</span>
+        <span class="biz-icon">☁️</span>
+        <div class="biz-name">Hosted Agent Access</div>
+        <div class="biz-price">$19<span style="font-size:1rem;font-weight:600;">/mo</span></div>
+        <div class="biz-price-sub">per seat · cancel anytime</div>
+        <p class="biz-desc">
+          Use the full Peach State Savings AI agent system — budgeting, insights, RSU tracking,
+          73+ tools — under a dedicated account, with priority support and early feature access.
+          Ideal for professionals who want the power without self-hosting.
+        </p>
+        <hr class="biz-divider">
+        <div class="biz-feature"><span class="biz-check">✓</span> All 73+ Pro tools unlocked</div>
+        <div class="biz-feature"><span class="biz-check">✓</span> Claude AI spending insights</div>
+        <div class="biz-feature"><span class="biz-check">✓</span> RSU, ESPP &amp; portfolio trackers</div>
+        <div class="biz-feature"><span class="biz-check">✓</span> Priority support (24hr response)</div>
+        <div class="biz-feature"><span class="biz-check">✓</span> Early access to new features</div>
+        <div class="biz-feature"><span class="biz-check">✓</span> Hosted &amp; maintained for you</div>
+        <div class="biz-cta-note">Contact via LinkedIn to get set up</div>
+      </div>
+
+      <!-- Agency / White-Label License -->
+      <div class="biz-card highlight">
+        <span class="biz-badge">Most Requested</span>
+        <span class="biz-icon">🏢</span>
+        <div class="biz-name">Agency White-Label License</div>
+        <div class="biz-price">$79<span style="font-size:1rem;font-weight:600;">/mo</span></div>
+        <div class="biz-price-sub">per deployment · annual billing saves 20%</div>
+        <p class="biz-desc">
+          Deploy the entire Peach State Savings platform under your own brand for your clients,
+          team, or community. You get your own domain, custom logo, and a fully functional
+          AI-powered finance system — built and maintained by the same autonomous AI pipeline
+          that ships features every night.
+        </p>
+        <hr class="biz-divider">
+        <div class="biz-feature"><span class="biz-check">✓</span> Full white-label branding (your logo, domain)</div>
+        <div class="biz-feature"><span class="biz-check">✓</span> Multi-user management dashboard</div>
+        <div class="biz-feature"><span class="biz-check">✓</span> All 73+ tools available to your users</div>
+        <div class="biz-feature"><span class="biz-check">✓</span> Claude AI integration under your API key</div>
+        <div class="biz-feature"><span class="biz-check">✓</span> Custom feature requests considered</div>
+        <div class="biz-feature"><span class="biz-check">✓</span> Onboarding call included</div>
+        <div class="biz-feature"><span class="biz-check">✓</span> Charge your own users (you set prices)</div>
+        <div class="biz-cta-note">Contact via LinkedIn to discuss your deployment</div>
+      </div>
+
+      <!-- Download & Self-Host -->
+      <div class="biz-card">
+        <span class="biz-badge">One-Time Purchase</span>
+        <span class="biz-icon">📦</span>
+        <div class="biz-name">Download &amp; Self-Host</div>
+        <div class="biz-price">$249<span style="font-size:1rem;font-weight:600;"> once</span></div>
+        <div class="biz-price-sub">lifetime license · no ongoing fees</div>
+        <p class="biz-desc">
+          Get the complete source code, Docker Compose setup, PostgreSQL schema, Nginx config,
+          and a step-by-step homelab deployment guide. Run Peach State Savings permanently on
+          your own server — your data, your hardware, no monthly fees, ever.
+        </p>
+        <hr class="biz-divider">
+        <div class="biz-feature"><span class="biz-check">✓</span> Full Python / Streamlit source code</div>
+        <div class="biz-feature"><span class="biz-check">✓</span> Docker Compose + Dockerfile included</div>
+        <div class="biz-feature"><span class="biz-check">✓</span> PostgreSQL schema + migration scripts</div>
+        <div class="biz-feature"><span class="biz-check">✓</span> Nginx reverse-proxy config</div>
+        <div class="biz-feature"><span class="biz-check">✓</span> Step-by-step homelab setup guide</div>
+        <div class="biz-feature"><span class="biz-check">✓</span> Lifetime updates via private GitHub repo</div>
+        <div class="biz-feature"><span class="biz-check">✓</span> One-time setup support call (60 min)</div>
+        <div class="biz-cta-note">Contact via LinkedIn to purchase &amp; receive download link</div>
+      </div>
+
+    </div>
+    <p style="text-align:center; margin-top:32px; font-size:0.84rem; color:#7A8499; line-height:1.7;">
+      💬 All business inquiries: reach out on
+      <a href="https://www.linkedin.com/in/darrian-belcher/" target="_blank" rel="noopener noreferrer"
+         style="color:#FF8C42; text-decoration:none;">LinkedIn → Darrian Belcher</a>
+      · Response within 24 hours.
+    </p>
   </div>
 </section>
 """, unsafe_allow_html=True)
