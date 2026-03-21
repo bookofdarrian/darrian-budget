@@ -19,6 +19,9 @@ homeharvest>=0.8.18
 # Spotify integration (Media Library)
 spotipy>=2.23.0
 # build: 2026-02-28-media-spotify
+# Garmin Connect integration
+garminconnect>=0.2.40
+
 # Agent Dashboard (Dash — standalone, no Streamlit)
 dash>=2.16.0
 dash-bootstrap-components>=1.5.0

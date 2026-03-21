@@ -14,3 +14,4 @@ emergency_code.txt
 VAULTWARDEN_CREDENTIALS.md
 .spotify_token_cache
 .playwright_profile/
+garmin_trigger.py
