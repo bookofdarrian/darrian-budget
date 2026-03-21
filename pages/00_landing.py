@@ -964,8 +964,8 @@ st.markdown("""
 # HERO
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown("""
-<header class="hero" role="banner">
-  <div class="hero-eyebrow">🚀 Built by a TPM at Visa · 73+ Finance Tools · Self-Hosted & Private</div>
+<div class="hero" role="banner">
+  <div class="hero-eyebrow">🚀 Built by a TPM at Visa · 73+ Finance Tools · Self-Hosted &amp; Private</div>
   <h1 class="hero-h1">
     The <span>Free AI Personal Finance App</span><br>Built for Real Life
   </h1>
@@ -974,7 +974,7 @@ st.markdown("""
     investments &amp; RSUs, and finally see where your money actually goes —
     free, forever, no credit card.
   </p>
-</header>
+</div>
 """, unsafe_allow_html=True)
 
 # CTA Button
