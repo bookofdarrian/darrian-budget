@@ -1036,10 +1036,225 @@ with tabs[5]:
     st.subheader("⌚ Garmin Health Data")
     st.info("📲 **Garmin Integration:** Until the Garmin Connect API is connected, log data manually here or paste from the Garmin app. The Garmin Connect IQ API (via `python-garminconnect`) can be enabled with your Garmin credentials in Settings.")
 
-    sub_g = st.tabs(["📥 Log Garmin Data", "📊 Garmin Trends", "🔗 API Setup Guide"])
+    sub_g = st.tabs(["🔄 Sync Now", "📥 Log Garmin Data", "📊 Garmin Trends"])
 
+    # ── Sub-tab 0: Sync Now ───────────────────────────────────────────────────
     with sub_g[0]:
-        st.markdown("### Log Garmin Data for a Day")
+        st.markdown("### 🔄 Garmin Connect — Live Sync")
+
+        garmin_email    = get_setting("garmin_email") or ""
+        garmin_password = get_setting("garmin_password") or ""
+
+        # ── Credentials setup ─────────────────────────────────────────────────
+        with st.expander("⚙️ Garmin Connect Credentials" + (" ✅ Saved" if garmin_email else " — Not set"), expanded=not garmin_email):
+            st.caption("Your credentials are stored securely in the app database (never in code or GitHub).")
+            new_email = st.text_input("Garmin Connect Email", value=garmin_email, key="g_cred_email")
+            new_pass  = st.text_input("Garmin Connect Password", value=garmin_password,
+                                       type="password", key="g_cred_pass")
+            if st.button("💾 Save Garmin Credentials", key="save_garmin_creds"):
+                set_setting("garmin_email", new_email)
+                set_setting("garmin_password", new_pass)
+                st.success("✅ Credentials saved!")
+                st.rerun()
+
+        if not garmin_email or not garmin_password:
+            st.warning("⚠️ Enter your Garmin Connect credentials above to enable live sync.")
+        else:
+            st.success(f"✅ Connected as: **{garmin_email}**")
+
+            sync_date = st.date_input("Sync Date", value=date.today(), key="garmin_sync_date")
+            sync_col1, sync_col2 = st.columns(2)
+
+            with sync_col1:
+                sync_btn = st.button("⌚ Sync from Garmin Connect", type="primary",
+                                      use_container_width=True, key="garmin_sync_btn")
+                st.caption("Pulls steps, HR, HRV, sleep, stress, body battery from Garmin Connect API")
+
+            with sync_col2:
+                sync_7_btn = st.button("📅 Sync Last 7 Days", use_container_width=True, key="garmin_sync_7")
+                st.caption("Backfills the past 7 days of data")
+
+            def _do_garmin_sync(target_date: date) -> dict:
+                """Pull data for one day from Garmin Connect. Returns result dict."""
+                try:
+                    from garminconnect import Garmin
+                    client = Garmin(garmin_email, garmin_password)
+                    client.login()
+                    date_str = target_date.isoformat()
+
+                    result = {"date": date_str, "synced": [], "errors": []}
+
+                    # ── Daily stats ───────────────────────────────────────────
+                    try:
+                        stats = client.get_stats(date_str)
+                        steps        = stats.get("totalSteps", 0)
+                        hr_avg       = stats.get("averageHeartRate", 0)
+                        hr_max       = stats.get("maxHeartRate", 0)
+                        rhr          = stats.get("restingHeartRate", 0)
+                        floors       = stats.get("floorsAscended", 0)
+                        cals_active  = stats.get("activeKilocalories", 0)
+                        cals_total   = stats.get("totalKilocalories", 0)
+                        active_min   = (stats.get("highlyActiveSeconds", 0) +
+                                        stats.get("activeSeconds", 0)) // 60
+                        result["steps"]       = steps
+                        result["hr_avg"]      = hr_avg
+                        result["hr_max"]      = hr_max
+                        result["rhr"]         = rhr
+                        result["floors"]      = floors
+                        result["cals_active"] = cals_active
+                        result["cals_total"]  = cals_total
+                        result["active_min"]  = active_min
+                        result["synced"].append("daily stats")
+                    except Exception as e:
+                        result["errors"].append(f"stats: {e}")
+
+                    # ── Sleep ─────────────────────────────────────────────────
+                    try:
+                        sleep_data = client.get_sleep_data(date_str)
+                        dto = sleep_data.get("dailySleepDTO", {})
+                        sleep_sec = dto.get("sleepTimeSeconds", 0)
+                        result["sleep_hours"] = round(sleep_sec / 3600, 2) if sleep_sec else None
+                        result["sleep_score"] = dto.get("sleepScores", {}).get("overall", {}).get("value") if dto else None
+                        result["synced"].append("sleep")
+                    except Exception as e:
+                        result["errors"].append(f"sleep: {e}")
+
+                    # ── HRV ───────────────────────────────────────────────────
+                    try:
+                        hrv_data = client.get_hrv_data(date_str)
+                        hrv_summary = hrv_data.get("hrvSummary", {}) if hrv_data else {}
+                        result["hrv"] = hrv_summary.get("lastNight") or hrv_summary.get("weeklyAvg")
+                        result["synced"].append("HRV")
+                    except Exception as e:
+                        result["errors"].append(f"HRV: {e}")
+
+                    # ── Stress ────────────────────────────────────────────────
+                    try:
+                        stress_data = client.get_stress_data(date_str)
+                        avg_stress = stress_data.get("avgStressLevel", 0) if stress_data else 0
+                        result["stress_avg"] = avg_stress if avg_stress and avg_stress > 0 else None
+                        result["synced"].append("stress")
+                    except Exception as e:
+                        result["errors"].append(f"stress: {e}")
+
+                    # ── Body Battery ──────────────────────────────────────────
+                    try:
+                        bb_data = client.get_body_battery(date_str)
+                        if bb_data and isinstance(bb_data, list) and len(bb_data) > 0:
+                            bb_values = [item.get("bodyBatteryLevel", 0) for item in bb_data
+                                         if item.get("bodyBatteryLevel") is not None]
+                            result["body_battery_high"] = max(bb_values) if bb_values else None
+                            result["body_battery_low"]  = min(bb_values) if bb_values else None
+                        result["synced"].append("body battery")
+                    except Exception as e:
+                        result["errors"].append(f"body battery: {e}")
+
+                    # ── SpO2 ──────────────────────────────────────────────────
+                    try:
+                        spo2_data = client.get_spo2_data(date_str)
+                        avg_spo2 = spo2_data.get("averageSpO2") if spo2_data else None
+                        result["spo2_avg"] = avg_spo2
+                        if avg_spo2:
+                            result["synced"].append("SpO2")
+                    except Exception as e:
+                        result["errors"].append(f"SpO2: {e}")
+
+                    return result
+
+                except Exception as e:
+                    return {"date": target_date.isoformat(), "synced": [],
+                            "errors": [f"Login failed: {e}"], "login_error": True}
+
+            def _store_garmin_result(res: dict):
+                """Save a sync result dict to hh_garmin_data."""
+                gdata = {
+                    "user_id": _get_user_id(),
+                    "data_date": res["date"],
+                    "steps":            res.get("steps"),
+                    "heart_rate_avg":   res.get("hr_avg"),
+                    "heart_rate_max":   res.get("hr_max"),
+                    "resting_hr":       res.get("rhr"),
+                    "hrv":              res.get("hrv"),
+                    "sleep_hours":      res.get("sleep_hours"),
+                    "sleep_score":      res.get("sleep_score"),
+                    "stress_avg":       res.get("stress_avg"),
+                    "body_battery_high": res.get("body_battery_high"),
+                    "body_battery_low":  res.get("body_battery_low"),
+                    "calories_active":  res.get("cals_active"),
+                    "calories_total":   res.get("cals_total"),
+                    "floors_climbed":   res.get("floors"),
+                    "active_minutes":   res.get("active_min"),
+                    "spo2_avg":         res.get("spo2_avg"),
+                    "source":           "garmin_api",
+                    "notes":            f"Auto-synced {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                }
+                # Remove None values to avoid SQLite issues
+                gdata = {k: v for k, v in gdata.items() if v is not None}
+                _save_garmin_data(gdata)
+
+            # ── Sync single day ───────────────────────────────────────────────
+            if sync_btn:
+                with st.spinner(f"⌚ Connecting to Garmin Connect and pulling {sync_date}..."):
+                    res = _do_garmin_sync(sync_date)
+
+                if res.get("login_error") or (res.get("errors") and not res.get("synced")):
+                    st.error(f"❌ Sync failed: {'; '.join(res.get('errors', []))}")
+                else:
+                    _store_garmin_result(res)
+                    st.success(f"✅ Synced: {', '.join(res.get('synced', []))}")
+                    if res.get("errors"):
+                        st.warning(f"⚠️ Some data unavailable: {'; '.join(res['errors'])}")
+
+                    # Show what was pulled
+                    kc = st.columns(5)
+                    kc[0].metric("Steps",        f"{res.get('steps', 0):,}" if res.get('steps') else "—")
+                    kc[1].metric("Avg HR",        f"{res.get('hr_avg', 0)} bpm" if res.get('hr_avg') else "—")
+                    kc[2].metric("HRV",           f"{res.get('hrv', 0)} ms" if res.get('hrv') else "—")
+                    kc[3].metric("Body Battery",  f"↑{res.get('body_battery_high','—')} ↓{res.get('body_battery_low','—')}")
+                    kc[4].metric("Sleep",         f"{res.get('sleep_hours', '—')} hrs")
+                    st.rerun()
+
+            # ── Sync last 7 days ──────────────────────────────────────────────
+            if sync_7_btn:
+                progress_bar = st.progress(0, text="Syncing past 7 days...")
+                results = []
+                for i, days_back in enumerate(range(6, -1, -1)):
+                    target = date.today() - timedelta(days=days_back)
+                    progress_bar.progress((i + 1) / 7, text=f"Syncing {target.isoformat()}...")
+                    res = _do_garmin_sync(target)
+                    if res.get("synced"):
+                        _store_garmin_result(res)
+                        results.append(f"✅ {target.isoformat()} ({', '.join(res['synced'])})")
+                    else:
+                        results.append(f"❌ {target.isoformat()} — {'; '.join(res.get('errors', ['No data']))}")
+                progress_bar.empty()
+                for r in results:
+                    st.markdown(r)
+                st.success("📅 7-day sync complete!")
+                st.rerun()
+
+            # ── Recent sync summary ───────────────────────────────────────────
+            st.divider()
+            st.markdown("#### ⌚ Recent Garmin Syncs")
+            recent_garmin = _load_garmin_data(7)
+            if recent_garmin:
+                import pandas as pd
+                gdf = pd.DataFrame(recent_garmin)
+                display_cols = [c for c in ["data_date","steps","heart_rate_avg","hrv",
+                                             "sleep_hours","stress_avg","body_battery_high","source"]
+                                if c in gdf.columns]
+                st.dataframe(gdf[display_cols].rename(columns={
+                    "data_date": "Date", "steps": "Steps", "heart_rate_avg": "HR",
+                    "hrv": "HRV", "sleep_hours": "Sleep", "stress_avg": "Stress",
+                    "body_battery_high": "Batt Peak", "source": "Source"
+                }), use_container_width=True, hide_index=True)
+            else:
+                st.info("No synced data yet. Hit **Sync from Garmin Connect** above.")
+
+    # ── Sub-tab 1: Manual Log ─────────────────────────────────────────────────
+    with sub_g[1]:
+        st.markdown("### 📥 Log Garmin Data Manually")
+        st.caption("Use this if auto-sync isn't working or to backfill past days.")
         gc1, gc2 = st.columns(2)
         with gc1:
             g_date = st.date_input("Date", value=date.today(), key="glog_date")
@@ -1060,7 +1275,6 @@ with tabs[5]:
             g_vo2 = st.number_input("VO2 Max (optional)", 0.0, 80.0, 0.0, key="glog_vo2")
             g_spo2 = st.number_input("SpO2 % (optional)", 0.0, 100.0, 0.0, key="glog_spo2")
             g_notes = st.text_input("Notes (e.g. 'wore watch to bed')", key="glog_notes")
-            g_source = st.selectbox("Source", ["manual", "garmin_app_screenshot", "garmin_api"], key="glog_source")
 
         if st.button("💾 Save Garmin Data", type="primary", use_container_width=True):
             gdata = {
@@ -1081,13 +1295,14 @@ with tabs[5]:
                 "vo2_max": g_vo2 if g_vo2 > 0 else None,
                 "spo2_avg": g_spo2 if g_spo2 > 0 else None,
                 "notes": g_notes,
-                "source": g_source,
+                "source": "manual",
             }
             _save_garmin_data(gdata)
             st.success("✅ Garmin data saved!")
             st.rerun()
 
-    with sub_g[1]:
+    # ── Sub-tab 2: Trends ─────────────────────────────────────────────────────
+    with sub_g[2]:
         garmin_data = _load_garmin_data(30)
         if garmin_data:
             import pandas as pd
@@ -1113,61 +1328,28 @@ with tabs[5]:
                 fig2.add_trace(go.Scatter(x=gdf["data_date"], y=gdf["body_battery_high"],
                     mode="lines+markers", name="Body Battery Peak",
                     line=dict(color="#FFC107", width=2)))
-            fig2.update_layout(title="HRV, Stress & Body Battery — 30 Days",
-                               height=300, margin=dict(t=40, b=20),
-                               legend=dict(orientation="h"))
+            if "sleep_hours" in gdf.columns:
+                fig2.add_trace(go.Bar(x=gdf["data_date"], y=gdf["sleep_hours"],
+                    name="Sleep (hrs)", marker_color="#7B68EE", opacity=0.5, yaxis="y2"))
+            fig2.update_layout(
+                title="HRV, Stress, Body Battery & Sleep — 30 Days",
+                height=320, margin=dict(t=40, b=20),
+                legend=dict(orientation="h"),
+                yaxis2=dict(overlaying="y", side="right", range=[0, 14])
+            )
             st.plotly_chart(fig2, use_container_width=True)
+
+            # Resting HR trend
+            if "resting_hr" in gdf.columns and gdf["resting_hr"].notna().any():
+                import plotly.express as px
+                fig3 = px.line(gdf.dropna(subset=["resting_hr"]),
+                               x="data_date", y="resting_hr",
+                               title="Resting Heart Rate — 30 Days",
+                               markers=True, color_discrete_sequence=["#E91E63"])
+                fig3.update_layout(height=260, margin=dict(t=40, b=20))
+                st.plotly_chart(fig3, use_container_width=True)
         else:
-            st.info("No Garmin data logged yet. Use the 'Log Garmin Data' tab.")
-
-    with sub_g[2]:
-        st.markdown("""
-## 🔗 Garmin Connect API Setup
-
-### Option 1: `python-garminconnect` (Recommended)
-This unofficial library connects to Garmin Connect with your login credentials.
-
-```bash
-pip install garminconnect
-```
-
-```python
-from garminconnect import Garmin
-
-client = Garmin("your@email.com", "your_password")
-client.login()
-
-# Get today's stats
-stats = client.get_stats(date.today().isoformat())
-# stats includes: totalSteps, averageHR, maxHR, floorsClimbed, etc.
-
-# Get HRV data
-hrv = client.get_hrv_data(date.today().isoformat())
-
-# Get sleep data
-sleep = client.get_sleep_data(date.today().isoformat())
-
-# Get stress data
-stress = client.get_stress_data(date.today().isoformat())
-```
-
-**Setup:** Store your Garmin credentials in app Settings:
-- Key: `garmin_email` → your Garmin Connect email
-- Key: `garmin_password` → your Garmin Connect password
-
-**Note:** Garmin does not have an official public API. The unofficial library works by simulating the web browser login. May break if Garmin changes their site.
-
-### Option 2: Garmin Health API (Enterprise)
-If you need a stable/official solution, Garmin offers a Health API for healthcare applications. Requires application approval.
-
-### Option 3: CSV Export
-1. Open **Garmin Connect** app or garmin.com
-2. Go to **Activities** → **Export CSV**
-3. Upload CSV here (coming soon in a future update)
-
-### Current Status
-Once you store `garmin_email` and `garmin_password` in Settings, a **Sync Now** button will appear here to automatically pull today's data.
-""")
+            st.info("No Garmin data yet. Use the **Sync Now** tab or **Manual Log** tab.")
 
 # ── TAB 6: Medications ────────────────────────────────────────────────────────
 with tabs[6]:
