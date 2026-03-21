@@ -7,7 +7,7 @@ building to '03 adolescence by j. cole on repeat. the vibe just hits different w
 === FACEBOOK ===
 I've been building in silence for a while. Today I'm sharing everything.
 
-Over the past year — while working full-time as a Technical Program Manager at Visa and finishing my Georgia Tech data analytics degree — I've been building three AI-powered platforms from a home server in my house.
+Over the past year — while working full-time as a Technical Program Manager at Visa as an NCA&T alumnus — I've been building three AI-powered platforms from a home server in my house.
 
 📊 Peach State Savings (peachstatesavings.com) — 140+ page personal finance OS. Free for everyone.
 
@@ -19,7 +19,7 @@ I could not have done this without:
 
 ❤️ Anthropic / Claude AI — genuine co-creator on every feature
 ❤️ The Streamlit framework team
-❤️ Georgia Tech for teaching me to build in systems
+❤️ NCA&T — for the foundation that taught me to build and think in systems
 ❤️ My colleagues at Visa for the program discipline I apply to every build
 ❤️ My family — every sacrifice, every "go do what you gotta do" — this is for you
 ❤️ Dr. Bedir — for promoting the growth of beautiful minds. Thank you for seeing us.
