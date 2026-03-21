@@ -996,6 +996,293 @@ if not user:
 uid = user.get("id", 0)
 username = user.get("username", "Reseller")
 
+
+# ── eBay Live Inventory Banner helpers ────────────────────────────────────────
+import json as _json
+import urllib.parse as _urlparse
+
+def _load_ebay_listings(user_id: int) -> list[dict]:
+    """
+    Pull all inventory items that are listed on eBay.
+    Supports both the legacy `sneaker_inventory` and the newer `soleops_inventory` tables.
+    Returns list of dicts: {brand, model, size, price, ebay_url, colorway, sku}
+    """
+    results = []
+    try:
+        conn = get_conn()
+        cur = conn.cursor()
+
+        # ── Try soleops_inventory (118_soleops_inventory_manager.py schema) ──
+        try:
+            cur.execute("""
+                SELECT brand, model, colorway, size, sku, listed_platforms, list_prices
+                FROM soleops_inventory
+                WHERE user_id = ? AND status IN ('listed', 'in_stock')
+            """, (user_id,))
+            for row in cur.fetchall():
+                brand, model, colorway, size, sku, platforms_raw, prices_raw = row
+                try:
+                    platforms = _json.loads(platforms_raw) if isinstance(platforms_raw, str) else (platforms_raw or [])
+                    prices    = _json.loads(prices_raw)    if isinstance(prices_raw, str)    else (prices_raw or {})
+                except Exception:
+                    platforms, prices = [], {}
+
+                # Only include items listed on eBay
+                listed_on_ebay = any("ebay" in str(p).lower() for p in platforms)
+                if not listed_on_ebay and platforms:
+                    # still show all listed items if eBay not set — show all
+                    pass
+
+                price = prices.get("eBay") or prices.get("ebay") or prices.get("StockX") or None
+                query = f"{brand} {model} {f'Size {size}' if size else ''}".strip()
+                if sku:
+                    query = sku
+                ebay_url = f"https://www.ebay.com/sch/i.html?_nkw={_urlparse.quote_plus(query)}&LH_Sold=0&LH_BIN=1"
+                results.append({
+                    "brand": brand or "",
+                    "model": model or "",
+                    "colorway": colorway or "",
+                    "size": size or "?",
+                    "sku": sku or "",
+                    "price": float(price) if price else None,
+                    "ebay_url": ebay_url,
+                })
+        except Exception:
+            pass  # table may not exist yet
+
+        # ── Try sneaker_inventory (older dashboard schema) ──────────────────
+        if not results:
+            try:
+                cur.execute("""
+                    SELECT shoe_name, size, cost_basis, listed_price, listed_platform, sku
+                    FROM sneaker_inventory
+                    WHERE user_id = ? AND status = 'active'
+                """, (user_id,))
+                for row in cur.fetchall():
+                    shoe_name, size, cost_basis, listed_price, platform, sku = row
+                    query = f"{shoe_name} Size {size}".strip() if shoe_name else ""
+                    if sku:
+                        query = sku
+                    ebay_url = f"https://www.ebay.com/sch/i.html?_nkw={_urlparse.quote_plus(query)}&LH_BIN=1"
+                    results.append({
+                        "brand": "",
+                        "model": shoe_name or "Unknown",
+                        "colorway": "",
+                        "size": str(size) if size else "?",
+                        "sku": sku or "",
+                        "price": float(listed_price) if listed_price else None,
+                        "ebay_url": ebay_url,
+                    })
+            except Exception:
+                pass
+
+        conn.close()
+    except Exception:
+        pass
+    return results
+
+
+def _render_ebay_banner(listings: list[dict]) -> None:
+    """
+    Render a scrolling marquee banner showing all eBay-listed inventory.
+    Each card shows: shoe name + colorway, size badge, price, and eBay link.
+    """
+    if not listings:
+        st.markdown("""
+        <div style="
+          background: linear-gradient(90deg, rgba(0,212,255,0.05) 0%, rgba(123,47,190,0.05) 100%);
+          border: 1px dashed rgba(0,212,255,0.25);
+          border-radius: 12px;
+          padding: 16px 24px;
+          text-align: center;
+          color: #7A80A0;
+          font-size: 0.85rem;
+          margin-bottom: 20px;
+        ">
+          📦 No eBay listings found yet — add inventory and mark items as listed to see them here.
+        </div>
+        """, unsafe_allow_html=True)
+        return
+
+    # Build card HTML for each listing
+    cards_html = ""
+    for item in listings:
+        name_parts = [x for x in [item["brand"], item["model"]] if x]
+        display_name = " ".join(name_parts) if name_parts else "Unknown Shoe"
+        if item["colorway"]:
+            display_name += f' <span style="color:#7A80A0;font-weight:400;">"{item["colorway"]}"</span>'
+        price_html = f'<span class="so-banner-price">${item["price"]:,.0f}</span>' if item["price"] else ""
+        cards_html += f"""
+        <a class="so-banner-card" href="{item['ebay_url']}" target="_blank" rel="noopener noreferrer" title="View on eBay: {item.get('model','')} Size {item['size']}">
+          <span class="so-banner-shoe-icon">👟</span>
+          <span class="so-banner-name">{display_name}</span>
+          <span class="so-banner-size">Sz {item['size']}</span>
+          {price_html}
+          <span class="so-banner-badge">eBay ↗</span>
+        </a>
+        """
+
+    # Duplicate for seamless infinite scroll
+    marquee_content = cards_html + cards_html
+
+    count_label = f"{len(listings)} pair{'s' if len(listings) != 1 else ''} live on eBay"
+
+    st.markdown(f"""
+    <style>
+    .so-ebay-banner-wrap {{
+      position: relative;
+      background: linear-gradient(135deg, rgba(0,212,255,0.06) 0%, rgba(123,47,190,0.04) 100%);
+      border: 1px solid rgba(0,212,255,0.2);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }}
+    .so-ebay-banner-header {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px 6px;
+      border-bottom: 1px solid rgba(0,212,255,0.12);
+    }}
+    .so-ebay-banner-title {{
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #00D4FF;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }}
+    .so-ebay-banner-count {{
+      font-size: 0.72rem;
+      color: #7A80A0;
+      background: rgba(0,212,255,0.08);
+      border: 1px solid rgba(0,212,255,0.18);
+      padding: 2px 10px;
+      border-radius: 100px;
+    }}
+    .so-ebay-marquee-track {{
+      display: flex;
+      overflow: hidden;
+      padding: 10px 0 12px;
+      gap: 0;
+    }}
+    .so-ebay-marquee-inner {{
+      display: flex;
+      gap: 10px;
+      animation: soBannerScroll 30s linear infinite;
+      white-space: nowrap;
+      padding: 0 10px;
+      flex-shrink: 0;
+    }}
+    .so-ebay-marquee-inner:hover {{ animation-play-state: paused; }}
+    @keyframes soBannerScroll {{
+      0%   {{ transform: translateX(0); }}
+      100% {{ transform: translateX(-50%); }}
+    }}
+    .so-banner-card {{
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(14,16,34,0.85);
+      border: 1px solid rgba(0,212,255,0.18);
+      border-radius: 10px;
+      padding: 8px 14px;
+      text-decoration: none;
+      color: #F0F4FF;
+      font-size: 0.83rem;
+      font-weight: 500;
+      transition: border-color 0.2s, background 0.2s, transform 0.15s;
+      flex-shrink: 0;
+      max-width: 340px;
+      cursor: pointer;
+    }}
+    .so-banner-card:hover {{
+      border-color: #00D4FF;
+      background: rgba(0,212,255,0.1);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(0,212,255,0.15);
+      color: #F0F4FF;
+      text-decoration: none;
+    }}
+    .so-banner-shoe-icon {{ font-size: 1rem; flex-shrink: 0; }}
+    .so-banner-name {{
+      font-weight: 600;
+      color: #E8EEFF;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 180px;
+    }}
+    .so-banner-size {{
+      background: rgba(0,212,255,0.12);
+      border: 1px solid rgba(0,212,255,0.25);
+      color: #00D4FF;
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      letter-spacing: 0.03em;
+    }}
+    .so-banner-price {{
+      color: #22D47E;
+      font-weight: 700;
+      font-size: 0.82rem;
+      flex-shrink: 0;
+    }}
+    .so-banner-badge {{
+      background: rgba(0,212,255,0.15);
+      color: #00D4FF;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      letter-spacing: 0.04em;
+    }}
+    /* Fade edges */
+    .so-ebay-banner-wrap::before,
+    .so-ebay-banner-wrap::after {{
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0; width: 60px;
+      z-index: 2;
+      pointer-events: none;
+    }}
+    .so-ebay-banner-wrap::before {{
+      left: 0;
+      background: linear-gradient(to right, rgba(6,8,15,0.95) 0%, transparent 100%);
+    }}
+    .so-ebay-banner-wrap::after {{
+      right: 0;
+      background: linear-gradient(to left, rgba(6,8,15,0.95) 0%, transparent 100%);
+    }}
+    </style>
+
+    <div class="so-ebay-banner-wrap" role="region" aria-label="Live eBay inventory">
+      <div class="so-ebay-banner-header">
+        <span class="so-ebay-banner-title">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+            <circle cx="5" cy="5" r="5" fill="#00D4FF" opacity="0.25"/>
+            <circle cx="5" cy="5" r="2.5" fill="#00D4FF">
+              <animate attributeName="r" values="2.5;4;2.5" dur="1.5s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/>
+            </circle>
+          </svg>
+          Live eBay Inventory
+        </span>
+        <span class="so-ebay-banner-count">{count_label}</span>
+      </div>
+      <div class="so-ebay-marquee-track">
+        <div class="so-ebay-marquee-inner">
+          {marquee_content}
+        </div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
 render_sidebar_brand()
 st.sidebar.markdown("---")
 st.sidebar.page_link("soleops_app.py",                          label="🏠 Dashboard",           icon="🏠")
@@ -1013,6 +1300,11 @@ render_sidebar_user_widget()
 
 st.title("👟 SoleOps")
 st.markdown(f"Welcome back, **{username}** — your sneaker resale command center.")
+
+# ── Live eBay Inventory Banner ─────────────────────────────────────────────────
+ebay_listings = _load_ebay_listings(uid)
+_render_ebay_banner(ebay_listings)
+
 st.markdown("---")
 
 # ── Quick Stats ───────────────────────────────────────────────────────────────
