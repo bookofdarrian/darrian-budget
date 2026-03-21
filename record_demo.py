@@ -21,8 +21,8 @@ from playwright.async_api import async_playwright, TimeoutError as PWTimeout
 SHORT = "--short" in sys.argv
 DURATION = 60 if SHORT else 90
 
-# App URL — tries local first, falls back to prod
-APP_URL = "http://100.95.125.112:8501"
+# Always use prod URL
+APP_URL = "https://peachstatesavings.com"
 PROD_URL = "https://peachstatesavings.com"
 
 VIDEO_DIR = Path("videos")
@@ -74,10 +74,7 @@ async def scroll_page(page, px: int = 600, pause: float = 0.8):
 
 
 async def nav(page, path: str, wait: int = 4000, scroll: bool = True):
-    try:
-        await page.goto(f"{APP_URL}{path}", wait_until="domcontentloaded", timeout=15000)
-    except Exception:
-        await page.goto(f"{PROD_URL}{path}", wait_until="domcontentloaded", timeout=20000)
+    await page.goto(f"{APP_URL}{path}", wait_until="domcontentloaded", timeout=20000)
     await page.wait_for_timeout(2500)
     if scroll:
         await scroll_page(page, 300)
@@ -85,18 +82,25 @@ async def nav(page, path: str, wait: int = 4000, scroll: bool = True):
 
 
 async def handle_login(page):
-    """Wait for login if needed (up to 90s)."""
+    """Always wait for login — 90 second window."""
     await page.wait_for_timeout(2000)
-    if "login" in page.url or "Login" in await page.content():
-        print("\n⏳ Log into the app when the browser opens (90 seconds)...")
+    content = await page.content()
+    if "Login" in content or "login" in page.url or "Sign in" in content:
+        print("\n⏳ LOG IN NOW — you have 90 seconds in the browser window...")
+        print("   Enter your username + password, then press Enter/Sign In")
         try:
+            # Wait until the page title changes away from Login
             await page.wait_for_function(
-                "() => !document.title.includes('Login')", timeout=90000
+                "() => !document.body.innerText.includes('Password') && document.body.innerText.length > 500",
+                timeout=90000,
             )
-            print("  ✓ Logged in! Starting tour...")
+            print("  ✓ Logged in! Starting tour in 3 seconds...")
         except PWTimeout:
-            print("  ⚠️  Login timed out — continuing anyway")
-        await page.wait_for_timeout(2000)
+            print("  ⚠️  Login timed out — check browser")
+        await page.wait_for_timeout(3000)
+    else:
+        print("  ✓ Already logged in — starting tour...")
+        await page.wait_for_timeout(1000)
 
 
 async def record_tour():
@@ -123,10 +127,7 @@ async def record_tour():
 
         # ── Opening: Dashboard ─────────────────────────────────
         print("🎬 [0:00] Opening dashboard...")
-        try:
-            await page.goto(APP_URL, wait_until="domcontentloaded", timeout=15000)
-        except Exception:
-            await page.goto(PROD_URL, wait_until="domcontentloaded", timeout=20000)
+        await page.goto(APP_URL, wait_until="domcontentloaded", timeout=20000)
         await handle_login(page)
 
         await page.wait_for_timeout(3000)
@@ -161,7 +162,7 @@ async def record_tour():
             # ── College Confused ───────────────────────────────
             print("🎬 [0:38] College Confused...")
             try:
-                await page.goto("https://collegeconfused.org", wait_until="domcontentloaded", timeout=15000)
+                await page.goto("https://collegeconfused.org", wait_until="domcontentloaded", timeout=20000)
                 await page.wait_for_timeout(4000)
                 await scroll_page(page, 500, 2.0)
             except Exception:
@@ -177,10 +178,7 @@ async def record_tour():
 
         # ── Dashboard for end card ─────────────────────────────
         print("🎬 Final shot: back to dashboard...")
-        try:
-            await page.goto(APP_URL, wait_until="domcontentloaded", timeout=10000)
-        except Exception:
-            await page.goto(PROD_URL, wait_until="domcontentloaded", timeout=15000)
+        await page.goto(APP_URL, wait_until="domcontentloaded", timeout=20000)
         await page.wait_for_timeout(4000)
 
         print("\n✅ Tour complete! Saving video...")
