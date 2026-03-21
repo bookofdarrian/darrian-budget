@@ -169,47 +169,55 @@ def _make_anthropic_stub():
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# TEST CLASS — INVENTORY MANAGER (Page 85)
+# TEST CLASS — SNEAKER INVENTORY ANALYZER (Page 65)
 # ═══════════════════════════════════════════════════════════════════════════════
 class TestSoleOpsInventoryManager(unittest.TestCase):
-    """Tests for pages/85_soleops_inventory_manager.py"""
+    """Tests for pages/65_sneaker_inventory_analyzer.py — SoleOps inventory helpers."""
 
     def setUp(self):
         import tempfile
-        self.db_file   = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
-        self.db_path   = self.db_file.name
+        self.db_file = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+        self.db_path = self.db_file.name
         self.db_file.close()
 
-        # Stub altair (page 85 imports it at top level)
+        # Build lightweight stubs for heavy optional deps
         altair_stub = types.ModuleType("altair")
         for _attr in ["Chart", "Color", "Axis", "Scale", "Tooltip", "X", "Y",
                       "condition", "value", "datum"]:
             setattr(altair_stub, _attr, MagicMock())
 
-        self._st_patch   = patch.dict(sys.modules, {"streamlit": _make_st_stub()})
-        self._db_stub    = _make_db_stub(self.db_path)
-        self._auth_stub  = _make_auth_stub()
-        self._db_patch   = patch.dict(sys.modules, {
-            "utils.db":   self._db_stub,
-            "utils.auth": self._auth_stub,
-            "altair":     altair_stub,
+        plotly_stub = types.ModuleType("plotly")
+        px_stub = types.ModuleType("plotly.express")
+        go_stub = types.ModuleType("plotly.graph_objects")
+        for _attr in ["bar", "line", "scatter", "pie", "histogram", "Figure"]:
+            setattr(px_stub, _attr, MagicMock(return_value=MagicMock()))
+            setattr(go_stub, _attr, MagicMock(return_value=MagicMock()))
+
+        self._st_patch  = patch.dict(sys.modules, {"streamlit": _make_st_stub()})
+        self._db_stub   = _make_db_stub(self.db_path)
+        self._auth_stub = _make_auth_stub()
+        self._db_patch  = patch.dict(sys.modules, {
+            "utils.db":            self._db_stub,
+            "utils.auth":          self._auth_stub,
+            "altair":              altair_stub,
+            "plotly":              plotly_stub,
+            "plotly.express":      px_stub,
+            "plotly.graph_objects": go_stub,
         })
         self._st_patch.start()
         self._db_patch.start()
 
-        # Import module fresh each test
-        if "inv_mgr" in sys.modules:
-            del sys.modules["inv_mgr"]
-        # Use importlib since module name starts with a digit
+        if "sneaker_inv" in sys.modules:
+            del sys.modules["sneaker_inv"]
         spec = importlib.util.spec_from_file_location(
-            "inv_mgr",
-            os.path.join(ROOT, "pages", "85_soleops_inventory_manager.py"),
+            "sneaker_inv",
+            os.path.join(ROOT, "pages", "65_sneaker_inventory_analyzer.py"),
         )
         self.mod = importlib.util.module_from_spec(spec)
         try:
             spec.loader.exec_module(self.mod)
         except _StopExecution:
-            pass  # st.stop() was called — module functions are still accessible
+            pass
 
     def tearDown(self):
         self._st_patch.stop()
@@ -223,12 +231,14 @@ class TestSoleOpsInventoryManager(unittest.TestCase):
     # ── 1. Import check ────────────────────────────────────────────────────────
     def test_import(self):
         self.assertTrue(hasattr(self.mod, "_ensure_tables"))
-        self.assertTrue(hasattr(self.mod, "_calc_fee"))
         self.assertTrue(hasattr(self.mod, "_calc_profit"))
-        self.assertTrue(hasattr(self.mod, "_days_since"))
-        self.assertTrue(hasattr(self.mod, "_get_tier"))
-        self.assertTrue(hasattr(self.mod, "_enrich_inventory"))
+        self.assertTrue(hasattr(self.mod, "_get_aging_tier"))
+        self.assertTrue(hasattr(self.mod, "_calc_days_listed"))
+        self.assertTrue(hasattr(self.mod, "_get_suggested_price"))
         self.assertTrue(hasattr(self.mod, "_mark_sold"))
+        self.assertTrue(hasattr(self.mod, "_delete_item"))
+        self.assertTrue(hasattr(self.mod, "_load_inventory"))
+        self.assertTrue(hasattr(self.mod, "_create_item"))
 
     # ── 2. DB table creation ───────────────────────────────────────────────────
     def test_ensure_tables_creates_soleops_inventory(self):
@@ -239,173 +249,130 @@ class TestSoleOpsInventoryManager(unittest.TestCase):
         self.assertIsNotNone(cur.fetchone(), "soleops_inventory table should exist")
         conn.close()
 
-    # ── 3a. _calc_fee helpers ─────────────────────────────────────────────────
-    def test_calc_fee_ebay(self):
-        fee = self.mod._calc_fee("eBay", 200.0)
-        expected = round(200.0 * 0.129 + 0.30, 2)
-        self.assertAlmostEqual(fee, expected, places=2)
-
-    def test_calc_fee_mercari(self):
-        fee = self.mod._calc_fee("Mercari", 200.0)
-        expected = round(200.0 * 0.10 + 0.30, 2)
-        self.assertAlmostEqual(fee, expected, places=2)
-
-    def test_calc_fee_stockx(self):
-        fee = self.mod._calc_fee("StockX", 200.0)
-        expected = round(200.0 * 0.115, 2)
-        self.assertAlmostEqual(fee, expected, places=2)
-
-    def test_calc_fee_poshmark_under_15(self):
-        fee = self.mod._calc_fee("Poshmark", 10.0)
-        self.assertAlmostEqual(fee, 2.95, places=2)
-
-    def test_calc_fee_poshmark_over_15(self):
-        fee = self.mod._calc_fee("Poshmark", 100.0)
-        self.assertAlmostEqual(fee, 20.0, places=2)
-
-    # ── 3b. _calc_profit ──────────────────────────────────────────────────────
+    # ── 3a. _calc_profit helpers ──────────────────────────────────────────────
     def test_calc_profit_ebay(self):
         profit = self.mod._calc_profit(200.0, 150.0, "eBay")
         fee    = round(200.0 * 0.129 + 0.30, 2)
         expected = round(200.0 - fee - 150.0, 2)
         self.assertAlmostEqual(profit, expected, places=2)
 
-    def test_calc_profit_zero_price(self):
-        profit = self.mod._calc_profit(0.0, 150.0, "eBay")
-        self.assertEqual(profit, 0.0)
+    def test_calc_profit_mercari(self):
+        profit = self.mod._calc_profit(200.0, 150.0, "Mercari")
+        fee    = round(200.0 * 0.10 + 0.30, 2)
+        expected = round(200.0 - fee - 150.0, 2)
+        self.assertAlmostEqual(profit, expected, places=2)
 
-    # ── 3c. _days_since ───────────────────────────────────────────────────────
-    def test_days_since_today(self):
-        days = self.mod._days_since(str(date.today()))
+    def test_calc_profit_stockx(self):
+        profit = self.mod._calc_profit(200.0, 150.0, "StockX")
+        fee    = round(200.0 * 0.115, 2)
+        expected = round(200.0 - fee - 150.0, 2)
+        self.assertAlmostEqual(profit, expected, places=2)
+
+    def test_calc_profit_positive_sale(self):
+        """Selling at a profit returns a positive float."""
+        profit = self.mod._calc_profit(300.0, 150.0, "eBay")
+        self.assertIsInstance(profit, float)
+        self.assertGreater(profit, 0)
+
+    def test_calc_profit_loss(self):
+        """Selling below cost returns a negative value."""
+        profit = self.mod._calc_profit(100.0, 200.0, "eBay")
+        self.assertLess(profit, 0)
+
+    # ── 3b. _calc_days_listed ─────────────────────────────────────────────────
+    def test_calc_days_listed_today(self):
+        days = self.mod._calc_days_listed(str(date.today()))
         self.assertEqual(days, 0)
 
-    def test_days_since_one_week_ago(self):
+    def test_calc_days_listed_one_week_ago(self):
         one_week = str(date.today() - timedelta(days=7))
-        days = self.mod._days_since(one_week)
+        days = self.mod._calc_days_listed(one_week)
         self.assertEqual(days, 7)
 
-    def test_days_since_empty_string(self):
-        days = self.mod._days_since("")
+    def test_calc_days_listed_none(self):
+        days = self.mod._calc_days_listed(None)
         self.assertEqual(days, 0)
 
-    def test_days_since_invalid(self):
-        days = self.mod._days_since("not-a-date")
+    def test_calc_days_listed_invalid(self):
+        days = self.mod._calc_days_listed("not-a-date")
         self.assertEqual(days, 0)
 
-    # ── 3d. _get_tier ─────────────────────────────────────────────────────────
+    # ── 3c. _get_aging_tier ───────────────────────────────────────────────────
     def test_get_tier_fresh(self):
-        tier = self.mod._get_tier(3)
+        tier = self.mod._get_aging_tier(3)
         self.assertEqual(tier["label"], "🟢 Fresh")
         self.assertAlmostEqual(tier["drop_pct"], 0.0)
 
     def test_get_tier_warm(self):
-        tier = self.mod._get_tier(10)
+        tier = self.mod._get_aging_tier(10)
         self.assertEqual(tier["label"], "🟡 Warm")
         self.assertAlmostEqual(tier["drop_pct"], 0.05)
 
     def test_get_tier_aging(self):
-        tier = self.mod._get_tier(17)
+        tier = self.mod._get_aging_tier(17)
         self.assertEqual(tier["label"], "🟠 Aging")
         self.assertAlmostEqual(tier["drop_pct"], 0.10)
 
     def test_get_tier_stale(self):
-        tier = self.mod._get_tier(25)
+        tier = self.mod._get_aging_tier(25)
         self.assertEqual(tier["label"], "🔴 Stale")
         self.assertAlmostEqual(tier["drop_pct"], 0.15)
 
     def test_get_tier_critical(self):
-        tier = self.mod._get_tier(35)
+        tier = self.mod._get_aging_tier(35)
         self.assertEqual(tier["label"], "⚫ Critical")
         self.assertAlmostEqual(tier["drop_pct"], 0.20)
 
-    # ── 4. _enrich_inventory ──────────────────────────────────────────────────
-    def test_enrich_inventory_adds_columns(self):
-        sample = pd.DataFrame([{
-            "id":              1,
-            "shoe_name":       "Jordan 1 Chicago",
-            "size":            "10",
-            "cost_basis":      150.0,
-            "listed_price":    220.0,
-            "target_price":    220.0,
-            "listed_platform": "eBay",
-            "date_purchased":  str(date.today() - timedelta(days=5)),
-            "listed_date":     "",
-        }])
-        enriched = self.mod._enrich_inventory(sample)
-        self.assertIn("days_held",       enriched.columns)
-        self.assertIn("tier",            enriched.columns)
-        self.assertIn("tier_color",      enriched.columns)
-        self.assertIn("suggested_price", enriched.columns)
-        self.assertIn("potential_profit",enriched.columns)
+    # ── 3d. _get_suggested_price ──────────────────────────────────────────────
+    def test_suggested_price_fresh_no_drop(self):
+        """Fresh items (< 7 days) should not have a price drop."""
+        new_price, reason = self.mod._get_suggested_price(200.0, 3)
+        self.assertEqual(new_price, 200.0)
 
-    def test_enrich_inventory_fresh_tier(self):
-        sample = pd.DataFrame([{
-            "id":              1,
-            "shoe_name":       "Test Shoe",
-            "size":            "9",
-            "cost_basis":      100.0,
-            "listed_price":    180.0,
-            "target_price":    0.0,
-            "listed_platform": "eBay",
-            "date_purchased":  str(date.today() - timedelta(days=2)),
-            "listed_date":     "",
-        }])
-        enriched = self.mod._enrich_inventory(sample)
-        self.assertEqual(enriched.iloc[0]["tier"], "🟢 Fresh")
-        # No drop on fresh tier
-        self.assertAlmostEqual(enriched.iloc[0]["suggested_price"], 180.0, places=1)
+    def test_suggested_price_stale_drops(self):
+        """Stale items (21–30 days) should have a 15% price drop."""
+        new_price, reason = self.mod._get_suggested_price(200.0, 25)
+        self.assertAlmostEqual(new_price, 170.0, places=1)
 
-    def test_enrich_empty_df_returns_empty(self):
-        result = self.mod._enrich_inventory(pd.DataFrame())
-        self.assertTrue(result.empty)
-
-    # ── 5. _add_item and load round-trip ──────────────────────────────────────
+    # ── 4. _create_item and load round-trip ───────────────────────────────────
     def test_add_and_load_item(self):
-        self.mod._add_item({
-            "shoe_name":       "Jordan 4 Red Thunder",
-            "brand":           "Jordan",
-            "colorway":        "Black/Fire Red",
-            "sku":             "CT8527-016",
-            "size":            "10",
-            "condition":       "Deadstock / New",
-            "cost_basis":      180.0,
-            "date_purchased":  str(date.today()),
-            "source":          "SNKRS",
-            "listed_date":     "",
-            "listed_price":    0.0,
-            "listed_platform": "Not Listed",
-            "target_price":    260.0,
-            "status":          "inventory",
-            "notes":           "Test note",
-        })
-        df = self.mod._load_inventory("inventory")
-        self.assertFalse(df.empty)
-        self.assertEqual(df.iloc[0]["shoe_name"], "Jordan 4 Red Thunder")
-        self.assertAlmostEqual(df.iloc[0]["cost_basis"], 180.0, places=2)
+        self.mod._create_item(
+            user_id=0,
+            shoe_name="Jordan 4 Red Thunder",
+            brand="Jordan",
+            colorway="Black/Fire Red",
+            size="10",
+            cost_basis=180.0,
+            condition="New with box",
+            listed_date=None,
+            listed_price=None,
+            listed_platform="Unlisted",
+            notes="Test note",
+        )
+        items = self.mod._load_inventory(user_id=0, status="inventory")
+        self.assertTrue(len(items) > 0)
+        self.assertEqual(items[0]["shoe_name"], "Jordan 4 Red Thunder")
+        self.assertAlmostEqual(items[0]["cost_basis"], 180.0, places=2)
 
     def test_delete_item(self):
-        self.mod._add_item({
-            "shoe_name":       "Delete Me",
-            "brand":           "",
-            "colorway":        "",
-            "sku":             "",
-            "size":            "9",
-            "condition":       "Deadstock / New",
-            "cost_basis":      100.0,
-            "date_purchased":  str(date.today()),
-            "source":          "Test",
-            "listed_date":     "",
-            "listed_price":    0.0,
-            "listed_platform": "Not Listed",
-            "target_price":    0.0,
-            "status":          "inventory",
-            "notes":           "",
-        })
-        df = self.mod._load_inventory("inventory")
-        item_id = int(df.iloc[0]["id"])
+        self.mod._create_item(
+            user_id=0,
+            shoe_name="Delete Me",
+            brand="",
+            colorway="",
+            size="9",
+            cost_basis=100.0,
+            condition="New with box",
+            listed_date=None,
+            listed_price=None,
+            listed_platform="Unlisted",
+            notes="",
+        )
+        items = self.mod._load_inventory(user_id=0, status="inventory")
+        item_id = int(items[0]["id"])
         self.mod._delete_item(item_id)
-        df_after = self.mod._load_inventory("inventory")
-        self.assertTrue(df_after.empty)
+        items_after = self.mod._load_inventory(user_id=0, status="inventory")
+        self.assertEqual(len(items_after), 0)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
