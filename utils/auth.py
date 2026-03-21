@@ -1160,13 +1160,13 @@ def render_sidebar_nav():
     st.sidebar.markdown("---")
 
     # ── Free-tier pages (visible to everyone) ─────────────────────────────────
-    st.sidebar.page_link("app.py",                 label="📊 Overview",         icon="📊")
-    st.sidebar.page_link("pages/1_expenses.py",    label="📋 Expenses",         icon="📋")
-    st.sidebar.page_link("pages/2_income.py",      label="💵 Income",           icon="💵")
-    st.sidebar.page_link("pages/5_bank_import.py", label="🏦 Bank Import",      icon="🏦")
-    st.sidebar.page_link("pages/8_goals.py",       label="🎯 Financial Goals",  icon="🎯")
-    st.sidebar.page_link("pages/15_bills.py",      label="📅 Bill Calendar",    icon="📅")
-    st.sidebar.page_link("pages/16_paycheck.py",   label="💸 Paycheck",         icon="💸")
+    st.sidebar.page_link("app.py",                 label="📊 Overview")
+    st.sidebar.page_link("pages/1_expenses.py",    label="📋 Expenses")
+    st.sidebar.page_link("pages/2_income.py",      label="💵 Income")
+    st.sidebar.page_link("pages/5_bank_import.py", label="🏦 Bank Import")
+    st.sidebar.page_link("pages/8_goals.py",       label="🎯 Financial Goals")
+    st.sidebar.page_link("pages/15_bills.py",      label="📅 Bill Calendar")
+    st.sidebar.page_link("pages/16_paycheck.py",   label="💸 Paycheck")
 
     if pro:
         # ── Pro-only pages ─────────────────────────────────────────────────────
@@ -1176,36 +1176,36 @@ def render_sidebar_nav():
             f"letter-spacing:0.06em; padding:4px 0 2px 4px;'>⭐ Pro</div>",
             unsafe_allow_html=True
         )
-        st.sidebar.page_link("pages/3_business_tracker.py", label="💼 Business Tracker", icon="💼")
-        st.sidebar.page_link("pages/4_trends.py",            label="📈 Monthly Trends",   icon="📈")
-        st.sidebar.page_link("pages/6_receipts.py",          label="🧾 Receipts & HSA",   icon="🧾")
-        st.sidebar.page_link("pages/7_ai_insights.py",       label="🤖 AI Insights",      icon="🤖")
-        st.sidebar.page_link("pages/9_net_worth.py",         label="💎 Net Worth",        icon="💎")
-        st.sidebar.page_link("pages/10_rsu_espp.py",         label="📊 RSU/ESPP",         icon="📊")
-        st.sidebar.page_link("pages/11_portfolio.py",        label="🗂️ Portfolio",        icon="🗂️")
-        st.sidebar.page_link("pages/12_market_news.py",      label="📰 Market News",      icon="📰")
+        st.sidebar.page_link("pages/3_business_tracker.py", label="💼 Business Tracker")
+        st.sidebar.page_link("pages/4_trends.py",            label="📈 Monthly Trends")
+        st.sidebar.page_link("pages/6_receipts.py",          label="🧾 Receipts & HSA")
+        st.sidebar.page_link("pages/7_ai_insights.py",       label="🤖 AI Insights")
+        st.sidebar.page_link("pages/9_net_worth.py",         label="💎 Net Worth")
+        st.sidebar.page_link("pages/10_rsu_espp.py",         label="📊 RSU/ESPP")
+        st.sidebar.page_link("pages/11_portfolio.py",        label="🗂️ Portfolio")
+        st.sidebar.page_link("pages/12_market_news.py",      label="📰 Market News")
         st.sidebar.markdown("---")
         st.sidebar.markdown(
             f"<div style='font-size:0.72rem; color:{TEXT_MUTED}; text-transform:uppercase; "
             f"letter-spacing:0.06em; padding:4px 0 2px 4px;'>🎓 Learning</div>",
             unsafe_allow_html=True
         )
-        st.sidebar.page_link("pages/89_learning_system.py", label="🧠 Learning System", icon="🧠")
-        st.sidebar.page_link("pages/90_ai_workflow_hub.py", label="⚡ AI Workflow Hub",  icon="⚡")
+        st.sidebar.page_link("pages/89_learning_system.py", label="🧠 Learning System")
+        st.sidebar.page_link("pages/90_ai_workflow_hub.py", label="⚡ AI Workflow Hub")
         st.sidebar.markdown("---")
         st.sidebar.markdown(
             f"<div style='font-size:0.72rem; color:{TEXT_MUTED}; text-transform:uppercase; "
             f"letter-spacing:0.06em; padding:4px 0 2px 4px;'>🛠️ Tools</div>",
             unsafe_allow_html=True
         )
-        st.sidebar.page_link("pages/22_todo.py",                label="✅ Todo",                icon="✅")
-        st.sidebar.page_link("pages/25_notes.py",               label="📝 Notes",               icon="📝")
-        st.sidebar.page_link("pages/24_creator_companion.py",   label="🎬 Creator Companion",   icon="🎬")
-        st.sidebar.page_link("pages/17_personal_assistant.py",  label="🤖 AI Assistant",        icon="🤖")
+        st.sidebar.page_link("pages/22_todo.py",                label="✅ Todo")
+        st.sidebar.page_link("pages/25_notes.py",               label="📝 Notes")
+        st.sidebar.page_link("pages/24_creator_companion.py",   label="🎬 Creator Companion")
+        st.sidebar.page_link("pages/17_personal_assistant.py",  label="🤖 AI Assistant")
     else:
         # ── Upgrade prompt for free users ─────────────────────────────────────
         st.sidebar.markdown("---")
-        st.sidebar.page_link("pages/0_pricing.py", label="⭐ Upgrade to Pro", icon="⭐")
+        st.sidebar.page_link("pages/0_pricing.py", label="⭐ Upgrade to Pro")
 
 
 def render_sidebar_user_widget():
