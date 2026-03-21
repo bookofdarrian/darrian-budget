@@ -743,15 +743,15 @@ body, .stApp {{ background: var(--bg-main); color: var(--text-main); font-family
 
 
 /* ── Hero Screenshot Mockup ── */
-.hero-mockup {
+.hero-mockup {{
   margin: 40px auto 0;
   max-width: 900px;
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid rgba(255,140,66,0.25);
   box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 80px rgba(255,140,66,0.08);
-}
-.hero-mockup-bar {
+}}
+.hero-mockup-bar {{
   background: #0F1320;
   height: 32px;
   border-bottom: 1px solid rgba(255,140,66,0.15);
@@ -759,16 +759,16 @@ body, .stApp {{ background: var(--bg-main); color: var(--text-main); font-family
   align-items: center;
   padding: 0 14px;
   gap: 7px;
-}
-.hero-mockup-dot {
+}}
+.hero-mockup-dot {{
   width: 12px; height: 12px;
   border-radius: 50%;
   display: inline-block;
-}
-.hero-mockup img {
+}}
+.hero-mockup img {{
   width: 100%;
   display: block;
-}
+}}
 
 /* ── Primary Button Override ── */
 .stButton > button[kind="primary"] {{
