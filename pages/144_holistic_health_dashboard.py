@@ -1062,6 +1062,24 @@ with tabs[5]:
         else:
             st.success(f"✅ Connected as: **{garmin_email}**")
 
+            # ── MFA / 2FA Section ─────────────────────────────────────────────
+            st.info(
+                "🔐 **If Garmin sends you a 2FA/MFA code** (email or SMS), enter it below "
+                "before clicking Sync. Leave blank if you don't have 2FA enabled."
+            )
+            mfa_col1, mfa_col2 = st.columns([2, 3])
+            mfa_code = mfa_col1.text_input(
+                "MFA / 2FA Code (optional)", max_chars=10,
+                placeholder="e.g. 123456", key="garmin_mfa_code",
+                help="Garmin emails or texts you a 6-digit code if 2FA is on."
+            )
+            mfa_col2.markdown("""
+**How it works:**
+1. Click Sync → Garmin emails/texts you a 6-digit code
+2. Enter the code above and click Sync again within 5 minutes
+3. After first successful sync, future syncs may not require a code
+""")
+
             sync_date = st.date_input("Sync Date", value=date.today(), key="garmin_sync_date")
             sync_col1, sync_col2 = st.columns(2)
 
@@ -1074,11 +1092,12 @@ with tabs[5]:
                 sync_7_btn = st.button("📅 Sync Last 7 Days", use_container_width=True, key="garmin_sync_7")
                 st.caption("Backfills the past 7 days of data")
 
-            def _do_garmin_sync(target_date: date) -> dict:
+            def _do_garmin_sync(target_date: date, mfa: str = "") -> dict:
                 """Pull data for one day from Garmin Connect. Returns result dict."""
                 try:
                     from garminconnect import Garmin
-                    client = Garmin(garmin_email, garmin_password)
+                    mfa_callback = (lambda: mfa) if mfa.strip() else None
+                    client = Garmin(garmin_email, garmin_password, prompt_mfa=mfa_callback)
                     client.login()
                     date_str = target_date.isoformat()
 
@@ -1195,7 +1214,7 @@ with tabs[5]:
             # ── Sync single day ───────────────────────────────────────────────
             if sync_btn:
                 with st.spinner(f"⌚ Connecting to Garmin Connect and pulling {sync_date}..."):
-                    res = _do_garmin_sync(sync_date)
+                    res = _do_garmin_sync(sync_date, mfa=mfa_code)
 
                 if res.get("login_error") or (res.get("errors") and not res.get("synced")):
                     st.error(f"❌ Sync failed: {'; '.join(res.get('errors', []))}")
