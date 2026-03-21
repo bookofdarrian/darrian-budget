@@ -156,6 +156,30 @@ GLOBAL_CSS = f"""
 /* App background */
 .stApp {{ background-color: {BG_MAIN}; color: {TEXT_MAIN}; }}
 
+/* ── Top header/toolbar bar — force dark ── */
+[data-testid="stHeader"] {{
+    background-color: {BG_MAIN} !important;
+    border-bottom: 1px solid {BG_BORDER} !important;
+    backdrop-filter: none !important;
+}}
+/* Streamlit v1.40+ renamed the header container */
+header[data-testid="stHeader"],
+.stAppHeader,
+[data-testid="stAppHeader"] {{
+    background-color: {BG_MAIN} !important;
+    border-bottom: 1px solid {BG_BORDER} !important;
+}}
+/* The toolbar icon buttons inside the header (menu, deploy, etc.) */
+[data-testid="stHeader"] button,
+[data-testid="stToolbar"] {{
+    color: {TEXT_MUTED} !important;
+}}
+/* Nuke any white/light background on the main top bar iframe layer */
+.stApp > header {{
+    background-color: {BG_MAIN} !important;
+    border-bottom: 1px solid {BG_BORDER} !important;
+}}
+
 /* Page headers */
 h1 {{ color: {PEACH}; font-weight: 700; letter-spacing: -0.02em; }}
 h2 {{ color: {TEXT_MAIN}; font-weight: 600; }}
