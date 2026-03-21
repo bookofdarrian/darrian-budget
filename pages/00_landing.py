@@ -947,7 +947,7 @@ body, .stApp {{ background: var(--bg-main); color: var(--text-main); font-family
 # TOP NAV
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown("""
-<nav class="top-nav" role="navigation" aria-label="Main navigation">
+<div class="top-nav" role="navigation" aria-label="Main navigation">
   <a class="nav-brand" href="/" aria-label="Peach State Savings Home">🍑 Peach State Savings</a>
   <div class="nav-links">
     <a class="nav-link" href="#features">Features</a>
@@ -956,7 +956,7 @@ st.markdown("""
     <a class="nav-link" href="#for-business">For Business</a>
     <a class="nav-link" href="#faq">FAQ</a>
   </div>
-</nav>
+</div>
 """, unsafe_allow_html=True)
 
 
@@ -1038,11 +1038,11 @@ st.markdown("""
 # FEATURES SECTION
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown("""
-<section class="section" id="features" aria-label="Features">
+<div class="section" id="features" aria-label="Features">
   <div class="section-eyebrow">Features</div>
   <h2 class="section-h2">Everything Your Finances Need, In One Place</h2>
   <p class="section-sub">From day-to-day budgeting to long-term wealth building — all the tools serious money managers use.</p>
-</section>
+</div>
 """, unsafe_allow_html=True)
 
 features = [
@@ -1065,11 +1065,11 @@ for row in rows:
     for col, (icon, title, desc) in zip(cols, row):
         with col:
             st.markdown(f"""
-            <article class="feat-card">
+            <div class="feat-card">
               <span class="feat-icon" role="img" aria-label="{title}">{icon}</span>
               <h3 class="feat-title">{title}</h3>
               <p class="feat-desc">{desc}</p>
-            </article>
+            </div>
             """, unsafe_allow_html=True)
     st.markdown("<div style='margin-top:14px;'></div>", unsafe_allow_html=True)
 
@@ -1078,7 +1078,7 @@ for row in rows:
 # HOW IT WORKS
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown("""
-<section class="section" id="how-it-works" aria-label="How it works">
+<div class="section" id="how-it-works" aria-label="How it works">
   <div class="section-eyebrow">How It Works</div>
   <h2 class="section-h2">Get Your Full Financial Picture in Under 5 Minutes</h2>
   <p class="section-sub">No bank linking required. No Open Banking. No giving us your credentials. Just your data, in your control.</p>
@@ -1099,7 +1099,7 @@ st.markdown("""
       <p class="how-desc">Your budget dashboard, net worth, goals, and AI insights are live immediately. Upgrade to Pro for RSU tracking, portfolio analytics, and all advanced tools.</p>
     </div>
   </div>
-</section>
+</div>
 """, unsafe_allow_html=True)
 
 
@@ -1107,31 +1107,31 @@ st.markdown("""
 # TESTIMONIALS
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown("""
-<section class="section" aria-label="User testimonials">
+<div class="section" aria-label="User testimonials">
   <div class="section-eyebrow">Social Proof</div>
   <h2 class="section-h2">Real People. Real Money. Real Results.</h2>
   <p class="section-sub">Peach State Savings users have paid off debt, hit savings goals, and finally understood their RSU compensation.</p>
   <div class="testimonial-grid">
-    <article class="testimonial-card" itemscope itemtype="https://schema.org/Review">
+    <div class="testimonial-card" itemscope itemtype="https://schema.org/Review">
       <div class="testimonial-stars" aria-label="5 out of 5 stars">★★★★★</div>
       <p class="testimonial-text" itemprop="reviewBody">"I finally understand my Visa RSU vests and ESPP. The tax breakdown alone saved me from a surprise IRS bill. This is the finance app I wish existed 3 years ago."</p>
       <div class="testimonial-author" itemprop="author">Marcus T.</div>
       <div class="testimonial-role">Software Engineer, Atlanta GA</div>
-    </article>
-    <article class="testimonial-card" itemscope itemtype="https://schema.org/Review">
+    </div>
+    <div class="testimonial-card" itemscope itemtype="https://schema.org/Review">
       <div class="testimonial-stars" aria-label="5 out of 5 stars">★★★★★</div>
       <p class="testimonial-text" itemprop="reviewBody">"The bank import is magic. I paste my NFCU statement and every transaction is categorized perfectly. I went from not knowing my spending to being fully on budget in a week."</p>
       <div class="testimonial-author" itemprop="author">Aaliyah R.</div>
       <div class="testimonial-role">Nurse Practitioner, Decatur GA</div>
-    </article>
-    <article class="testimonial-card" itemscope itemtype="https://schema.org/Review">
+    </div>
+    <div class="testimonial-card" itemscope itemtype="https://schema.org/Review">
       <div class="testimonial-stars" aria-label="5 out of 5 stars">★★★★★</div>
       <p class="testimonial-text" itemprop="reviewBody">"The debt payoff planner showed me I was wasting $4,200 a year on interest from the wrong payoff order. Switched to avalanche method and I'm on track to be debt-free 2 years early."</p>
       <div class="testimonial-author" itemprop="author">Jordan K.</div>
       <div class="testimonial-role">Product Manager, Sandy Springs GA</div>
-    </article>
+    </div>
   </div>
-</section>
+</div>
 """, unsafe_allow_html=True)
 
 
@@ -1139,7 +1139,7 @@ st.markdown("""
 # BUILDER STORY
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown("""
-<section class="section" aria-label="About the builder">
+<div class="section" aria-label="About the builder">
   <div class="section-eyebrow">The Builder</div>
   <h2 class="section-h2">Built by Someone Who Actually Needed It</h2>
   <p class="section-sub">Not a VC-backed startup. Not a growth-hacked SaaS. Just a builder who wanted better tools for his own money.</p>
@@ -1151,11 +1151,11 @@ st.markdown("""
         <div class="builder-role">Technical Project Analyst @ Visa · Atlanta, GA</div>
       </div>
     </div>
-    <blockquote class="builder-quote">
+    <div class="builder-quote">
       "I built Peach State Savings because every finance app I tried either did too little or cost too much —
       and none of them understood how I actually made money. Between my Visa salary, RSU vests, ESPP purchases,
       and sneaker resale income, I needed something custom. So I built it."
-    </blockquote>
+    </div>
     <div class="builder-body">
       Every feature in this app came from a real problem. The bank import? I was spending 2 hours manually
       copying transactions into a spreadsheet. The RSU tracker? I didn't understand my Visa equity comp.
@@ -1167,7 +1167,7 @@ st.markdown("""
       <strong style="color:#F5F7FF;">The pipeline does the building. The human makes the decisions.</strong>
     </div>
   </div>
-</section>
+</div>
 """, unsafe_allow_html=True)
 
 
@@ -1175,7 +1175,7 @@ st.markdown("""
 # PRICING
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown("""
-<section class="section" id="pricing" aria-label="Pricing">
+<div class="section" id="pricing" aria-label="Pricing">
   <div class="section-eyebrow">Pricing</div>
   <h2 class="section-h2">Simple, Honest Pricing. No Surprises.</h2>
   <p class="section-sub">Start free. Upgrade when you're ready. Cancel anytime — no questions, no retention dark patterns.</p>
@@ -1214,7 +1214,7 @@ st.markdown("""
       <div class="price-feature"><span class="price-check">✓</span> All 73+ Pro tools unlocked</div>
     </div>
   </div>
-</section>
+</div>
 """, unsafe_allow_html=True)
 
 
@@ -1222,7 +1222,7 @@ st.markdown("""
 # FOR BUSINESS — AGENCY LICENSE & DOWNLOAD
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown("""
-<section class="section" id="for-business" aria-label="For businesses and developers">
+<div class="section" id="for-business" aria-label="For businesses and developers">
   <div class="section-eyebrow">For Business &amp; Developers</div>
   <h2 class="section-h2">Use Peach State Savings as Your Own AI Finance System</h2>
   <p class="section-sub">
@@ -1309,7 +1309,7 @@ st.markdown("""
       · Response within 24 hours.
     </p>
   </div>
-</section>
+</div>
 """, unsafe_allow_html=True)
 
 
@@ -1317,7 +1317,7 @@ st.markdown("""
 # FAQ
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown("""
-<section class="section" id="faq" aria-label="Frequently asked questions">
+<div class="section" id="faq" aria-label="Frequently asked questions">
   <div class="section-eyebrow">FAQ</div>
   <h2 class="section-h2">Frequently Asked Questions</h2>
   <p class="section-sub">Everything you need to know before you sign up.</p>
@@ -1358,7 +1358,7 @@ st.markdown("""
       <span itemprop="text">Peach State Savings uses Anthropic's Claude (claude-opus-4-5) for all AI-powered features including spending categorization, personalized insights, goal predictions, and debt payoff recommendations.</span>
     </div>
   </div>
-</section>
+</div>
 """, unsafe_allow_html=True)
 
 
@@ -1366,13 +1366,13 @@ st.markdown("""
 # FINAL CTA
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown("""
-<section class="cta-section" aria-label="Call to action">
+<div class="cta-section" aria-label="Call to action">
   <h2 class="cta-h2">Start Managing Your Money Better — Today.</h2>
   <p class="cta-sub">
     Free forever for core features. No credit card. No ads. No data selling.<br>
     Just tools that actually work, built by someone who uses them every day.
   </p>
-</section>
+</div>
 """, unsafe_allow_html=True)
 
 cta_l, cta_c, cta_r = st.columns([1, 2, 1])
@@ -1390,7 +1390,7 @@ with cta_c:
 # FOOTER
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown(f"""
-<footer class="site-footer" role="contentinfo">
+<div class="site-footer" role="contentinfo">
   <div class="footer-grid">
     <div>
       <div class="footer-brand">🍑 Peach State Savings</div>
@@ -1412,5 +1412,5 @@ st.markdown(f"""
     <span>© 2026 Peach State Savings · Built &amp; self-hosted in Atlanta, GA by <a href="https://www.linkedin.com/in/darrian-belcher/" rel="noopener noreferrer" target="_blank">Darrian Belcher</a></span>
     <span>Free personal finance app · AI budgeting · Bank import · RSU tracker</span>
   </div>
-</footer>
+</div>
 """, unsafe_allow_html=True)
