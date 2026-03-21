@@ -214,6 +214,102 @@ if not expense_df.empty:
 else:
     st.info("No expense data yet for this month.")
 
+# ── eBay Listed Shoes Banner ──────────────────────────────────────────────────
+try:
+    _inv_conn = get_conn()
+    _inv_c = _inv_conn.cursor()
+    _inv_c.execute("""
+        SELECT brand, model, colorway, size, list_prices, listed_platforms
+        FROM soleops_inventory
+        WHERE status = 'listed' AND user_id = ?
+    """, (_uid,))
+    _listed_rows = _inv_c.fetchall()
+    _inv_conn.close()
+
+    import json as _json
+    _ebay_shoes = []
+    for _row in _listed_rows:
+        _brand, _model, _colorway, _size, _list_prices_raw, _platforms_raw = _row
+        try:
+            _platforms = _json.loads(_platforms_raw) if isinstance(_platforms_raw, str) else (_platforms_raw or [])
+        except Exception:
+            _platforms = []
+        if "eBay" in _platforms:
+            try:
+                _prices = _json.loads(_list_prices_raw) if isinstance(_list_prices_raw, str) else (_list_prices_raw or {})
+            except Exception:
+                _prices = {}
+            _ebay_price = _prices.get("eBay") or _prices.get("ebay")
+            _ebay_shoes.append({
+                "brand": _brand,
+                "model": _model,
+                "colorway": _colorway or "",
+                "size": _size,
+                "price": _ebay_price,
+            })
+
+    if _ebay_shoes:
+        _shoe_items_html = "".join([
+            f'<span style="display:inline-block;margin:0 18px;white-space:nowrap;">'
+            f'👟 <strong>{s["brand"]} {s["model"]}</strong>'
+            f'{(" — " + s["colorway"]) if s["colorway"] else ""}'
+            f' | Sz {s["size"]}'
+            f'{(" | $" + str(s["price"])) if s["price"] else ""}'
+            f'</span>'
+            for s in _ebay_shoes
+        ])
+        # Duplicate for seamless scroll loop
+        _ticker_content = _shoe_items_html * 4
+
+        st.markdown("---")
+        st.markdown(
+            f"""
+<div style="
+    background: linear-gradient(90deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
+    border: 1.5px solid #e05a00;
+    border-radius: 10px;
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 6px;
+">
+  <div style="
+    background: #e05a00;
+    color: #fff;
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    padding: 8px 14px;
+    display: inline-block;
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+  ">🛒 LIVE ON EBAY</div>
+  <div style="overflow:hidden; padding: 8px 12px 8px 145px;">
+    <div style="
+      display: inline-block;
+      white-space: nowrap;
+      animation: soleops-ticker 28s linear infinite;
+      color: #f0f0f0;
+      font-size: 14px;
+      font-weight: 500;
+    ">{_ticker_content}</div>
+  </div>
+</div>
+<style>
+@keyframes soleops-ticker {{
+  0%   {{ transform: translateX(0); }}
+  100% {{ transform: translateX(-50%); }}
+}}
+</style>
+""",
+            unsafe_allow_html=True,
+        )
+except Exception:
+    pass  # Inventory tables may not exist yet — silently skip
+
 # ── Learning System Quick View ─────────────────────────────────────────────────
 try:
     _lconn = get_conn()

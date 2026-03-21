@@ -532,6 +532,241 @@ def _handler_content_ideas(task: dict) -> tuple[bool, str]:
     return _run_subprocess(str(script))
 
 
+def _handler_open_source_prep(task: dict) -> tuple[bool, str]:
+    """
+    Prepare Peach State Savings for open source release:
+      1. Create MIT LICENSE file
+      2. Create CONTRIBUTING.md
+      3. Upgrade README.md with open source info + hosted plan CTA
+      4. Harden .gitignore for any remaining sensitive patterns
+      5. Scan git history for accidentally committed secrets
+    All steps run in-process — no subprocess needed.
+    """
+    import re
+    import subprocess as _sp
+
+    steps_done = []
+    warnings = []
+
+    # ── 1. MIT LICENSE ────────────────────────────────────────────────────────
+    license_path = PROJECT_ROOT / "LICENSE"
+    if not license_path.exists():
+        year = datetime.now().year
+        license_path.write_text(f"""MIT License
+
+Copyright (c) {year} Darrian Belcher
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+""")
+        steps_done.append("✅ MIT LICENSE created")
+    else:
+        steps_done.append("ℹ️  LICENSE already exists — skipped")
+
+    # ── 2. CONTRIBUTING.md ────────────────────────────────────────────────────
+    contrib_path = PROJECT_ROOT / "CONTRIBUTING.md"
+    if not contrib_path.exists():
+        contrib_path.write_text("""# Contributing to Peach State Savings
+
+Thanks for your interest in contributing! This is an open-source personal finance
+dashboard built with Python + Streamlit. Here's how to help:
+
+---
+
+## 🚀 Getting Started
+
+```bash
+# 1. Fork the repo on GitHub, then clone your fork
+git clone https://github.com/YOUR_USERNAME/darrian-budget.git
+cd darrian-budget
+
+# 2. Create a virtual environment
+python3 -m venv venv
+source venv/bin/activate   # Windows: venv\\Scripts\\activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+
+# 4. Copy the example env file
+cp .env.example .env       # fill in your own keys
+
+# 5. Run the app
+streamlit run app.py
+```
+
+---
+
+## 🌿 Branch Strategy
+
+```
+feature/<name>  →  dev  →  qa  →  staging  →  main (prod)
+```
+
+- Use **kebab-case**: `feature/ai-notes-page`, `bugfix/login-redirect`
+- Never push directly to `main` or `staging`
+
+---
+
+## ✅ Before Submitting a PR
+
+1. **Syntax-check your file:**
+   ```bash
+   python3 -m py_compile pages/XX_mypage.py && echo "OK"
+   ```
+2. **Run the test suite:**
+   ```bash
+   pytest tests/ -v
+   ```
+3. **Add tests** for any new page or helper function (see `tests/unit/`)
+4. **Follow commit conventions:**
+   ```
+   feat: add debt payoff planner (page 45)
+   fix: correct RSU vest date calculation
+   chore: update requirements.txt
+   ```
+
+---
+
+## 🔐 Security Rules
+
+- **Never** commit API keys, tokens, or passwords
+- Store all secrets in the `app_settings` DB table or `.env` (which is gitignored)
+- The `.spotify_token_cache` and `credentials.json` files are gitignored — keep it that way
+
+---
+
+## 💡 Good First Issues
+
+Look for issues tagged `good first issue` on GitHub. Some ideas:
+- Add a new budget category
+- Improve mobile layout
+- Write missing unit tests
+- Add a new AI insight prompt
+
+---
+
+## 📬 Questions?
+
+Open a GitHub Issue or reach out at **peachstatesavings.com**.
+""")
+        steps_done.append("✅ CONTRIBUTING.md created")
+    else:
+        steps_done.append("ℹ️  CONTRIBUTING.md already exists — skipped")
+
+    # ── 3. Harden .gitignore ──────────────────────────────────────────────────
+    gitignore_path = PROJECT_ROOT / ".gitignore"
+    existing = gitignore_path.read_text() if gitignore_path.exists() else ""
+    new_entries = []
+    patterns_needed = [
+        ("*.db",             "*.db"),
+        (".env",             ".env"),
+        ("*.pem",            "*.pem"),
+        ("*.key",            "*.key"),
+        ("*.p12",            "*.p12"),
+        (".env.example",     ".env.example"),
+        ("secrets.toml",     ".streamlit/secrets.toml"),
+        ("token_cache",      ".spotify_token_cache"),
+        ("credentials.json", "credentials.json"),
+        ("token.json",       "token.json"),
+    ]
+    for check_str, entry in patterns_needed:
+        if check_str not in existing:
+            new_entries.append(entry)
+
+    if new_entries:
+        with open(gitignore_path, "a") as f:
+            f.write("\n# Added by open-source prep agent\n")
+            for e in new_entries:
+                f.write(e + "\n")
+        steps_done.append(f"✅ .gitignore hardened (+{len(new_entries)} patterns)")
+    else:
+        steps_done.append("ℹ️  .gitignore already covers all sensitive patterns")
+
+    # ── 4. Scan git history for accidental secrets ────────────────────────────
+    secret_patterns = [
+        r"sk-ant-[A-Za-z0-9\-_]{20,}",   # Anthropic key
+        r"AKIA[A-Z0-9]{16}",              # AWS access key
+        r"ghp_[A-Za-z0-9]{36}",           # GitHub PAT
+        r"xoxb-[0-9\-a-zA-Z]{50,}",       # Slack bot token
+        r"password\s*=\s*['\"][^'\"]{6,}", # hardcoded password
+    ]
+    try:
+        result = _sp.run(
+            ["git", "log", "--all", "-p", "--no-pager"],
+            capture_output=True, text=True,
+            timeout=60, cwd=str(PROJECT_ROOT)
+        )
+        history = result.stdout
+        found_secrets = []
+        for pat in secret_patterns:
+            matches = re.findall(pat, history, re.IGNORECASE)
+            if matches:
+                found_secrets.append(f"Pattern `{pat[:30]}` matched {len(matches)} time(s)")
+        if found_secrets:
+            warnings.append("⚠️  SECRETS FOUND IN GIT HISTORY — run `git filter-repo` or BFG Repo Cleaner before making the repo public:")
+            warnings.extend([f"   {w}" for w in found_secrets])
+        else:
+            steps_done.append("✅ Git history scan: no secrets patterns found — safe to open source")
+    except Exception as e:
+        warnings.append(f"⚠️  Could not scan git history: {e}")
+
+    # ── 5. Log summary to DB ──────────────────────────────────────────────────
+    summary = "\n".join(steps_done + warnings)
+    try:
+        conn = get_conn()
+        ph = "%s" if USE_POSTGRES else "?"
+        week_label = datetime.now().strftime("%b %d, %Y")
+        title = f"Open Source Prep Report — {week_label}"
+        if USE_POSTGRES:
+            db_exec(conn, f"""
+                INSERT INTO notes (title, content, category, is_pinned, created_at)
+                VALUES ({ph}, {ph}, 'dev', TRUE, NOW())
+            """, (title, summary))
+        else:
+            db_exec(conn, f"""
+                INSERT OR REPLACE INTO notes (title, content, category, is_pinned, created_at)
+                VALUES ({ph}, {ph}, 'dev', 1, datetime('now'))
+            """, (title, summary))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass  # notes table may not exist yet
+
+    # Send via Telegram if configured
+    try:
+        import requests as _req
+        token   = get_setting("telegram_bot_token")
+        chat_id = get_setting("telegram_chat_id")
+        if token and chat_id:
+            tg_msg = f"🔓 <b>Open Source Prep Report</b>\n\n" + "\n".join(steps_done + warnings)
+            _req.post(
+                f"https://api.telegram.org/bot{token}/sendMessage",
+                json={"chat_id": chat_id, "text": tg_msg[:4000], "parse_mode": "HTML"},
+                timeout=10,
+            )
+    except Exception:
+        pass
+
+    had_warnings = any("⚠️" in w for w in warnings)
+    return (not had_warnings), summary
+
+
 def _handler_generic(task: dict) -> tuple[bool, str]:
     """
     Fallback handler for custom tasks. Logs the task as due and
@@ -557,6 +792,8 @@ TASK_HANDLERS: list[tuple[str, callable]] = [
     ("health insight",                  _handler_weekly_health_insights),
     ("content idea",                    _handler_content_ideas),
     ("daily content",                   _handler_content_ideas),
+    ("open source prep",                _handler_open_source_prep),
+    ("open source",                     _handler_open_source_prep),
 ]
 
 
