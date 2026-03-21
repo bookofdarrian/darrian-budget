@@ -8,6 +8,22 @@ import streamlit as st
 import base64
 from pathlib import Path
 
+
+def _load_b64(path: str, mime: str = "image/jpeg") -> str:
+    """Load a local file as base64 data URI for HTML embedding."""
+    try:
+        with open(path, "rb") as f:
+            data = base64.b64encode(f.read()).decode()
+        return f"data:{mime};base64,{data}"
+    except Exception:
+        return ""
+
+
+# ── Personal photos (Darrian Belcher / © All Rights Reserved) ─────────────────
+_HEADSHOT      = _load_b64("static/photos/darrian_headshot.png",   "image/png")
+_PROFESSIONAL  = _load_b64("static/photos/darrian_professional.jpg")
+_HERO_IMG_SRC  = _load_b64("static/hero_screenshot.jpg")
+
 st.set_page_config(
     page_title="Peach State Savings — Free AI Personal Finance App | Budget, Track & Grow",
     page_icon="🍑",
@@ -297,6 +313,7 @@ body, .stApp {{ background: var(--bg-main); color: var(--text-main); font-family
   margin: 0 auto 40px;
   line-height: 1.7;
   font-weight: 400;
+  text-align: center;
 }}
 .hero-trust {{
   display: flex;
@@ -1002,7 +1019,7 @@ st.markdown(
     <span class="hero-mockup-dot" style="background:#febc2e;"></span>
     <span class="hero-mockup-dot" style="background:#28c840;"></span>
   </div>
-  <img src="data:image/jpeg;base64,{_HERO_IMG}"
+  <img src="{_HERO_IMG_SRC}"
        alt="Peach State Savings Dashboard"
        loading="lazy" />
 </div>''',
@@ -1138,14 +1155,17 @@ st.markdown("""
 # ═══════════════════════════════════════════════════════════════════════════════
 # BUILDER STORY
 # ═══════════════════════════════════════════════════════════════════════════════
-st.markdown("""
+st.markdown(f"""
 <div class="section" aria-label="About the builder">
   <div class="section-eyebrow">The Builder</div>
   <h2 class="section-h2">Built by Someone Who Actually Needed It</h2>
   <p class="section-sub">Not a VC-backed startup. Not a growth-hacked SaaS. Just a builder who wanted better tools for his own money.</p>
   <div class="builder-card">
     <div class="builder-header">
-      <div class="builder-avatar" aria-hidden="true">👨🏾‍💻</div>
+      <div class="builder-avatar" style="overflow:hidden;padding:0;background:none;">
+        <img src="{_HEADSHOT}" alt="Darrian Belcher"
+             style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" />
+      </div>
       <div>
         <div class="builder-name">Darrian Belcher</div>
         <div class="builder-role">Technical Project Analyst @ Visa · Atlanta, GA</div>
