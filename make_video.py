@@ -1,64 +1,70 @@
 #!/usr/bin/env python3
 """
-Generate voiceover with OpenAI TTS, combine with screen recording,
-burn in auto-captions using Whisper, produce final video.
+make_video.py — Combine screen recording + voice + background beat.
+
+Usage:
+  python3 make_video.py [voice_file] [beat_file]
+
+  voice_file: path to your recorded voice (mp3/m4a/aiff/wav)
+              Default: looks for videos/my_voice.* or uses AI fallback
+  beat_file:  path to background music (any mp3)
+              Drop ANY mp3 as videos/beat.mp3 and it will be mixed in at low volume
+
+Examples:
+  python3 make_video.py                                # auto-detect
+  python3 make_video.py videos/my_voice.m4a            # your recorded voice
+  python3 make_video.py videos/my_voice.m4a videos/beat.mp3  # voice + beat
 """
-import subprocess
-import os
-import sys
+import subprocess, sys, glob
 from pathlib import Path
 
 VIDEOS = Path("videos")
-VIDEO_IN = VIDEOS / "short_tour.mp4"
-AUDIO_OUT = VIDEOS / "voiceover.mp3"
-FINAL = VIDEOS / "final_with_voice.mp4"
+VIDEO_IN = VIDEOS / "tour_v2.mp4"
+if not VIDEO_IN.exists():
+    VIDEO_IN = VIDEOS / "short_tour.mp4"   # fallback
+FINAL = VIDEOS / "final_v3.mp4"
 FFMPEG = "/usr/local/bin/ffmpeg"
 
-SCRIPT = """My computer built me a new app feature while I was sleeping. This is everything I've built.
+# --- Find voice file ---
+voice = None
+if len(sys.argv) > 1:
+    voice = Path(sys.argv[1])
+else:
+    # Auto-detect: look for user's recorded voice first
+    for pattern in ["videos/my_voice.*", "videos/voice_record.*", "videos/recording.*"]:
+        found = glob.glob(pattern)
+        if found:
+            voice = Path(found[0])
+            print(f"  Auto-detected voice: {voice}")
+            break
+    if not voice:
+        # Fall back to aria
+        voice = VIDEOS / "voice_aria_woman.mp3"
+        print(f"  Using AI voice: {voice}")
 
-Peach State Savings — a personal finance operating system. 140 pages. Budget tracker, income manager, RSU calendar, investments, cash flow — all in one place. Free.
+# --- Find beat file ---
+beat = None
+if len(sys.argv) > 2:
+    beat = Path(sys.argv[2])
+elif (VIDEOS / "beat.mp3").exists():
+    beat = VIDEOS / "beat.mp3"
+    print(f"  Found beat: {beat}")
 
-SoleOps — my sneaker resale business suite. AI listing generator, inventory manager, and an ARB scanner that texts me when a pair drops below my buy price. It made me $200 before breakfast.
+if not voice or not voice.exists():
+    print(f"❌ Voice file not found: {voice}")
+    print("  AirDrop your Voice Memos recording to your Mac,")
+    print("  then move it to: videos/my_voice.m4a")
+    print("  Then re-run: python3 make_video.py videos/my_voice.m4a")
+    sys.exit(1)
 
-College Confused — free AI college prep for first-gen students. FAFSA walkthrough, essay assistant, AI mock interviews. I was first-gen. This is the platform I wish I had. Always free. Always will be.
+print(f"\n📹 Video:  {VIDEO_IN}")
+print(f"🎤 Voice:  {voice}")
+print(f"🎵 Beat:   {beat or 'none'}")
+print(f"📤 Output: {FINAL}\n")
 
-All of this runs on a server in my house, managed by an overnight AI system that builds features while I sleep.
-
-peachstatesavings.com — free. getsoleops.com — April launch. collegeconfused.org — always free. Follow the build: at bookofdarrian."""
-
-# --- Step 1: Generate voiceover via OpenAI TTS ---
-print("Step 1: Generating voiceover with OpenAI TTS...")
-try:
-    import openai
-    from utils.db import get_setting
-    api_key = get_setting("openai_api_key") or os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        raise ValueError("No OpenAI API key found")
-    client = openai.OpenAI(api_key=api_key)
-    resp = client.audio.speech.create(
-        model="tts-1",
-        voice="onyx",   # deep, authoritative
-        input=SCRIPT,
-        speed=0.95,
-    )
-    resp.stream_to_file(str(AUDIO_OUT))
-    print(f"  ✅ Voiceover: {AUDIO_OUT} ({AUDIO_OUT.stat().st_size//1024}KB)")
-except Exception as e:
-    print(f"  ⚠️  OpenAI TTS failed: {e}")
-    print("  Falling back to macOS say...")
-    aiff = VIDEOS / "voiceover.aiff"
-    subprocess.run(["say", "-v", "Samantha", "-r", "165",
-                    SCRIPT, "-o", str(aiff)], check=True)
-    subprocess.run([FFMPEG, "-y", "-i", str(aiff),
-                    str(AUDIO_OUT)], capture_output=True)
-    print(f"  ✅ Fallback voiceover: {AUDIO_OUT}")
-
-# --- Step 2: Get durations ---
-def get_duration(path):
-    r = subprocess.run(
-        [FFMPEG, "-i", str(path)],
-        capture_output=True, text=True
-    )
+# --- Get duration helper ---
+def duration(p):
+    r = subprocess.run([FFMPEG, "-i", str(p)], capture_output=True, text=True)
     for line in r.stderr.split("\n"):
         if "Duration" in line:
             t = line.split("Duration:")[1].split(",")[0].strip()
@@ -66,54 +72,71 @@ def get_duration(path):
             return float(h)*3600 + float(m)*60 + float(s)
     return 0
 
-vid_dur = get_duration(VIDEO_IN)
-aud_dur = get_duration(AUDIO_OUT)
-print(f"  Video: {vid_dur:.1f}s  |  Audio: {aud_dur:.1f}s")
+vid_dur = duration(VIDEO_IN)
+vox_dur = duration(voice)
+print(f"  Video: {vid_dur:.1f}s  |  Voice: {vox_dur:.1f}s")
 
-# --- Step 3: Combine video + audio (loop video if audio is longer) ---
-print("Step 2: Combining video + voiceover...")
-if aud_dur > vid_dur:
-    # Speed up video slightly to match audio, or loop it
-    speed = aud_dur / vid_dur
-    if speed < 1.5:
-        # Slow down video slightly
-        subprocess.run([
-            FFMPEG, "-y",
-            "-i", str(VIDEO_IN),
-            "-i", str(AUDIO_OUT),
-            "-filter:v", f"setpts={1/speed}*PTS",
-            "-c:v", "libx264", "-crf", "23", "-preset", "fast",
-            "-c:a", "aac", "-shortest",
-            "-movflags", "+faststart",
-            str(FINAL)
-        ], capture_output=True)
-    else:
-        # Just mux and let it run
-        subprocess.run([
-            FFMPEG, "-y",
-            "-stream_loop", "-1", "-i", str(VIDEO_IN),
-            "-i", str(AUDIO_OUT),
-            "-c:v", "libx264", "-crf", "23", "-preset", "fast",
-            "-c:a", "aac", "-shortest",
-            "-movflags", "+faststart",
-            str(FINAL)
-        ], capture_output=True)
-else:
+# --- Build ffmpeg command ---
+target = max(vid_dur, vox_dur)
+
+# Convert voice to temp wav (normalize any format)
+tmp_voice = VIDEOS / "_voice_norm.wav"
+subprocess.run([FFMPEG, "-y", "-i", str(voice),
+                "-ar", "44100", "-ac", "1", str(tmp_voice)],
+               capture_output=True)
+
+if beat and beat.exists():
+    # Mix voice (loud) + beat (quiet, 20% volume)
+    tmp_mix = VIDEOS / "_audio_mix.wav"
+    beat_dur = duration(beat)
     subprocess.run([
         FFMPEG, "-y",
-        "-i", str(VIDEO_IN),
-        "-i", str(AUDIO_OUT),
-        "-c:v", "copy", "-c:a", "aac",
-        "-shortest", "-movflags", "+faststart",
-        str(FINAL)
+        "-stream_loop", "-1", "-i", str(tmp_voice),
+        "-stream_loop", "-1", "-i", str(beat),
+        "-filter_complex",
+        f"[0:a]volume=1.0[vox];[1:a]volume=0.15[bg];[vox][bg]amix=inputs=2:duration=first[out]",
+        "-map", "[out]",
+        "-t", str(vox_dur),
+        str(tmp_mix)
     ], capture_output=True)
-
-if FINAL.exists():
-    print(f"  ✅ Final video: {FINAL} ({FINAL.stat().st_size//1024}KB)")
-    subprocess.run(["open", str(FINAL)])
-    print("  ▶️  Opening in QuickTime...")
+    audio_src = tmp_mix
 else:
-    print("  ❌ Something went wrong — check ffmpeg output")
+    audio_src = tmp_voice
 
-print("\n✅ DONE — final_with_voice.mp4 ready for TikTok/IG/YouTube!")
-print("  Drag to CapCut for text overlays, then export 9:16")
+# Combine: loop video if voice is longer
+if vox_dur > vid_dur * 1.5:
+    video_filter = "-stream_loop -1"
+    cmd = [FFMPEG, "-y",
+           "-stream_loop", "-1", "-i", str(VIDEO_IN),
+           "-i", str(audio_src),
+           "-c:v", "libx264", "-crf", "22", "-preset", "fast",
+           "-c:a", "aac", "-b:a", "192k",
+           "-shortest", "-movflags", "+faststart",
+           str(FINAL)]
+else:
+    cmd = [FFMPEG, "-y",
+           "-i", str(VIDEO_IN),
+           "-i", str(audio_src),
+           "-c:v", "libx264", "-crf", "22", "-preset", "fast",
+           "-c:a", "aac", "-b:a", "192k",
+           "-shortest", "-movflags", "+faststart",
+           str(FINAL)]
+
+result = subprocess.run(cmd, capture_output=True, text=True)
+
+# Cleanup temp files
+for f in [tmp_voice, VIDEOS / "_audio_mix.wav"]:
+    if f.exists():
+        f.unlink()
+
+if FINAL.exists() and FINAL.stat().st_size > 10000:
+    print(f"\n✅ FINAL VIDEO: {FINAL} ({FINAL.stat().st_size // 1024}KB)")
+    subprocess.run(["open", str(FINAL)])
+    print("▶️  Opening in QuickTime...")
+    print()
+    print("══════════════════════════════════════════")
+    print("  Drag to CapCut → add text overlays")
+    print("  Export 9:16 for TikTok/IG/YouTube Shorts")
+    print("══════════════════════════════════════════")
+else:
+    print(f"❌ ffmpeg error:\n{result.stderr[-1000:]}")
