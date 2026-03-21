@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SoleOps — Sneaker Resale OS</title>
+  <meta name="description" content="The operating system for serious sneaker resellers. AI listings, real-time price alerts, inventory management, and full P&amp;L — all in one place." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & Base ───────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:          #080A0D;
+      --bg2:         #0E1117;
+      --bg3:         #141820;
+      --glass:       rgba(20, 24, 32, 0.75);
+      --border:      rgba(255,255,255,0.06);
+      --border2:     rgba(255,255,255,0.10);
+      --orange:      #FF6B35;
+      --orange-glow: rgba(255,107,53,0.18);
+      --purple:      #7C3AED;
+      --green:       #10B981;
+      --white:       #F8FAFC;
+      --grey:        #94A3B8;
+      --grey2:       #64748B;
+      --r:           12px;
+      --r2:          20px;
+      font-size: 16px;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--white);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+
+    /* ── Grid noise texture ─────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.015) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+
+    /* ── NAV ────────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 40px;
+      height: 64px;
+      background: rgba(8,10,13,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 20px; font-weight: 800; letter-spacing: -0.5px;
+    }
+    .nav-logo .icon { font-size: 22px; }
+    .nav-logo span { color: var(--orange); }
+    .nav-links { display: flex; align-items: center; gap: 32px; }
+    .nav-links a { font-size: 14px; color: var(--grey); font-weight: 500; transition: color .15s; }
+    .nav-links a:hover { color: var(--white); }
+    .nav-cta {
+      background: var(--orange); color: #000;
+      padding: 9px 22px; border-radius: 8px;
+      font-size: 14px; font-weight: 700;
+      transition: opacity .15s, transform .1s;
+    }
+    .nav-cta:hover { opacity: .9; transform: translateY(-1px); }
+
+    /* ── HERO ───────────────────────────────────────────── */
+    .hero {
+      position: relative; z-index: 1;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      overflow: hidden;
+    }
+    .hero-glow {
+      position: absolute;
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(255,107,53,0.12) 0%, transparent 70%);
+      top: 10%; left: 50%; transform: translateX(-50%);
+      pointer-events: none;
+    }
+    .hero-glow2 {
+      position: absolute;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(124,58,237,0.10) 0%, transparent 70%);
+      top: 40%; right: 10%;
+      pointer-events: none;
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,107,53,0.10);
+      border: 1px solid rgba(255,107,53,0.25);
+      color: var(--orange);
+      padding: 7px 16px; border-radius: 100px;
+      font-size: 13px; font-weight: 600;
+      letter-spacing: 0.3px;
+      margin-bottom: 32px;
+    }
+    .badge-dot { width: 7px; height: 7px; background: var(--orange); border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
+
+    .hero h1 {
+      font-size: clamp(48px, 7vw, 88px);
+      font-weight: 900;
+      line-height: 1.0;
+      letter-spacing: -3px;
+      margin-bottom: 24px;
+      max-width: 900px;
+    }
+    .hero h1 .accent { color: var(--orange); }
+    .hero h1 .dim { color: var(--grey); }
+
+    .hero p {
+      font-size: 20px; color: var(--grey);
+      max-width: 560px; margin: 0 auto 48px;
+      line-height: 1.7;
+      font-weight: 400;
+    }
+
+    .hero-actions { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; justify-content: center; }
+    .btn-primary {
+      background: var(--orange);
+      color: #000; font-weight: 800; font-size: 16px;
+      padding: 14px 32px; border-radius: 10px;
+      border: none; cursor: pointer;
+      transition: all .15s;
+      box-shadow: 0 0 40px rgba(255,107,53,0.3);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 60px rgba(255,107,53,0.4); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--grey); font-weight: 600; font-size: 16px;
+      padding: 14px 28px; border-radius: 10px;
+      border: 1px solid var(--border2); cursor: pointer;
+      transition: all .15s;
+    }
+    .btn-ghost:hover { color: var(--white); border-color: var(--border2); background: var(--bg3); }
+
+    /* ── STATS STRIP ────────────────────────────────────── */
+    .stats {
+      position: relative; z-index: 1;
+      display: flex; justify-content: center; flex-wrap: wrap; gap: 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg2);
+      padding: 0;
+    }
+    .stat {
+      flex: 1; min-width: 160px;
+      padding: 40px 32px;
+      text-align: center;
+      border-right: 1px solid var(--border);
+    }
+    .stat:last-child { border-right: none; }
+    .stat-num { font-size: 42px; font-weight: 900; letter-spacing: -2px; color: var(--white); }
+    .stat-num .unit { color: var(--orange); }
+    .stat-label { font-size: 14px; color: var(--grey); margin-top: 4px; font-weight: 500; }
+
+    /* ── SECTIONS ───────────────────────────────────────── */
+    section { position: relative; z-index: 1; }
+    .section-label {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--orange);
+      margin-bottom: 16px;
+    }
+    .section-label::before { content: ''; width: 20px; height: 1px; background: var(--orange); }
+    .section-title {
+      font-size: clamp(36px, 4vw, 56px);
+      font-weight: 900; letter-spacing: -2px;
+      line-height: 1.05; margin-bottom: 16px;
+    }
+    .section-sub {
+      font-size: 18px; color: var(--grey);
+      max-width: 560px; line-height: 1.7;
+    }
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+    .section-pad { padding: 100px 0; }
+
+    /* ── FEATURES GRID ──────────────────────────────────── */
+    .features { background: var(--bg); }
+    .features-intro { text-align: center; margin-bottom: 72px; }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: var(--r2);
+      overflow: hidden;
+    }
+    .feat-card {
+      background: var(--bg2);
+      padding: 40px 36px;
+      transition: background .2s;
+    }
+    .feat-card:hover { background: var(--bg3); }
+    .feat-icon {
+      width: 52px; height: 52px;
+      background: var(--orange-glow);
+      border: 1px solid rgba(255,107,53,0.2);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    .feat-title { font-size: 20px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px; }
+    .feat-desc { font-size: 15px; color: var(--grey); line-height: 1.7; }
+    .feat-tag {
+      display: inline-block;
+      margin-top: 16px;
+      font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
+      color: var(--orange);
+      background: var(--orange-glow);
+      padding: 4px 12px; border-radius: 100px;
+    }
+
+    /* ── FEATURE HIGHLIGHT (Big alternating) ────────────── */
+    .highlight-section { padding: 100px 0; }
+    .highlight-row {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 80px; align-items: center;
+      margin-bottom: 120px;
+    }
+    .highlight-row.reverse { direction: rtl; }
+    .highlight-row.reverse > * { direction: ltr; }
+    .highlight-content .eyebrow {
+      font-size: 12px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--orange);
+      margin-bottom: 16px;
+    }
+    .highlight-content h3 {
+      font-size: 42px; font-weight: 900;
+      letter-spacing: -1.5px; line-height: 1.1;
+      margin-bottom: 20px;
+    }
+    .highlight-content p {
+      font-size: 17px; color: var(--grey); line-height: 1.8;
+      margin-bottom: 32px;
+    }
+    .check-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .check-list li {
+      display: flex; align-items: flex-start; gap: 12px;
+      font-size: 15px; color: var(--grey);
+    }
+    .check-list li::before {
+      content: '✓';
+      color: var(--green); font-weight: 700; font-size: 14px;
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.2);
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .highlight-visual {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r2);
+      overflow: hidden;
+      position: relative;
+    }
+    /* Mock UI card */
+    .mock-ui {
+      padding: 24px;
+      font-family: 'Inter', monospace;
+    }
+    .mock-header {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 20px; padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .mock-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .mock-title { font-size: 13px; color: var(--grey); font-weight: 600; margin-left: 8px; }
+    .mock-row {
+      display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 12px; margin-bottom: 12px;
+    }
+    .mock-cell {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .mock-cell-label { font-size: 10px; color: var(--grey2); text-transform: uppercase; letter-spacing: 0.8px; }
+    .mock-cell-val { font-size: 20px; font-weight: 800; margin-top: 4px; }
+    .mock-cell-val.green { color: var(--green); }
+    .mock-cell-val.orange { color: var(--orange); }
+    .mock-cell-val.white { color: var(--white); }
+    .mock-table-row {
+      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 8px; padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px; align-items: center;
+    }
+    .mock-table-row:last-child { border: none; }
+    .mock-sku { color: var(--white); font-weight: 600; }
+    .mock-val { color: var(--grey); }
+    .mock-badge {
+      display: inline-block; padding: 3px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: 700;
+    }
+    .badge-red { background: rgba(239,68,68,.15); color: #F87171; }
+    .badge-green { background: rgba(16,185,129,.15); color: #34D399; }
+    .badge-orange { background: rgba(255,107,53,.15); color: var(--orange); }
+
+    /* ── PRICING ────────────────────────────────────────── */
+    .pricing { background: var(--bg2); }
+    .pricing-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: var(--r2);
+      overflow: hidden;
+    }
+    .price-card {
+      background: var(--bg2);
+      padding: 44px 36px;
+      position: relative;
+    }
+    .price-card.featured {
+      background: linear-gradient(160deg, #0F0A1E 0%, #100E20 100%);
+      border: 1px solid rgba(124,58,237,0.3);
+      box-shadow: inset 0 0 60px rgba(124,58,237,0.05);
+    }
+    .price-badge {
+      position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+      background: var(--purple);
+      color: #fff; font-size: 12px; font-weight: 700;
+      padding: 4px 16px; border-radius: 100px;
+      letter-spacing: 0.5px;
+    }
+    .price-tier { font-size: 13px; font-weight: 700; color: var(--grey); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .price-amount { font-size: 52px; font-weight: 900; letter-spacing: -2px; }
+    .price-amount .per { font-size: 18px; font-weight: 500; color: var(--grey); }
+    .price-desc { font-size: 15px; color: var(--grey); margin: 12px 0 32px; }
+    .price-features { list-style: none; display: flex; flex-direction: column; gap: 14px; margin-bottom: 36px; }
+    .price-features li { font-size: 15px; color: var(--grey); display: flex; align-items: center; gap: 12px; }
+    .price-features li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; }
+    .price-features li.muted { color: var(--grey2); }
+    .price-features li.muted::before { content: '–'; color: var(--grey2); }
+    .btn-plan {
+      width: 100%; padding: 14px; border-radius: 10px;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      border: none; transition: all .15s;
+    }
+    .btn-plan-outline {
+      background: transparent; color: var(--white);
+      border: 1px solid var(--border2);
+    }
+    .btn-plan-outline:hover { background: var(--bg3); }
+    .btn-plan-primary { background: var(--purple); color: #fff; box-shadow: 0 0 30px rgba(124,58,237,0.3); }
+    .btn-plan-primary:hover { transform: translateY(-1px); box-shadow: 0 0 40px rgba(124,58,237,0.4); }
+
+    /* ── SOCIAL PROOF ───────────────────────────────────── */
+    .proof { background: var(--bg); }
+    .proof-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .proof-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 28px 28px 24px;
+      transition: border-color .2s;
+    }
+    .proof-card:hover { border-color: var(--border2); }
+    .proof-stars { color: var(--orange); font-size: 14px; margin-bottom: 14px; }
+    .proof-text { font-size: 15px; color: var(--grey); line-height: 1.7; margin-bottom: 20px; }
+    .proof-author { display: flex; align-items: center; gap: 12px; }
+    .proof-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--orange-glow); border: 1px solid rgba(255,107,53,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .proof-name { font-size: 14px; font-weight: 700; }
+    .proof-handle { font-size: 13px; color: var(--grey2); }
+
+    /* ── ALERT DEMO ─────────────────────────────────────── */
+    .alert-demo {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r2);
+      padding: 32px;
+      max-width: 480px;
+    }
+    .alert-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .alert-icon { font-size: 28px; }
+    .alert-label { font-size: 13px; font-weight: 700; color: var(--grey2); text-transform: uppercase; letter-spacing: 1px; }
+    .alert-title { font-size: 17px; font-weight: 700; }
+    .alert-body {
+      background: var(--bg3);
+      border: 1px solid rgba(16,185,129,0.2);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+    .alert-pair { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+    .alert-price { display: flex; align-items: center; gap: 16px; }
+    .alert-price-val { font-size: 32px; font-weight: 900; color: var(--green); letter-spacing: -1px; }
+    .alert-price-below { font-size: 13px; color: var(--grey); }
+    .alert-meta { display: flex; justify-content: space-between; margin-top: 12px; font-size: 12px; color: var(--grey2); }
+
+    /* ── CTA SECTION ────────────────────────────────────── */
+    .cta-section {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+    .cta-section .section-title { color: var(--white); max-width: 700px; margin: 0 auto 20px; }
+    .cta-sub { font-size: 18px; color: var(--grey); max-width: 480px; margin: 0 auto 48px; }
+    .cta-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .cta-note { font-size: 13px; color: var(--grey2); margin-top: 20px; }
+
+    /* ── FOOTER ─────────────────────────────────────────── */
+    footer {
+      position: relative; z-index: 1;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      padding: 48px 24px;
+    }
+    .footer-inner {
+      max-width: 1160px; margin: 0 auto;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 16px;
+    }
+    .footer-logo { font-size: 18px; font-weight: 800; }
+    .footer-logo span { color: var(--orange); }
+    .footer-links { display: flex; gap: 24px; }
+    .footer-links a { font-size: 14px; color: var(--grey2); transition: color .15s; }
+    .footer-links a:hover { color: var(--white); }
+    .footer-copy { font-size: 13px; color: var(--grey2); }
+
+    /* ── RESPONSIVE ─────────────────────────────────────── */
+    @media (max-width: 900px) {
+      nav { padding: 0 20px; }
+      .nav-links { display: none; }
+      .features-grid, .pricing-grid { grid-template-columns: 1fr; }
+      .proof-grid { grid-template-columns: 1fr; }
+      .highlight-row { grid-template-columns: 1fr; gap: 40px; }
+      .highlight-row.reverse { direction: ltr; }
+      .stat { min-width: 50%; }
+      .mock-row { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <span class="icon">👟</span>
+    <div>Sole<span>Ops</span></div>
+  </div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#alerts">ARB Scanner</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#proof">Reviews</a>
+  </div>
+  <a href="https://peachstatesavings.com" class="nav-cta">Get Early Access →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-glow2"></div>
+
+  <div class="badge">
+    <div class="badge-dot"></div>
+    April 2026 Launch — Join the Waitlist
+  </div>
+
+  <h1>
+    Stop guessing.<br>
+    Start <span class="accent">printing.</span>
+  </h1>
+
+  <p>
+    The operating system for serious sneaker resellers.<br>
+    AI listings, real-time price alerts, and full P&L — so you can scale without the spreadsheets.
+  </p>
+
+  <div class="hero-actions">
+    <a href="https://peachstatesavings.com" class="btn-primary">Get Early Access — Free →</a>
+    <a href="#features" class="btn-ghost">See Features</a>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-num"><span class="unit">$</span>200</div>
+    <div class="stat-label">avg daily profit (resellers)</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">3<span class="unit">min</span></div>
+    <div class="stat-label">to generate a full eBay listing</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num"><span class="unit">#</span>1</div>
+    <div class="stat-label">ARB alert before you wake up</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">0<span class="unit">$</span></div>
+    <div class="stat-label">spreadsheets required</div>
+  </div>
+</div>
+
+<!-- FEATURES GRID -->
+<section class="features section-pad" id="features">
+  <div class="container">
+    <div class="features-intro">
+      <div class="section-label">Features</div>
+      <h2 class="section-title">Everything in one OS</h2>
+      <p class="section-sub">Built by a reseller, for resellers. Every tool you need to run a profitable operation — no context switching.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feat-card">
+        <div class="feat-icon">✨</div>
+        <div class="feat-title">AI Listing Generator</div>
+        <p class="feat-desc">Paste a SKU or drop a photo. Claude writes the perfect eBay and Mercari title, description, and keyword stack in under 3 minutes.</p>
+        <span class="feat-tag">LIVE</span>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔍</div>
+        <div class="feat-title">ARB Scanner</div>
+        <p class="feat-desc">Set your buy price. SoleOps monitors StockX, GOAT, eBay, and Mercari 24/7 — texts you the second a pair drops below your target.</p>
+        <span class="feat-tag">LIVE</span>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📦</div>
+        <div class="feat-title">Inventory Manager</div>
+        <p class="feat-desc">Every pair tracked by SKU, colorway, size, cost, platform, and days listed. Color-coded aging alerts before your pairs go stale.</p>
+        <span class="feat-tag">LIVE</span>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📈</div>
+        <div class="feat-title">Price Predictor</div>
+        <p class="feat-desc">AI models trained on historical StockX/eBay data tell you whether to hold or flip — with a confidence score and reasoning.</p>
+        <span class="feat-tag">COMING SOON</span>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">💸</div>
+        <div class="feat-title">P&L Dashboard</div>
+        <p class="feat-desc">Real profit after platform fees, shipping, and taxes. See your best months, best pairs, and best platforms at a glance.</p>
+        <span class="feat-tag">LIVE</span>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔔</div>
+        <div class="feat-title">Telegram Alerts</div>
+        <p class="feat-desc">Price drops, inventory aging alerts, and daily briefings — delivered to your phone so you never miss a move while you sleep.</p>
+        <span class="feat-tag">LIVE</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HIGHLIGHT 1: ARB Scanner -->
+<section class="highlight-section" id="alerts">
+  <div class="container">
+    <div class="highlight-row">
+      <div class="highlight-content">
+        <div class="eyebrow">ARB Scanner</div>
+        <h3>The alert that made me $200 before breakfast.</h3>
+        <p>Set your max buy price for any SKU. SoleOps monitors every major platform around the clock. The moment a pair hits your target — you get a Telegram message with the link, platform, size, and current sell price.</p>
+        <ul class="check-list">
+          <li>Monitors eBay, Mercari, StockX, GOAT simultaneously</li>
+          <li>Custom price targets per SKU and size</li>
+          <li>Instant Telegram push — no app required</li>
+          <li>Includes spread analysis and estimated profit after fees</li>
+        </ul>
+      </div>
+      <div class="highlight-visual">
+        <div class="alert-demo">
+          <div class="alert-header">
+            <div class="alert-icon">🔔</div>
+            <div>
+              <div class="alert-label">SoleOps Alert</div>
+              <div class="alert-title">Price Target Hit</div>
+            </div>
+          </div>
+          <div class="alert-body">
+            <div class="alert-pair">Nike Dunk Low Panda — 10.5</div>
+            <div class="alert-price">
+              <div class="alert-price-val">$94</div>
+              <div>
+                <div style="font-size:13px;color:#94A3B8">Listed on eBay</div>
+                <div style="font-size:13px;color:#10B981;font-weight:700">↑ Sell for $162 on StockX</div>
+              </div>
+            </div>
+            <div class="alert-meta">
+              <span>Est. profit after fees: <strong style="color:#10B981">+$51</strong></span>
+              <span style="color:#FF6B35">2 min ago</span>
+            </div>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:10px">
+            <button style="flex:1;padding:10px;background:#10B981;color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer">Buy Now →</button>
+            <button style="flex:1;padding:10px;background:var(--bg3);color:var(--grey);border:1px solid var(--border);border-radius:8px;font-weight:600;cursor:pointer">Dismiss</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HIGHLIGHT 2: Inventory -->
+    <div class="highlight-row reverse">
+      <div class="highlight-content">
+        <div class="eyebrow">Inventory Manager</div>
+        <h3>Know exactly when to drop the price.</h3>
+        <p>Every pair in your inventory is tracked with aging timers. SoleOps color-codes your stock — green is fresh, red means reprice now. Stop holding pairs that are killing your cash flow.</p>
+        <ul class="check-list">
+          <li>Days listed per SKU across all platforms</li>
+          <li>Automatic reprice suggestions based on aging tier</li>
+          <li>Velocity chart — see which pairs move fastest</li>
+          <li>Full cost basis and estimated profit on every pair</li>
+        </ul>
+      </div>
+      <div class="highlight-visual">
+        <div class="mock-ui">
+          <div class="mock-header">
+            <div class="mock-dot" style="background:#FF5F57"></div>
+            <div class="mock-dot" style="background:#FEBC2E"></div>
+            <div class="mock-dot" style="background:#28C840"></div>
+            <div class="mock-title">SoleOps — Inventory · 12 pairs</div>
+          </div>
+          <div class="mock-row">
+            <div class="mock-cell"><div class="mock-cell-label">Total Value</div><div class="mock-cell-val white">$3,840</div></div>
+            <div class="mock-cell"><div class="mock-cell-label">Est. Profit</div><div class="mock-cell-val green">+$890</div></div>
+            <div class="mock-cell"><div class="mock-cell-label">Stale Pairs</div><div class="mock-cell-val orange">3</div></div>
+            <div class="mock-cell"><div class="mock-cell-label">Avg Days</div><div class="mock-cell-val white">11</div></div>
+          </div>
+          <div style="margin-top:8px">
+            <div class="mock-table-row" style="font-size:11px;color:var(--grey2)">
+              <div>SKU</div><div>Cost</div><div>Days</div><div>Status</div>
+            </div>
+            <div class="mock-table-row"><div class="mock-sku">AJ1 Chicago 10.5</div><div class="mock-val">$280</div><div class="mock-val">4d</div><div><span class="mock-badge badge-green">Fresh</span></div></div>
+            <div class="mock-table-row"><div class="mock-sku">Dunk Panda 10</div><div class="mock-val">$94</div><div class="mock-val">22d</div><div><span class="mock-badge badge-red">⚠ Reprice</span></div></div>
+            <div class="mock-table-row"><div class="mock-sku">NB 550 White 11</div><div class="mock-val">$110</div><div class="mock-val">8d</div><div><span class="mock-badge badge-orange">Hold</span></div></div>
+            <div class="mock-table-row"><div class="mock-sku">Yeezy 350 V2 10</div><div class="mock-val">$200</div><div class="mock-val">29d</div><div><span class="mock-badge badge-red">⚠ Drop Now</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOCIAL PROOF -->
+<section class="proof section-pad" id="proof">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:56px">
+      <div class="section-label">Reviews</div>
+      <h2 class="section-title">Resellers who use it, love it.</h2>
+    </div>
+    <div class="proof-grid">
+      <div class="proof-card">
+        <div class="proof-stars">★★★★★</div>
+        <p class="proof-text">"The ARB scanner alone paid for my subscription in the first day. Got a hit on a pair of Dunks at 6am before anyone else saw it. $80 profit before I even had coffee."</p>
+        <div class="proof-author">
+          <div class="proof-avatar">👟</div>
+          <div><div class="proof-name">Mike T.</div><div class="proof-handle">eBay Top Rated Seller · Atlanta, GA</div></div>
+        </div>
+      </div>
+      <div class="proof-card">
+        <div class="proof-stars">★★★★★</div>
+        <p class="proof-text">"I was spending 20 minutes writing each eBay listing. Now I paste the SKU and have a full listing with keywords in 3 minutes. Did 14 listings last Saturday in under an hour."</p>
+        <div class="proof-author">
+          <div class="proof-avatar">🔥</div>
+          <div><div class="proof-name">Jordan K.</div><div class="proof-handle">Sneaker Reseller · Chicago, IL</div></div>
+        </div>
+      </div>
+      <div class="proof-card">
+        <div class="proof-stars">★★★★★</div>
+        <p class="proof-text">"The inventory aging tracker stopped me from bagholding. I had 4 pairs sitting for 30+ days and didn't even notice. SoleOps flagged them, I repriced, all 4 sold in a week."</p>
+        <div class="proof-author">
+          <div class="proof-avatar">📦</div>
+          <div><div class="proof-name">Devon R.</div><div class="proof-handle">Full-Time Reseller · Houston, TX</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing section-pad" id="pricing">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:64px">
+      <div class="section-label">Pricing</div>
+      <h2 class="section-title">Simple, honest pricing.</h2>
+      <p class="section-sub">Make back your subscription cost on the first ARB hit. Most resellers do it day one.</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="price-tier">Starter</div>
+        <div class="price-amount">$9<span class="per">/mo</span></div>
+        <div class="price-desc">Perfect for side-hustle resellers getting started.</div>
+        <ul class="price-features">
+          <li>AI Listing Generator (10/mo)</li>
+          <li>Inventory Manager (up to 25 pairs)</li>
+          <li>Basic P&amp;L Dashboard</li>
+          <li class="muted">ARB Scanner</li>
+          <li class="muted">Telegram Alerts</li>
+          <li class="muted">Price Predictor</li>
+        </ul>
+        <button class="btn-plan btn-plan-outline">Start Free Trial</button>
+      </div>
+      <div class="price-card featured">
+        <div class="price-badge">MOST POPULAR</div>
+        <div class="price-tier">Pro</div>
+        <div class="price-amount" style="color:var(--purple)">$19<span class="per">/mo</span></div>
+        <div class="price-desc">For serious resellers who flip 10+ pairs a month.</div>
+        <ul class="price-features">
+          <li>AI Listing Generator (unlimited)</li>
+          <li>Inventory Manager (unlimited)</li>
+          <li>Full P&amp;L + Fee Calculator</li>
+          <li>ARB Scanner (all platforms)</li>
+          <li>Telegram Alerts (real-time)</li>
+          <li class="muted">Price Predictor</li>
+        </ul>
+        <button class="btn-plan btn-plan-primary">Get Pro — $19/mo</button>
+      </div>
+      <div class="price-card">
+        <div class="price-tier">Boss</div>
+        <div class="price-amount">$29<span class="per">/mo</span></div>
+        <div class="price-desc">Full power for resellers running a real operation.</div>
+        <ul class="price-features">
+          <li>Everything in Pro</li>
+          <li>AI Price Predictor</li>
+          <li>Bulk Listing Actions</li>
+          <li>Monthly Reseller Report</li>
+          <li>Priority Support</li>
+          <li>Early access to new features</li>
+        </ul>
+        <button class="btn-plan btn-plan-outline">Get Boss — $29/mo</button>
+      </div>
+    </div>
+    <p style="text-align:center;margin-top:24px;font-size:14px;color:var(--grey2)">
+      14-day free trial · No credit card required · Cancel anytime
+    </p>
+  </div>
+</section>
+
+<!-- CULTURAL DNA -->
+<section style="position:relative;z-index:1;background:var(--bg);padding:80px 0 0;border-top:1px solid var(--border)">
+  <div class="container" style="text-align:center;margin-bottom:48px">
+    <div class="section-label" style="justify-content:center">Cultural Foundation</div>
+    <h2 class="section-title" style="max-width:700px;margin:0 auto 16px">
+      Built on real culture.<br>
+      <span style="color:var(--orange)">Unapologetically.</span>
+    </h2>
+    <p style="color:var(--grey);font-size:17px;max-width:560px;margin:0 auto">
+      The same energy that drives the music drives this product. Build in public. Represent with purpose.
+    </p>
+  </div>
+
+  <!-- Black Panthers Tribute -->
+  <div class="container" style="margin-bottom:60px">
+    <div style="background:linear-gradient(135deg,#0A0800 0%,#1A1200 50%,#0A0800 100%);border:1px solid rgba(220,160,0,0.25);border-radius:20px;padding:48px;position:relative;overflow:hidden">
+      <!-- Gold glow -->
+      <div style="position:absolute;width:400px;height:400px;background:radial-gradient(circle,rgba(220,160,0,0.08) 0%,transparent 70%);top:-100px;left:50%;transform:translateX(-50%);pointer-events:none"></div>
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#DCA000,transparent)"></div>
+
+      <div style="display:flex;align-items:flex-start;gap:32px;flex-wrap:wrap">
+        <div style="flex:1;min-width:280px">
+          <div style="display:inline-flex;align-items:center;gap:10px;background:rgba(220,160,0,0.1);border:1px solid rgba(220,160,0,0.25);padding:6px 16px;border-radius:100px;margin-bottom:20px">
+            <span style="color:#DCA000;font-size:18px">✊🏿</span>
+            <span style="color:#DCA000;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase">In Honor &amp; Memory</span>
+          </div>
+          <h3 style="font-size:32px;font-weight:900;letter-spacing:-1px;line-height:1.2;margin-bottom:16px;color:#F5E6B0">
+            Black Panther Party
+          </h3>
+          <p style="color:#94A3B8;font-size:15px;line-height:1.8;margin-bottom:24px">
+            Founded 1966 in Oakland. Fred Hampton. Huey P. Newton. Bobby Seale. Angela Davis. Assata Shakur.
+            They didn't wait for permission to build power — they organized, they served their communities, and they paid the highest price.
+            Every tool we build to put money, knowledge, and power back in our community is built in their honor.
+          </p>
+          <div style="display:flex;flex-wrap:wrap;gap:10px">
+            <span style="background:rgba(220,160,0,0.12);border:1px solid rgba(220,160,0,0.2);color:#DCA000;padding:6px 14px;border-radius:8px;font-size:13px;font-weight:600">Fred Hampton</span>
+            <span style="background:rgba(220,160,0,0.12);border:1px solid rgba(220,160,0,0.2);color:#DCA000;padding:6px 14px;border-radius:8px;font-size:13px;font-weight:600">Huey P. Newton</span>
+            <span style="background:rgba(220,160,0,0.12);border:1px solid rgba(220,160,0,0.2);color:#DCA000;padding:6px 14px;border-radius:8px;font-size:13px;font-weight:600">Bobby Seale</span>
+            <span style="background:rgba(220,160,0,0.12);border:1px solid rgba(220,160,0,0.2);color:#DCA000;padding:6px 14px;border-radius:8px;font-size:13px;font-weight:600">Angela Davis</span>
+            <span style="background:rgba(220,160,0,0.12);border:1px solid rgba(220,160,0,0.2);color:#DCA000;padding:6px 14px;border-radius:8px;font-size:13px;font-weight:600">Assata Shakur</span>
+            <span style="background:rgba(220,160,0,0.12);border:1px solid rgba(220,160,0,0.2);color:#DCA000;padding:6px 14px;border-radius:8px;font-size:13px;font-weight:600">Elaine Brown</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;min-width:220px">
+          <div style="background:rgba(220,160,0,0.06);border:1px solid rgba(220,160,0,0.12);border-radius:12px;padding:20px">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(220,160,0,0.6);margin-bottom:8px">10 Point Program · 1966</div>
+            <div style="font-size:15px;color:#F5E6B0;font-style:italic;line-height:1.6">"We want land, bread, housing, education, clothing, justice, peace."</div>
+          </div>
+          <div style="background:rgba(220,160,0,0.06);border:1px solid rgba(220,160,0,0.12);border-radius:12px;padding:20px">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(220,160,0,0.6);margin-bottom:8px">Fred Hampton</div>
+            <div style="font-size:15px;color:#F5E6B0;font-style:italic;line-height:1.6">"You fight racism with solidarity. You fight capitalism with socialism. You fight imperialism with internationalism."</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Artists marquee -->
+  <div style="overflow:hidden;padding:32px 0;border-top:1px solid var(--border)">
+    <div style="text-align:center;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey2);margin-bottom:24px">
+      Music that built this — in rotation while building
+    </div>
+    <div class="marquee-track" style="display:flex;gap:0;white-space:nowrap;animation:marquee 30s linear infinite">
+      <div class="marquee-inner" style="display:flex;gap:0;flex-shrink:0">
+        <span class="artist-tag">MAVI</span><span class="artist-sep">·</span>
+        <span class="artist-tag">MIKE</span><span class="artist-sep">·</span>
+        <span class="artist-tag">Earl Sweatshirt</span><span class="artist-sep">·</span>
+        <span class="artist-tag">Eem Triplin</span><span class="artist-sep">·</span>
+        <span class="artist-tag">Tyler, the Creator</span><span class="artist-sep">·</span>
+        <span class="artist-tag">J. Cole</span><span class="artist-sep">·</span>
+        <span class="artist-tag">Frank Ocean</span><span class="artist-sep">·</span>
+        <span class="artist-tag">Kenny Mason</span><span class="artist-sep">·</span>
+        <span class="artist-tag">Freddie Gibbs</span><span class="artist-sep">·</span>
+        <span class="artist-tag">The Alchemist</span><span class="artist-sep">·</span>
+        <span class="artist-tag">Action Bronson</span><span class="artist-sep">·</span>
+      </div>
+      <!-- duplicate for seamless loop -->
+      <div class="marquee-inner" aria-hidden="true" style="display:flex;gap:0;flex-shrink:0">
+        <span class="artist-tag">MAVI</span><span class="artist-sep">·</span>
+        <span class="artist-tag">MIKE</span><span class="artist-sep">·</span>
+        <span class="artist-tag">Earl Sweatshirt</span><span class="artist-sep">·</span>
+        <span class="artist-tag">Eem Triplin</span><span class="artist-sep">·</span>
+        <span class="artist-tag">Tyler, the Creator</span><span class="artist-sep">·</span>
+        <span class="artist-tag">J. Cole</span><span class="artist-sep">·</span>
+        <span class="artist-tag">Frank Ocean</span><span class="artist-sep">·</span>
+        <span class="artist-tag">Kenny Mason</span><span class="artist-sep">·</span>
+        <span class="artist-tag">Freddie Gibbs</span><span class="artist-sep">·</span>
+        <span class="artist-tag">The Alchemist</span><span class="artist-sep">·</span>
+        <span class="artist-tag">Action Bronson</span><span class="artist-sep">·</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .artist-tag {
+    font-size: 26px; font-weight: 900; letter-spacing: -0.5px;
+    color: var(--grey2); padding: 0 20px;
+    transition: color .2s;
+    cursor: default;
+  }
+  .artist-tag:hover { color: var(--orange); }
+  .artist-sep { font-size: 20px; color: var(--border2); display: flex; align-items: center; }
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .marquee-track { display: flex; }
+  .marquee-track:hover { animation-play-state: paused; }
+</style>
+
+<!-- CTA -->
+<section class="cta-section section-pad">
+  <div class="container">
+    <div class="section-label" style="justify-content:center">Get Started</div>
+    <h2 class="section-title">Your next $200 day starts here.</h2>
+    <p class="cta-sub">Join the waitlist now. First 50 resellers get Pro free for 30 days.</p>
+    <div class="cta-buttons">
+      <a href="https://peachstatesavings.com" class="btn-primary" style="font-size:17px;padding:16px 40px">Get Early Access — Free →</a>
+    </div>
+    <p class="cta-note">Built by Darrian Belcher · @bookofkaur · peachstatesavings.com</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">Sole<span>Ops</span> · by Peach State Savings</div>
+    <div class="footer-links">
+      <a href="https://peachstatesavings.com">App</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#features">Features</a>
+      <a href="https://collegeconfused.org">College Confused</a>
+    </div>
+    <div class="footer-copy">© 2026 SoleOps · getsoleops.com</div>
+  </div>
+</footer>
+
+<script>
+  // Smooth scroll for anchor links
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelector(a.getAttribute('href'))?.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
+  // Fade-in on scroll
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) e.target.style.opacity = '1';
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.feat-card, .proof-card, .price-card, .highlight-row').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transition = 'opacity 0.5s ease';
+    observer.observe(el);
+  });
+</script>
+
+</body>
+</html>
