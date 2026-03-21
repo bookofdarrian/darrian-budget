@@ -22,7 +22,7 @@ def _load_b64(path: str, mime: str = "image/jpeg") -> str:
 # ── Personal photos (Darrian Belcher / © All Rights Reserved) ─────────────────
 _HEADSHOT      = _load_b64("static/photos/darrian_headshot.png",   "image/png")
 _PROFESSIONAL  = _load_b64("static/photos/darrian_professional.jpg")
-_HERO_IMG_SRC  = _load_b64("static/hero_screenshot.jpg")
+_HERO_IMG_SRC  = _load_b64("static/dashboard_screenshot.png", "image/png")
 
 st.set_page_config(
     page_title="Peach State Savings — Free AI Personal Finance App | Budget, Track & Grow",
