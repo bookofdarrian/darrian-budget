@@ -5,7 +5,7 @@
 ---
 
 ## 🎯 CORE STORY / ANGLE
-> *"I'm a first-gen college student, TPM at Visa, finishing my Georgia Tech degree — and in my spare time I quietly built three production AI-powered platforms, a home server, an overnight AI dev system, and a sneaker resale business. This is how I did it, and I couldn't have done it without the people who believed in me."*
+> *"I'm a first-gen college student, TPM at Visa, an NCA&T alumnus — and in my spare time I quietly built three production AI-powered platforms, a home server, an overnight AI dev system, and a sneaker resale business. This is how I did it, and I couldn't have done it without the people who believed in me."*
 
 ---
 
@@ -39,7 +39,7 @@
 
 ### [WHO I AM — 0:15–1:00]
 
-"Quick background — my name is Darrian Belcher. I'm a TPM at Visa in Atlanta, finishing my data analytics degree at Georgia Tech, and I've been a first-gen college student my whole life. I run a sneaker resale business called 404 Sole Archive. And over the past year, I've been quietly building three AI-powered platforms from my home lab."
+"Quick background — my name is Darrian Belcher. I'm a TPM at Visa in Atlanta, an NCA&T alumnus, and I've been a first-gen college student my whole life. I run a sneaker resale business called 404 Sole Archive. And over the past year, I've been quietly building three AI-powered platforms from my home lab."
 
 "Here's what I mean by 'home lab' — I have a physical server running in my house, connected to the internet, powered by Proxmox, secured by Tailscale, and accessible anywhere in the world. That server runs my three live products 24/7."
 
@@ -107,7 +107,7 @@
 
 "**The Streamlit team** — I've never met any of you, but you built the framework that let a TPM build 140+ app pages without writing a single line of frontend HTML. You lowered the barrier to building and I'm forever grateful."
 
-"**The Georgia Tech community** — my professors, my classmates, the people who pushed me to think in systems, in data, in strategy. Everything I know about building at scale comes from there."
+"**The NCA&T community** — my professors, my classmates, the people who pushed me to think in systems, in data, in strategy. Everything I know about building at scale comes from there."
 
 "**My Visa colleagues** — working as a TPM on enterprise programs every day taught me how to ship, how to scope, how to build with purpose. That discipline shows up in every product I build."
 
@@ -179,7 +179,7 @@
 "This system has built 140+ pages across three platforms — a personal finance OS, a sneaker resale business suite, and a college prep platform for first-gen students — all running on a server in my house, all accessible at custom domains."
 
 **[0:40–0:55 THE STORY]**
-"I'm a TPM at Visa. I'm finishing my Georgia Tech degree. I flip sneakers. And in my spare time — with AI — I built all of this. None of it was solo. Shoutout to Claude AI, the Streamlit team, Georgia Tech, and every single person who told me 'keep building.'"
+"I'm a TPM at Visa. I'm an NCA&T alumnus. I flip sneakers. And in my spare time — with AI — I built all of this. None of it was solo. Shoutout to Claude AI, the Streamlit team, NCA&T, and every single person who told me 'keep building.'"
 
 **[0:55–1:00 CTA]**
 "Links in bio. Everything is free. Try it."
@@ -194,7 +194,7 @@
 **[0:03–0:25]**
 "That app is College Confused — free AI college prep for first-gen students. FAFSA walkthrough, essay assistant, scholarship tracker, AI mock interviews. It lives at collegeconfused.org and it will always be free."
 
-"But that's just one of three products I've built from a home server in my house — while working full-time at Visa and finishing my Georgia Tech degree."
+"But that's just one of three products I've built from a home server in my house — while working full-time at Visa and an NCA&T alumnus."
 
 **[0:25–0:40]**
 *[Fast scroll through all products]*
@@ -231,7 +231,7 @@
 Built something I'm proud of. 🍑
 
 Over the past year, quietly building while working full-time at @Visa and 
-finishing my @GeorgiaTech degree. Three AI-powered platforms. One home server. 
+finishing my @ncatsuaggies degree. Three AI-powered platforms. One home server. 
 140+ pages of code.
 
 Here's what we've built:
@@ -254,7 +254,7 @@ This isn't a solo W. I have to shout out:
 
 🙏 @Anthropic / Claude AI — my co-creator on every line
 🙏 The Streamlit team — for making this possible without a frontend team
-🙏 Georgia Tech — for teaching me to think in systems
+🙏 NCA&T — for teaching me to think in systems
 🙏 My Visa family — for the TPM discipline that ships things
 🙏 The ATL community — for riding with me since day one
 🙏 My family — every sacrifice, every belief — this is all for y'all
@@ -316,7 +316,7 @@ The product is better because of your feedback. 🍑
 ## TikTok Caption
 
 ```
-I built 140 AI-powered app pages while working at Visa and going to Georgia Tech 🤯
+I built 140 AI-powered app pages while working at Visa as an NCA&T alumnus 🤯
 
 Three platforms. One home server. Zero team.
 
@@ -324,7 +324,7 @@ Three platforms. One home server. Zero team.
 → SoleOps (sneaker resale suite) — getsoleops.com  
 → College Confused (free first-gen college prep) — collegeconfused.org
 
-BIGGEST shoutouts to: Claude AI (@anthropic), the Streamlit team, Georgia Tech, 
+BIGGEST shoutouts to: Claude AI (@anthropic), the Streamlit team, NCA&T, 
 my Visa fam, Dr. Bedir, my family, Josh, Keona, Nylah, Omar, Noah, Liddon, 
 Nauri, Metri, Joa, Juan, Vine, the Menace2 GC, 252 // 525, RIP Danny 🕊️ 💙
 
@@ -344,7 +344,7 @@ Links in bio 🍑
 I've been building in silence for a while. Today I'm sharing everything.
 
 Over the past year — while working full-time as a Technical Program Manager at 
-Visa and finishing my Georgia Tech data analytics degree — I've been building 
+Visa and an NCA&T alumnus — I've been building 
 three AI-powered platforms from a home server in my house.
 
 📊 Peach State Savings (peachstatesavings.com)
@@ -367,7 +367,7 @@ I could not have done any of this without:
 
 ❤️ Anthropic / Claude AI — genuine co-creator on every feature
 ❤️ The Streamlit framework team
-❤️ Georgia Tech for teaching me to build in systems
+❤️ NCA&T — for the education that taught me to build and think in systems
 ❤️ My colleagues at Visa for the program discipline I apply to every build
 ❤️ My family — every sacrifice, every "go do what you gotta do" — this is for you
 ❤️ Dr. Bedir — for promoting the growth of beautiful minds. Thank you for seeing us.
@@ -419,7 +419,7 @@ What feature do you want to see next? Drop it in the comments 👇
 
 ```
 🧵 THREAD: I built 140 AI-powered apps while working at Visa, going to 
-Georgia Tech, and running a sneaker business.
+NCA&T, and running a sneaker business.
 
 Here's everything, and everyone who made it possible. 🍑
 
@@ -510,10 +510,10 @@ go to streamlit.io. You have no more excuses.
 ```
 
 ```
-10/ My Visa + Georgia Tech communities.
+10/ My Visa + NCA&T communities.
 
 Working as a TPM at Visa taught me how to ship real programs with 
-real stakes. Georgia Tech taught me to think in data and systems.
+real stakes. NCA&T taught me to think in data and systems.
 
 Both show up in every product decision I make.
 ```
