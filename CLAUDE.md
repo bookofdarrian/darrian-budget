@@ -321,6 +321,47 @@ See `SOLE_OPS_ROADMAP.md` for the full SoleOps product plan.
 
 ---
 
+## 🚨 DEPLOYMENT ARCHITECTURE — READ BEFORE EVERY DEPLOY
+
+**This is the actual production setup. Getting this wrong means changes don't appear.**
+
+### Port Map (CT100 @ 100.95.125.112)
+| Port | Service | What it serves |
+|------|---------|----------------|
+| **8501** | `darrian-budget` **Docker container** | **PSS + College Confused + SoleOps** — ALL sites route here via Nginx Proxy Manager |
+| 8502 | `college-confused` systemd service | Secondary / legacy — NOT what the browser hits |
+| 8503 | (unused / old deploy target) | |
+
+### Reverse Proxy
+- **Nginx Proxy Manager** runs as a Docker container (`nginx-proxy-manager`)
+- ALL domain routing (`peachstatesavings.com`, `collegeconfused.org`, `soleops.app`) goes through NPM → port 8501
+- There is NO `/etc/nginx/sites-enabled/` — standard nginx is NOT used
+
+### Code Update Flow
+```
+git push origin main
+→ ssh root@100.95.125.112
+→ cd /opt/darrian-budget && git pull origin main
+→ docker restart darrian-budget   ← THIS IS THE REQUIRED STEP
+```
+
+### ⚠️ CRITICAL: git pull alone is NOT enough
+The `darrian-budget` Docker container mounts `/opt/darrian-budget:/app` as a volume.
+File changes from `git pull` ARE reflected immediately on disk inside the container.
+BUT **Streamlit caches page modules in memory** — the old page code stays loaded until the container restarts.
+
+**NEVER say "try a hard refresh" without first:**
+1. Checking which port/service the domain actually routes to (`docker ps`, check NPM)
+2. Restarting the correct container: `docker restart darrian-budget`
+3. Verifying the content is correct inside the container: `docker exec darrian-budget grep 'search_term' /app/pages/XX_page.py`
+
+### The full correct deploy command after any code change:
+```bash
+ssh root@100.95.125.112 "cd /opt/darrian-budget && git pull origin main && docker restart darrian-budget && sleep 5 && docker exec darrian-budget grep -c 'expected_string' /app/pages/XX_page.py && echo LIVE"
+```
+
+---
+
 ## 👤 Owner
 
 **Darrian Belcher** | darrian@peachstatesavings.com
