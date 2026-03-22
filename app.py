@@ -13,6 +13,14 @@ from utils.auth import (
     require_login, render_sidebar_brand, render_sidebar_nav,
     render_sidebar_user_widget, inject_css, get_current_user
 )
+from utils.carousel import (
+    CAROUSEL_BASE_CSS,
+    carousel_theme_css,
+    render_nature_inspiration_carousel,
+    render_headshot_lifestyle_carousel,
+    render_story_band_html,
+    render_roots_cities_band,
+)
 
 # ── App config ────────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -333,3 +341,36 @@ try:
         st.page_link("pages/89_learning_system.py", label="→ Open Learning System", icon="🧠")
 except Exception:
     pass  # Learning tables may not exist yet — silently skip
+
+# ── Inspiration Gallery (Immich Photos) ───────────────────────────────────────
+try:
+    st.markdown("---")
+    st.markdown(
+        CAROUSEL_BASE_CSS + carousel_theme_css("green"),
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f"""
+<div class="carousel-section">
+  <div class="carousel-section-header">
+    <span class="carousel-eyebrow" style="color:#22D47E;">📸 Life & Inspiration</span>
+    <h2 class="carousel-title">The World Outside the Spreadsheet</h2>
+    <p class="carousel-subtitle">
+      Hampton · Atlanta · NYC · Chicago — the cities that built the builder.
+    </p>
+  </div>
+  {render_nature_inspiration_carousel("green")}
+  {render_story_band_html(
+      "Finance is just the fuel. The journey is the point.",
+      "Darrian Belcher · Peach State Savings",
+      "#22D47E",
+  )}
+  {render_headshot_lifestyle_carousel("green")}
+  {render_roots_cities_band("#22D47E")}
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+    st.page_link("pages/146_immich_photo_manager.py", label="Manage Photo Library", icon="📸")
+except Exception:
+    pass  # carousel not critical — never break the dashboard

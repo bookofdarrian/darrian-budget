@@ -9,6 +9,19 @@ Authenticated users see the full dashboard with live inventory metrics.
 """
 
 import streamlit as st
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent))
+from utils.carousel import (
+    CAROUSEL_BASE_CSS,
+    carousel_theme_css,
+    render_shoe_product_carousel,
+    render_street_fashion_carousel,
+    render_nature_inspiration_carousel,
+    render_story_band_html,
+    render_roots_cities_band,
+    render_headshot_lifestyle_carousel,
+)
 from utils.db import init_db, get_conn
 from utils.auth import (
     inject_soleops_css,
@@ -761,6 +774,29 @@ if not user:
     </div>
     """, unsafe_allow_html=True)
 
+    # ── CAROUSEL CSS + SHOE PRODUCT CAROUSEL ─────────────────────────────────
+    st.markdown(CAROUSEL_BASE_CSS + carousel_theme_css("cyan"), unsafe_allow_html=True)
+    st.markdown(f"""
+<div class="carousel-section">
+  <div class="carousel-section-header">
+    <span class="carousel-eyebrow" style="color:#00D4FF;">The Heat Right Now</span>
+    <h2 class="carousel-title">Built for the Culture</h2>
+    <p class="carousel-subtitle">
+      Real sneakers. Real resellers. Real numbers. SoleOps is built by
+      someone who actually flips — not a tech bro who read a blog post.
+    </p>
+  </div>
+  {render_shoe_product_carousel("cyan")}
+  <div style="margin-top:20px;"></div>
+  {render_story_band_html(
+    "I built SoleOps between inventory runs. Every feature exists because I personally needed it — "
+    "and couldn't find anything else that actually worked for sneaker resellers.",
+    "Darrian Belcher · Builder · Reseller · Atlanta, GA",
+    "#00D4FF"
+  )}
+</div>
+""", unsafe_allow_html=True)
+
     # ── FEATURES ──────────────────────────────────────────────────────────────
     st.markdown("""
     <section class="so-section" id="features" aria-label="Features">
@@ -1296,6 +1332,8 @@ st.sidebar.page_link("pages/85_soleops_inventory_manager.py",   label="🗂️ I
 st.sidebar.page_link("pages/86_soleops_listing_generator.py",   label="✍️ Listing Generator",    icon="✍️")
 st.sidebar.markdown("---")
 st.sidebar.page_link("pages/70_soleops_stripe_paywall.py",      label="💳 Subscription",         icon="💳")
+st.sidebar.markdown("---")
+st.sidebar.page_link("pages/146_immich_photo_manager.py",        label="Photo Library",           icon="📸")
 render_sidebar_user_widget()
 
 st.title("👟 SoleOps")
