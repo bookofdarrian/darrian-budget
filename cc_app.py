@@ -9,18 +9,6 @@ Authenticated users see the full dashboard.
 """
 
 import streamlit as st
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent))
-from utils.carousel import (
-    CAROUSEL_BASE_CSS,
-    carousel_theme_css,
-    render_nature_inspiration_carousel,
-    render_street_fashion_carousel,
-    render_headshot_lifestyle_carousel,
-    render_story_band_html,
-    render_roots_cities_band,
-)
 from utils.db import init_db
 from utils.auth import (
     inject_cc_css,
@@ -186,12 +174,10 @@ if not user:
       --bg-main: #08071A;
       --bg-surface: #0E0C2A;
       --bg-card: #12102A;
-      --bg-border: #2A2848;
+      --bg-border: #1E1C42;
       --text-main: #F2F0FF;
-      /* WCAG AA fix: was #8A84B0 (3.8:1 ratio FAIL) → #C4B8FF (8.2:1 PASS) */
-      --text-muted: #C4B8FF;
-      /* text-dim only used on decorative/non-essential UI — not on readable body text */
-      --text-dim: #5A5480;
+      --text-muted: #8A84B0;
+      --text-dim: #3A385A;
       --success: #22D47E;
       --gold: #FFD166;
       --radius-sm: 8px;
@@ -272,6 +258,7 @@ if not user:
       background: var(--violet-dim);
       border: 1px solid rgba(155,142,255,0.3);
       color: var(--violet-light);
+      -webkit-text-fill-color: #C4B8FF !important;
       font-size: 0.78rem;
       font-weight: 700;
       padding: 5px 14px;
@@ -284,6 +271,7 @@ if not user:
       font-size: clamp(2.2rem, 5vw, 3.8rem);
       font-weight: 900;
       color: var(--text-main);
+      -webkit-text-fill-color: #F2F0FF !important;
       line-height: 1.08;
       letter-spacing: -0.04em;
       margin-bottom: 20px;
@@ -297,6 +285,7 @@ if not user:
     .cc-hero-sub {
       font-size: clamp(1rem, 2vw, 1.2rem);
       color: var(--text-muted);
+      -webkit-text-fill-color: #8A84B0 !important;
       max-width: 580px;
       margin: 0 auto 40px;
       line-height: 1.7;
@@ -412,6 +401,118 @@ if not user:
       font-size: 0.84rem;
       color: var(--text-muted);
       line-height: 1.65;
+    }
+
+
+    /* ── Product Mockup Preview ── */
+    .cc-mockup-wrap { max-width: 680px; margin: 28px auto 0; }
+    .cc-mockup-browser {
+      background: #16143A;
+      border: 1px solid rgba(155,142,255,0.25);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 0 0 1px rgba(155,142,255,0.12);
+    }
+    .cc-mockup-bar {
+      background: #0E0C26;
+      border-bottom: 1px solid rgba(155,142,255,0.15);
+      padding: 9px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .cc-mockup-dots { display: flex; gap: 6px; }
+    .cc-mockup-dots span { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .cc-mockup-dots span:nth-child(1) { background: #FF5F57; }
+    .cc-mockup-dots span:nth-child(2) { background: #FFBD2E; }
+    .cc-mockup-dots span:nth-child(3) { background: #28CA41; }
+    .cc-mockup-url {
+      background: rgba(155,142,255,0.07);
+      border: 1px solid rgba(155,142,255,0.18);
+      border-radius: 5px;
+      padding: 3px 12px;
+      font-size: 0.7rem;
+      color: #8A84B0;
+      -webkit-text-fill-color: #8A84B0 !important;
+      flex: 1;
+      text-align: center;
+      letter-spacing: 0.01em;
+    }
+    .cc-mockup-screen { padding: 18px 20px 20px; }
+    .cc-mock-greeting {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #C4B8FF;
+      -webkit-text-fill-color: #C4B8FF !important;
+      margin-bottom: 14px;
+    }
+    .cc-mock-stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .cc-mock-stat {
+      background: rgba(155,142,255,0.08);
+      border: 1px solid rgba(155,142,255,0.2);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+    .cc-mock-stat-num {
+      font-size: 1.15rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, #9B8EFF 0%, #C4B8FF 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: block;
+      line-height: 1.2;
+    }
+    .cc-mock-stat-lbl {
+      font-size: 0.62rem;
+      color: #8A84B0;
+      -webkit-text-fill-color: #8A84B0 !important;
+      display: block;
+      margin-top: 3px;
+    }
+    .cc-mock-tasks { display: flex; flex-direction: column; gap: 6px; }
+    .cc-mock-task {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(155,142,255,0.12);
+      border-radius: 8px;
+      padding: 8px 12px;
+    }
+    .cc-mock-task-icon { font-size: 0.9rem; }
+    .cc-mock-task-text {
+      flex: 1;
+      font-size: 0.73rem;
+      color: #F2F0FF;
+      -webkit-text-fill-color: #F2F0FF !important;
+    }
+    .cc-mock-badge {
+      font-size: 0.63rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+    .cc-mock-badge-violet {
+      background: rgba(155,142,255,0.15);
+      color: #C4B8FF;
+      -webkit-text-fill-color: #C4B8FF !important;
+    }
+    .cc-mock-badge-orange {
+      background: rgba(255,179,71,0.15);
+      color: #FFB347;
+      -webkit-text-fill-color: #FFB347 !important;
+    }
+    .cc-mock-badge-teal {
+      background: rgba(78,205,196,0.15);
+      color: #4ECDC4;
+      -webkit-text-fill-color: #4ECDC4 !important;
     }
 
     /* ── How It Works ── */
@@ -702,7 +803,56 @@ if not user:
         </div>
         """, unsafe_allow_html=True)
 
-    # ── STATS ─────────────────────────────────────────────────────────────────
+    # ── PRODUCT MOCKUP ────────────────────────────────────────────────────────
+    _ml, _mc, _mr = st.columns([1, 4, 1])
+    with _mc:
+        st.markdown("""
+        <div class="cc-mockup-wrap">
+          <div class="cc-mockup-browser">
+            <div class="cc-mockup-bar">
+              <div class="cc-mockup-dots"><span></span><span></span><span></span></div>
+              <div class="cc-mockup-url">app.collegeconfused.org — Your Dashboard</div>
+            </div>
+            <div class="cc-mockup-screen">
+              <div class="cc-mock-greeting">👋 Welcome back, Aaliyah — 47 days until Common App ED deadline</div>
+              <div class="cc-mock-stats-row">
+                <div class="cc-mock-stat">
+                  <span class="cc-mock-stat-num">7</span>
+                  <span class="cc-mock-stat-lbl">Schools on List</span>
+                </div>
+                <div class="cc-mock-stat">
+                  <span class="cc-mock-stat-num">3</span>
+                  <span class="cc-mock-stat-lbl">Essays In Progress</span>
+                </div>
+                <div class="cc-mock-stat">
+                  <span class="cc-mock-stat-num">$12K</span>
+                  <span class="cc-mock-stat-lbl">Scholarships Found</span>
+                </div>
+              </div>
+              <div class="cc-mock-tasks">
+                <div class="cc-mock-task">
+                  <span class="cc-mock-task-icon">✍️</span>
+                  <span class="cc-mock-task-text">Common App Personal Statement — Draft 3</span>
+                  <span class="cc-mock-badge cc-mock-badge-orange">Due Oct 15</span>
+                </div>
+                <div class="cc-mock-task">
+                  <span class="cc-mock-task-icon">💰</span>
+                  <span class="cc-mock-task-text">Gates Millennium Scholarship Application</span>
+                  <span class="cc-mock-badge cc-mock-badge-violet">Due Nov 1</span>
+                </div>
+                <div class="cc-mock-task">
+                  <span class="cc-mock-task-icon">📋</span>
+                  <span class="cc-mock-task-text">FAFSA Submission — 2025–2026 Aid Year</span>
+                  <span class="cc-mock-badge cc-mock-badge-teal">✓ Complete</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+
+        # ── STATS ─────────────────────────────────────────────────────────────────
     st.markdown("""
     <div class="cc-stats" role="region" aria-label="Platform statistics">
       <div class="cc-stat">
@@ -723,30 +873,6 @@ if not user:
       </div>
     </div>
     """, unsafe_allow_html=True)
-
-    # ── CAROUSEL: NATURE + CITIES INSPIRATION ────────────────────────────────
-    st.markdown(CAROUSEL_BASE_CSS + carousel_theme_css("blue"), unsafe_allow_html=True)
-    st.markdown(f"""
-<div class="carousel-section">
-  <div class="carousel-section-header">
-    <span class="carousel-eyebrow" style="color:#9B8EFF;">From Hampton to Atlanta</span>
-    <h2 class="carousel-title">Your Journey Is the Story</h2>
-    <p class="carousel-subtitle">
-      Every student's path is unique. College Confused was built by someone who lived the
-      confusion — and came out the other side. Your story is worth telling.
-    </p>
-  </div>
-  {render_nature_inspiration_carousel("blue")}
-  {render_roots_cities_band("#9B8EFF")}
-  {render_story_band_html(
-    "I grew up in Hampton, VA with a mom who interned in NYC and a dad from Chicago who interned in ATL. "
-    "That cross-cultural upbringing taught me that every student's story is valid, powerful, and worth amplifying. "
-    "College Confused exists so no student has to navigate this alone.",
-    "Darrian Belcher · Founder · Hampton, VA → Atlanta, GA",
-    "#9B8EFF"
-  )}
-</div>
-""", unsafe_allow_html=True)
 
     # ── FEATURES ──────────────────────────────────────────────────────────────
     st.markdown("""
@@ -967,16 +1093,14 @@ username = user.get("username", "Student")
 
 render_sidebar_brand()
 st.sidebar.markdown("---")
-st.sidebar.page_link("cc_app.py",                       label="🏠 Home",            icon="🏠")
+st.sidebar.page_link("app.py",                       label="🏠 Home",            icon="🏠")
 st.sidebar.page_link("pages/80_cc_home.py",             label="🎓 Dashboard",       icon="🎓")
 st.sidebar.page_link("pages/81_cc_timeline.py",         label="📅 My Timeline",     icon="📅")
 st.sidebar.page_link("pages/82_cc_scholarships.py",     label="💰 Scholarships",    icon="💰")
 st.sidebar.page_link("pages/83_cc_essay_station.py",    label="✍️ Essay Station",   icon="✍️")
 st.sidebar.page_link("pages/84_cc_test_prep.py",        label="📚 SAT/ACT Prep",    icon="📚")
-st.sidebar.page_link("pages/87_cc_college_list.py",     label="🏫 College List",    icon="🏫")
-st.sidebar.page_link("pages/88_cc_fafsa_guide.py",      label="📋 FAFSA Guide",     icon="📋")
-st.sidebar.markdown("---")
-st.sidebar.page_link("pages/146_immich_photo_manager.py", label="Photo Library",    icon="📸")
+# College List page not yet deployed
+# FAFSA Guide page not yet deployed
 render_sidebar_user_widget()
 
 st.title("🎓 College Confused")
