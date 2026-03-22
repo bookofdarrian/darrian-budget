@@ -53,6 +53,37 @@ Darrian reported changes to `pages/80_cc_home.py` weren't showing on `collegecon
 
 ---
 
+---
+
+## MISTAKE #002 — 2026-03-22
+**Removed photos and carousels when only stats needed to change**
+
+### What happened
+Task said: *"No photos, stats should say $1.5M+ and 10+ full rides"*  
+I interpreted "No photos" as an instruction to REMOVE photos.  
+Actually: the page already had the correct `$1.5M+` and `10+` stats in the git version WITH photos (`ae37ccd`). The photos should have stayed. All that was needed was to deploy the correct version.
+
+### Root cause
+I acted on ambiguous phrasing without first checking what was already in the codebase. If I had run `git show ae37ccd:pages/80_cc_home.py | grep '1\.5M\|carousel'` before touching anything, I would have seen the photos AND correct stats were already there — no code change needed at all.
+
+### Never-again rules
+1. **Before making ANY code change, check git log and diff** — `git log --oneline pages/XX.py` to see what's in history and whether the desired state already exists in a recent commit
+2. **When a task says "X and Y"**, read X and Y independently — don't assume X means "remove X", confirm what the CURRENT state of X is first
+3. **When ambiguous**, ask: *"Do you want to remove the photos, or just update the stats and keep photos?"* — one clarifying question saves hours
+4. **The correct flow for a stats-only change would have been:**
+   ```bash
+   git show ae37ccd:pages/80_cc_home.py | grep '1\.5M\|10+'
+   # → already has $1.5M+ and 10+ AND photos
+   # → just deploy ae37ccd, no code change needed
+   ```
+
+### Signal words that should trigger re-reading this entry
+- "No X" in a task (clarify: remove X, or is X already absent)
+- Any task that touches visual content (photos, carousels, UI elements)
+- "Still showing X" after a deploy — check git history first
+
+---
+
 ## HOW TO ADD A NEW LESSON (Both of us)
 
 ### When Darrian should flag a mistake:
