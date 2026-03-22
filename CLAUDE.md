@@ -329,39 +329,42 @@ See `SOLE_OPS_ROADMAP.md` for the full SoleOps product plan.
 **This is the actual production setup. Getting this wrong means changes don't appear.**
 
 ### Port Map (CT100 @ 100.95.125.112)
-| Port | Service | What it serves |
-|------|---------|----------------|
-| **8501** | `darrian-budget` **Docker container** | **PSS + College Confused + SoleOps** — ALL sites route here via Nginx Proxy Manager |
-| 8502 | `college-confused` systemd service | Secondary / legacy — NOT what the browser hits |
-| 8503 | (unused / old deploy target) | |
+| Port | Service | Dir | Routes |
+|------|---------|-----|--------|
+| **8501** | `darrian-budget` Docker container | `/opt/darrian-budget` (git repo, volume-mounted) | `peachstatesavings.com` |
+| **8502** | `college-confused` systemd service | `/opt/college-confused` (**NOT a git repo, manual copy**) | `collegeconfused.org` |
+| 8503 | (unused) | | |
 
 ### Reverse Proxy
 - **Nginx Proxy Manager** runs as a Docker container (`nginx-proxy-manager`)
-- ALL domain routing (`peachstatesavings.com`, `collegeconfused.org`, `soleops.app`) goes through NPM → port 8501
+- NPM config lives in Docker volume: `/var/lib/docker/volumes/homelab_npm_data/_data/nginx/proxy_host/`
+- `3.conf` = `collegeconfused.org` → port **8502**
 - There is NO `/etc/nginx/sites-enabled/` — standard nginx is NOT used
 
-### Code Update Flow
-```
-git push origin main
-→ ssh root@100.95.125.112
-→ cd /opt/darrian-budget && git pull origin main
-→ docker restart darrian-budget   ← THIS IS THE REQUIRED STEP
-```
+### ⚠️ TWO SEPARATE DEPLOY PATHS — DO NOT CONFUSE THEM
 
-### ⚠️ CRITICAL: git pull alone is NOT enough
-The `darrian-budget` Docker container mounts `/opt/darrian-budget:/app` as a volume.
-File changes from `git pull` ARE reflected immediately on disk inside the container.
-BUT **Streamlit caches page modules in memory** — the old page code stays loaded until the container restarts.
-
-**NEVER say "try a hard refresh" without first:**
-1. Checking which port/service the domain actually routes to (`docker ps`, check NPM)
-2. Restarting the correct container: `docker restart darrian-budget`
-3. Verifying the content is correct inside the container: `docker exec darrian-budget grep 'search_term' /app/pages/XX_page.py`
-
-### The full correct deploy command after any code change:
+#### peachstatesavings.com (port 8501 — Docker)
 ```bash
 ssh root@100.95.125.112 "cd /opt/darrian-budget && git pull origin main && docker restart darrian-budget && sleep 5 && docker exec darrian-budget grep -c 'expected_string' /app/pages/XX_page.py && echo LIVE"
 ```
+- `/opt/darrian-budget` IS a git repo
+- Volume-mounted — `git pull` updates files on disk immediately
+- BUT Streamlit caches modules in memory → **must `docker restart darrian-budget`**
+
+#### collegeconfused.org (port 8502 — systemd)
+```bash
+ssh root@100.95.125.112 "cp /opt/darrian-budget/pages/XX_page.py /opt/college-confused/pages/XX_page.py && systemctl restart college-confused && sleep 3 && grep -c 'expected_string' /opt/college-confused/pages/XX_page.py && echo LIVE"
+```
+- `/opt/college-confused` is **NOT a git repo** — `git pull` does nothing here
+- Files must be **manually copied** from `/opt/darrian-budget/` after each change
+- Then restart the systemd service: `systemctl restart college-confused`
+- Verify with: `grep 'expected_string' /opt/college-confused/pages/XX_page.py`
+
+### NEVER say "try a hard refresh" without:
+1. Checking which port/dir the domain routes to (see table above)
+2. Copying the updated file to the correct directory (if CC)
+3. Restarting the correct service (`docker restart` vs `systemctl restart`)
+4. Verifying the content is present in the actual serving path
 
 ---
 
