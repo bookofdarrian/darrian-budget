@@ -161,7 +161,7 @@ def _ensure_tables():
     conn = get_conn()
 
     # Daily check-in (mood/energy/anxiety — all 4 pillars)
-    conn.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS hh_daily_checkin (
             id                {AUTO},
             user_id           INTEGER NOT NULL DEFAULT 1,
@@ -226,7 +226,7 @@ def _ensure_tables():
     """)
 
     # Medication log
-    conn.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS hh_medications (
             id            {AUTO},
             user_id       INTEGER NOT NULL DEFAULT 1,
@@ -244,7 +244,7 @@ def _ensure_tables():
         )
     """)
 
-    conn.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS hh_med_logs (
             id          {AUTO},
             user_id     INTEGER NOT NULL DEFAULT 1,
@@ -257,7 +257,7 @@ def _ensure_tables():
     """)
 
     # Episode tracker (manic/depressive/anxiety)
-    conn.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS hh_episodes (
             id              {AUTO},
             user_id         INTEGER NOT NULL DEFAULT 1,
@@ -275,7 +275,7 @@ def _ensure_tables():
     """)
 
     # CBT thought records
-    conn.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS hh_thought_records (
             id              {AUTO},
             user_id         INTEGER NOT NULL DEFAULT 1,
@@ -296,7 +296,7 @@ def _ensure_tables():
     """)
 
     # Health goals
-    conn.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS hh_health_goals (
             id          {AUTO},
             user_id     INTEGER NOT NULL DEFAULT 1,
@@ -311,7 +311,7 @@ def _ensure_tables():
     """)
 
     # Garmin manual data entry (for days without auto-sync)
-    conn.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS hh_garmin_data (
             id              {AUTO},
             user_id         INTEGER NOT NULL DEFAULT 1,
@@ -339,7 +339,7 @@ def _ensure_tables():
     """)
 
     # Family shared health summary
-    conn.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS hh_family_alerts (
             id          {AUTO},
             user_id     INTEGER NOT NULL DEFAULT 1,
@@ -365,7 +365,7 @@ def _save_checkin(data: dict):
     conn = get_conn()
     cols = ", ".join(data.keys())
     vals = ", ".join([PH] * len(data))
-    conn.execute(f"INSERT INTO hh_daily_checkin ({cols}) VALUES ({vals})", list(data.values()))
+    db_exec(conn, f"INSERT INTO hh_daily_checkin ({cols}) VALUES ({vals})", list(data.values()))
     conn.commit()
     conn.close()
 
@@ -398,7 +398,7 @@ def _load_today_checkin():
 
 def _save_medication(name, dosage, frequency, time_of_day, purpose, prescriber, refill_date, pills, notes):
     conn = get_conn()
-    conn.execute(f"""
+    db_exec(conn, f"""
         INSERT INTO hh_medications
             (user_id, med_name, dosage, frequency, time_of_day, purpose, prescriber, refill_date, pills_remaining, notes)
         VALUES ({PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH})
@@ -418,7 +418,7 @@ def _load_medications():
 
 def _log_medication_taken(med_id, status, notes=""):
     conn = get_conn()
-    conn.execute(f"""
+    db_exec(conn, f"""
         INSERT INTO hh_med_logs (user_id, med_id, status, notes)
         VALUES ({PH},{PH},{PH},{PH})
     """, (_get_user_id(), med_id, status, notes))
@@ -429,7 +429,7 @@ def _save_thought_record(data: dict):
     conn = get_conn()
     cols = ", ".join(data.keys())
     vals = ", ".join([PH] * len(data))
-    conn.execute(f"INSERT INTO hh_thought_records ({cols}) VALUES ({vals})", list(data.values()))
+    db_exec(conn, f"INSERT INTO hh_thought_records ({cols}) VALUES ({vals})", list(data.values()))
     conn.commit()
     conn.close()
 
@@ -437,7 +437,7 @@ def _save_garmin_data(data: dict):
     conn = get_conn()
     cols = ", ".join(data.keys())
     vals = ", ".join([PH] * len(data))
-    conn.execute(f"INSERT INTO hh_garmin_data ({cols}) VALUES ({vals})", list(data.values()))
+    db_exec(conn, f"INSERT INTO hh_garmin_data ({cols}) VALUES ({vals})", list(data.values()))
     conn.commit()
     conn.close()
 
@@ -457,7 +457,7 @@ def _load_garmin_data(days=7):
 
 def _save_goal(pillar, goal, target_date, notes):
     conn = get_conn()
-    conn.execute(f"""
+    db_exec(conn, f"""
         INSERT INTO hh_health_goals (user_id, pillar, goal, target_date, notes)
         VALUES ({PH},{PH},{PH},{PH},{PH})
     """, (_get_user_id(), pillar, goal, target_date, notes))
@@ -1768,14 +1768,14 @@ with tabs[10]:
                                 int(g.get("progress", 0)), key=f"goal_progress_{g['id']}")
                             if st.button("Update", key=f"goal_update_{g['id']}"):
                                 conn = get_conn()
-                                conn.execute(f"UPDATE hh_health_goals SET progress={PH} WHERE id={PH}",
+                                db_exec(conn, f"UPDATE hh_health_goals SET progress={PH} WHERE id={PH}",
                                              (new_progress, g["id"]))
                                 conn.commit()
                                 conn.close()
                                 st.rerun()
                             if st.button("✅ Done", key=f"goal_done_{g['id']}"):
                                 conn = get_conn()
-                                conn.execute(f"UPDATE hh_health_goals SET completed=1, progress=100 WHERE id={PH}",
+                                db_exec(conn, f"UPDATE hh_health_goals SET completed=1, progress=100 WHERE id={PH}",
                                              (g["id"],))
                                 conn.commit()
                                 conn.close()

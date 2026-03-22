@@ -6,7 +6,7 @@ import json
 from datetime import datetime, date
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.db import get_conn, init_db
+from utils.db import get_conn, init_db, execute as db_exec
 from utils.auth import require_login, render_sidebar_brand, render_sidebar_user_widget, inject_css
 
 st.set_page_config(page_title="AI Trading Bot", page_icon="🤖", layout="wide")
@@ -32,7 +32,7 @@ DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "budg
 def _get_setting(key, default=""):
     try:
         conn = sqlite3.connect(DB_PATH)
-        row = conn.execute("SELECT value FROM app_settings WHERE key=?", (key,)).fetchone()
+        row = db_exec(conn, "SELECT value FROM app_settings WHERE key=?", (key,)).fetchone()
         conn.close()
         return row[0] if row and row[0] else default
     except Exception:
@@ -42,7 +42,7 @@ def _get_setting(key, default=""):
 def _set_setting(key, value):
     try:
         conn = sqlite3.connect(DB_PATH)
-        conn.execute(
+        db_exec(conn, 
             "INSERT OR REPLACE INTO app_settings (key, value) VALUES (?,?)",
             (key, value)
         )
@@ -55,7 +55,7 @@ def _set_setting(key, value):
 def _get_bot_config(key, default=""):
     try:
         conn = sqlite3.connect(DB_PATH)
-        row = conn.execute("SELECT value FROM bot_config WHERE key=?", (key,)).fetchone()
+        row = db_exec(conn, "SELECT value FROM bot_config WHERE key=?", (key,)).fetchone()
         conn.close()
         return row[0] if row and row[0] else default
     except Exception:
@@ -65,7 +65,7 @@ def _get_bot_config(key, default=""):
 def _set_bot_config(key, value):
     try:
         conn = sqlite3.connect(DB_PATH)
-        conn.execute(
+        db_exec(conn, 
             "INSERT OR REPLACE INTO bot_config (key, value, updated_at) VALUES (?,?,?)",
             (key, value, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         )
@@ -78,7 +78,7 @@ def _set_bot_config(key, value):
 def _ensure_bot_tables():
     try:
         conn = sqlite3.connect(DB_PATH)
-        conn.executescript(
+        db_exec(conn,
             "CREATE TABLE IF NOT EXISTS bot_decisions ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "timestamp TEXT NOT NULL, ticker TEXT NOT NULL,"
@@ -87,7 +87,9 @@ def _ensure_bot_tables():
             "order_id TEXT, price REAL, quantity REAL,"
             "option_symbol TEXT, option_expiry TEXT,"
             "option_strike REAL, option_type TEXT,"
-            "premium REAL, market_mode TEXT DEFAULT 'paper', pnl REAL);"
+            "premium REAL, market_mode TEXT DEFAULT 'paper', pnl REAL)"
+        )
+        db_exec(conn,
             "CREATE TABLE IF NOT EXISTS bot_positions ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "opened_at TEXT, ticker TEXT, position_type TEXT,"
@@ -95,14 +97,18 @@ def _ensure_bot_tables():
             "stop_loss REAL, take_profit REAL, status TEXT DEFAULT 'open',"
             "closed_at TEXT, pnl REAL, option_symbol TEXT,"
             "option_expiry TEXT, option_strike REAL, option_type TEXT,"
-            "market_mode TEXT DEFAULT 'paper');"
+            "market_mode TEXT DEFAULT 'paper')"
+        )
+        db_exec(conn,
             "CREATE TABLE IF NOT EXISTS bot_config ("
-            "key TEXT PRIMARY KEY, value TEXT, updated_at TEXT);"
+            "key TEXT PRIMARY KEY, value TEXT, updated_at TEXT)"
+        )
+        db_exec(conn,
             "CREATE TABLE IF NOT EXISTS bot_daily_summary ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "trade_date TEXT UNIQUE, trades INTEGER DEFAULT 0,"
             "winners INTEGER DEFAULT 0, losers INTEGER DEFAULT 0,"
-            "gross_pnl REAL DEFAULT 0, net_pnl REAL DEFAULT 0, summary_ai TEXT);"
+            "gross_pnl REAL DEFAULT 0, net_pnl REAL DEFAULT 0, summary_ai TEXT)"
         )
         conn.commit()
         conn.close()
@@ -120,9 +126,9 @@ def _load_decisions(limit=50, mode_filter=None):
             params.append(mode_filter)
         q += " ORDER BY timestamp DESC LIMIT ?"
         params.append(limit)
-        rows = conn.execute(q, params).fetchall()
+        rows = db_exec(conn, q, params).fetchall()
         conn.close()
-        return [dict(zip([d[0] for d in conn.execute("PRAGMA table_info(bot_decisions)").description if False] +
+        return [dict(zip([d[0] for d in db_exec(conn, "PRAGMA table_info(bot_decisions)").description if False] +
                          ["id","timestamp","ticker","strategy","signal","reason","action_taken",
                           "order_id","price","quantity","option_symbol","option_expiry",
                           "option_strike","option_type","premium","market_mode","pnl"], row))
@@ -142,7 +148,7 @@ def _load_decisions_v2(limit=50, mode_filter=None):
             params.append(mode_filter)
         q += " ORDER BY timestamp DESC LIMIT ?"
         params.append(limit)
-        rows = conn.execute(q, params).fetchall()
+        rows = db_exec(conn, q, params).fetchall()
         conn.close()
         return [dict(r) for r in rows]
     except Exception:
@@ -153,13 +159,13 @@ def _load_stats():
     try:
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
-        total = conn.execute("SELECT COUNT(*) FROM bot_decisions WHERE action_taken='executed'").fetchone()[0]
-        executed = conn.execute("SELECT COUNT(*) FROM bot_decisions WHERE action_taken IN ('executed','dry_run')").fetchone()[0]
-        by_signal = conn.execute(
+        total = db_exec(conn, "SELECT COUNT(*) FROM bot_decisions WHERE action_taken='executed'").fetchone()[0]
+        executed = db_exec(conn, "SELECT COUNT(*) FROM bot_decisions WHERE action_taken IN ('executed','dry_run')").fetchone()[0]
+        by_signal = db_exec(conn, 
             "SELECT signal, COUNT(*) as cnt FROM bot_decisions WHERE action_taken IN ('executed','dry_run') "
             "GROUP BY signal ORDER BY cnt DESC"
         ).fetchall()
-        by_ticker = conn.execute(
+        by_ticker = db_exec(conn, 
             "SELECT ticker, COUNT(*) as cnt FROM bot_decisions WHERE action_taken IN ('executed','dry_run') "
             "GROUP BY ticker ORDER BY cnt DESC LIMIT 10"
         ).fetchall()

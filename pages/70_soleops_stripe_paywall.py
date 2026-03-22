@@ -118,7 +118,7 @@ def _ensure_tables():
     ph = "%s" if USE_POSTGRES else "?"
     auto = "SERIAL PRIMARY KEY" if USE_POSTGRES else "INTEGER PRIMARY KEY AUTOINCREMENT"
 
-    conn.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS soleops_subscriptions (
             id              {auto},
             user_email      TEXT NOT NULL,
@@ -133,7 +133,7 @@ def _ensure_tables():
             updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    conn.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS soleops_users (
             id              {auto},
             email           TEXT NOT NULL UNIQUE,
@@ -143,7 +143,7 @@ def _ensure_tables():
             created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    conn.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS soleops_billing_events (
             id              {auto},
             user_email      TEXT NOT NULL,
@@ -167,7 +167,7 @@ _ensure_tables()
 def _get_subscription(email: str) -> dict:
     conn = get_conn()
     ph = "%s" if USE_POSTGRES else "?"
-    cur = conn.execute(
+    cur = db_exec(conn, 
         f"SELECT * FROM soleops_subscriptions WHERE user_email = {ph} ORDER BY created_at DESC LIMIT 1",
         (email,)
     )
@@ -187,7 +187,7 @@ def _upsert_subscription(email: str, plan: str, stripe_customer_id: str = "",
     ph = "%s" if USE_POSTGRES else "?"
     existing = _get_subscription(email)
     if existing.get("id"):
-        conn.execute(
+        db_exec(conn, 
             f"""UPDATE soleops_subscriptions
                 SET plan={ph}, stripe_customer_id={ph}, stripe_sub_id={ph},
                     status={ph}, current_period_end={ph}, updated_at=CURRENT_TIMESTAMP
@@ -195,7 +195,7 @@ def _upsert_subscription(email: str, plan: str, stripe_customer_id: str = "",
             (plan, stripe_customer_id, stripe_sub_id, status, period_end, email)
         )
     else:
-        conn.execute(
+        db_exec(conn, 
             f"""INSERT INTO soleops_subscriptions
                 (user_email, plan, stripe_customer_id, stripe_sub_id, status, current_period_end)
                 VALUES ({ph},{ph},{ph},{ph},{ph},{ph})""",
@@ -208,7 +208,7 @@ def _upsert_subscription(email: str, plan: str, stripe_customer_id: str = "",
 def _get_billing_history(email: str) -> pd.DataFrame:
     conn = get_conn()
     ph = "%s" if USE_POSTGRES else "?"
-    cur = conn.execute(
+    cur = db_exec(conn, 
         f"SELECT * FROM soleops_billing_events WHERE user_email = {ph} ORDER BY event_date DESC",
         (email,)
     )
@@ -220,7 +220,7 @@ def _get_billing_history(email: str) -> pd.DataFrame:
 
 def _get_all_subscribers() -> pd.DataFrame:
     conn = get_conn()
-    cur = conn.execute("SELECT * FROM soleops_subscriptions ORDER BY created_at DESC")
+    cur = db_exec(conn, "SELECT * FROM soleops_subscriptions ORDER BY created_at DESC")
     rows = cur.fetchall()
     cols = [d[0] for d in cur.description]
     conn.close()
@@ -234,7 +234,7 @@ def _count_inventory_items(email: str) -> int:
         ph = "%s" if USE_POSTGRES else "?"
         # soleops_inventory may or may not have user_email column
         try:
-            cur = conn.execute("SELECT COUNT(*) FROM soleops_inventory")
+            cur = db_exec(conn, "SELECT COUNT(*) FROM soleops_inventory")
             count = cur.fetchone()[0]
         except Exception:
             count = 0
@@ -282,7 +282,7 @@ def _cancel_subscription(email: str) -> bool:
             stripe.Subscription.modify(sub["stripe_sub_id"], cancel_at_period_end=True)
         conn = get_conn()
         ph = "%s" if USE_POSTGRES else "?"
-        conn.execute(
+        db_exec(conn, 
             f"UPDATE soleops_subscriptions SET cancel_at_period_end = 1 WHERE user_email = {ph}",
             (email,)
         )
@@ -538,16 +538,16 @@ with tab4:
                 conn = get_conn()
                 ph = "%s" if USE_POSTGRES else "?"
                 # Upsert into soleops_users
-                existing = conn.execute(
+                existing = db_exec(conn, 
                     f"SELECT id FROM soleops_users WHERE email = {ph}", (user_email,)
                 ).fetchone()
                 if existing:
-                    conn.execute(
+                    db_exec(conn, 
                         f"UPDATE soleops_users SET display_name = {ph} WHERE email = {ph}",
                         (name, user_email)
                     )
                 else:
-                    conn.execute(
+                    db_exec(conn, 
                         f"INSERT INTO soleops_users (email, display_name) VALUES ({ph}, {ph})",
                         (user_email, name)
                     )
@@ -583,7 +583,7 @@ with tab4:
                             # Demo mode — just update DB
                             conn = get_conn()
                             ph = "%s" if USE_POSTGRES else "?"
-                            conn.execute(
+                            db_exec(conn, 
                                 f"UPDATE soleops_subscriptions SET cancel_at_period_end = 1 WHERE user_email = {ph}",
                                 (user_email,)
                             )

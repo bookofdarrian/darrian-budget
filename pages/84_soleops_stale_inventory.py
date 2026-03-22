@@ -122,7 +122,7 @@ def _seed_scheduled_task() -> None:
     try:
         conn = get_conn()
         ph = "%s" if USE_POSTGRES else "?"
-        row = conn.execute(
+        row = db_exec(conn, 
             f"SELECT id FROM agent_scheduled_tasks WHERE task_name = {ph}",
             ("SoleOps Stale Inventory Weekly Scan",)
         ).fetchone()
@@ -194,7 +194,7 @@ def _load_stale_inventory(user_id: int, min_days: int = DEFAULT_STALE_DAYS) -> l
     """Load all active inventory items older than min_days, enriched with tier data."""
     conn = get_conn()
     ph = "%s" if USE_POSTGRES else "?"
-    cur = conn.execute(f"""
+    cur = db_exec(conn, f"""
         SELECT id, shoe_name, brand, colorway, size, cost_basis, condition,
                listed_date, listed_price, listed_platform, notes
         FROM soleops_inventory
@@ -237,7 +237,7 @@ def _load_stale_inventory(user_id: int, min_days: int = DEFAULT_STALE_DAYS) -> l
 def _load_full_inventory(user_id: int) -> list[dict]:
     conn = get_conn()
     ph = "%s" if USE_POSTGRES else "?"
-    cur = conn.execute(f"""
+    cur = db_exec(conn, f"""
         SELECT id, shoe_name, size, cost_basis, listed_date, listed_price, listed_platform
         FROM soleops_inventory
         WHERE user_id = {ph} AND status = 'inventory'
@@ -288,7 +288,7 @@ def _log_alert_sent(
 def _load_alert_history(user_id: int, limit: int = 40) -> list[dict]:
     conn = get_conn()
     ph = "%s" if USE_POSTGRES else "?"
-    cur = conn.execute(f"""
+    cur = db_exec(conn, f"""
         SELECT shoe_name, size, days_listed, listed_price,
                suggested_price, alert_type, sent_at, action_taken
         FROM soleops_stale_alerts
@@ -851,7 +851,7 @@ with tab_sched:
     try:
         conn = get_conn()
         ph = "%s" if USE_POSTGRES else "?"
-        task_row = conn.execute(
+        task_row = db_exec(conn, 
             f"SELECT * FROM agent_scheduled_tasks WHERE task_name = {ph}",
             ("SoleOps Stale Inventory Weekly Scan",)
         ).fetchone()

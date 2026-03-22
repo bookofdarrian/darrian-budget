@@ -107,7 +107,7 @@ def _get_grant(username: str) -> dict | None:
     """Return the sandbox grant row for a username, or None."""
     conn = get_conn()
     ph = "%s" if USE_POSTGRES else "?"
-    row = conn.execute(
+    row = db_exec(conn, 
         f"SELECT * FROM sandbox_grants WHERE username = {ph} AND active = {1 if not USE_POSTGRES else 'TRUE'}",
         (username,),
     ).fetchone()
@@ -120,7 +120,7 @@ def _get_grant(username: str) -> dict | None:
 def _list_grants() -> list[dict]:
     """Return all active sandbox grants."""
     conn = get_conn()
-    rows = conn.execute(
+    rows = db_exec(conn, 
         "SELECT * FROM sandbox_grants ORDER BY granted_at DESC"
     ).fetchall()
     conn.close()
@@ -197,7 +197,7 @@ def _init_sandbox_db(username: str) -> None:
     """Create all the standard tables in the user's sandbox DB."""
     conn = _get_sandbox_conn(username)
     # Expenses
-    conn.execute("""
+    db_exec(conn, """
         CREATE TABLE IF NOT EXISTS expenses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             date TEXT, category TEXT, description TEXT,
@@ -205,7 +205,7 @@ def _init_sandbox_db(username: str) -> None:
         )
     """)
     # Income
-    conn.execute("""
+    db_exec(conn, """
         CREATE TABLE IF NOT EXISTS income (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             date TEXT, source TEXT, description TEXT,
@@ -213,7 +213,7 @@ def _init_sandbox_db(username: str) -> None:
         )
     """)
     # Goals
-    conn.execute("""
+    db_exec(conn, """
         CREATE TABLE IF NOT EXISTS goals (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT, target_amount REAL DEFAULT 0.0,
@@ -222,7 +222,7 @@ def _init_sandbox_db(username: str) -> None:
         )
     """)
     # Net worth snapshots
-    conn.execute("""
+    db_exec(conn, """
         CREATE TABLE IF NOT EXISTS net_worth (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             snapshot_date TEXT, assets REAL DEFAULT 0.0,
@@ -232,7 +232,7 @@ def _init_sandbox_db(username: str) -> None:
         )
     """)
     # Bills
-    conn.execute("""
+    db_exec(conn, """
         CREATE TABLE IF NOT EXISTS bills (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT, amount REAL DEFAULT 0.0,
@@ -241,7 +241,7 @@ def _init_sandbox_db(username: str) -> None:
         )
     """)
     # Todo tasks
-    conn.execute("""
+    db_exec(conn, """
         CREATE TABLE IF NOT EXISTS pa_tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
@@ -253,13 +253,13 @@ def _init_sandbox_db(username: str) -> None:
         )
     """)
     # Sandbox-specific: sandbox_meta
-    conn.execute("""
+    db_exec(conn, """
         CREATE TABLE IF NOT EXISTS sandbox_meta (
             key TEXT PRIMARY KEY,
             value TEXT
         )
     """)
-    conn.execute(
+    db_exec(conn, 
         "INSERT OR IGNORE INTO sandbox_meta (key, value) VALUES ('created_at', ?)",
         (datetime.now().isoformat(),),
     )
@@ -273,7 +273,7 @@ def _sandbox_summary(username: str) -> dict:
     result: dict = {}
     for tbl in SANDBOX_TABLES:
         try:
-            n = conn.execute(f"SELECT COUNT(*) FROM {tbl}").fetchone()[0]
+            n = db_exec(conn, f"SELECT COUNT(*) FROM {tbl}").fetchone()[0]
             result[tbl] = n
         except Exception:
             result[tbl] = 0
@@ -287,7 +287,7 @@ def _export_sandbox_as_json(username: str) -> str:
     export: dict = {"exported_at": datetime.now().isoformat(), "tables": {}}
     for tbl in SANDBOX_TABLES:
         try:
-            rows = conn.execute(f"SELECT * FROM {tbl}").fetchall()
+            rows = db_exec(conn, f"SELECT * FROM {tbl}").fetchall()
             export["tables"][tbl] = [dict(r) for r in rows]
         except Exception:
             export["tables"][tbl] = []

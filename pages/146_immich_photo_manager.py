@@ -28,7 +28,7 @@ from datetime import datetime
 import streamlit as st
 
 from utils.auth import inject_css, render_sidebar_brand, render_sidebar_user_widget, require_login
-from utils.db import get_conn, get_setting, init_db, set_setting
+from utils.db import get_conn, get_setting, init_db, set_setting, execute as db_exec
 from utils.immich_photos import (
     CAROUSEL_SEARCH_QUERIES,
     SITE_CATEGORY_MAP,
@@ -80,7 +80,7 @@ def _ensure_tables() -> None:
         USE_POSTGRES = os.getenv("DATABASE_URL", "").startswith("postgres")
         ph = "%s" if USE_POSTGRES else "?"
         with conn:
-            conn.execute(f"""
+            db_exec(conn, f"""
                 CREATE TABLE IF NOT EXISTS immich_photo_catalog (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     asset_id TEXT NOT NULL UNIQUE,
@@ -109,7 +109,7 @@ def _save_classified_photo(photo: dict) -> None:
     conn = get_conn()
     try:
         with conn:
-            conn.execute("""
+            db_exec(conn, """
                 INSERT INTO immich_photo_catalog
                     (asset_id, category, sites, seo_alt_text, caption, priority,
                      reasoning, thumbnail_url, updated_at)
@@ -150,10 +150,10 @@ def _load_catalog(category: str = None, site: str = None) -> list[dict]:
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
         query += " ORDER BY priority DESC, updated_at DESC"
-        rows = conn.execute(query, params).fetchall()
-        cols = [d[0] for d in conn.execute(query, params).description] if rows else []
+        rows = db_exec(conn, query, params).fetchall()
+        cols = [d[0] for d in db_exec(conn, query, params).description] if rows else []
         # Re-run with description
-        cur = conn.execute(query, params)
+        cur = db_exec(conn, query, params)
         cols = [d[0] for d in cur.description]
         return [dict(zip(cols, row)) for row in cur.fetchall()]
     finally:
@@ -164,7 +164,7 @@ def _update_photo_override(asset_id: str, category: str, sites: list, priority: 
     conn = get_conn()
     try:
         with conn:
-            conn.execute("""
+            db_exec(conn, """
                 UPDATE immich_photo_catalog
                 SET category = ?, sites = ?, priority = ?, caption = ?,
                     manually_overridden = 1, updated_at = datetime('now')

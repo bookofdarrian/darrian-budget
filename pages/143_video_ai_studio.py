@@ -60,7 +60,7 @@ AUTO = "SERIAL PRIMARY KEY" if USE_POSTGRES else "INTEGER PRIMARY KEY AUTOINCREM
 # ── DB Setup ───────────────────────────────────────────────────────────────────
 def _ensure_tables():
     conn = get_conn()
-    conn.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS studio_images (
             id           {AUTO},
             user_id      INTEGER NOT NULL DEFAULT 1,
@@ -77,7 +77,7 @@ def _ensure_tables():
             created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    conn.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS studio_videos (
             id           {AUTO},
             user_id      INTEGER NOT NULL DEFAULT 1,
@@ -97,7 +97,7 @@ def _ensure_tables():
             created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    conn.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS studio_prompts (
             id           {AUTO},
             user_id      INTEGER NOT NULL DEFAULT 1,
@@ -120,7 +120,7 @@ def _get_user_id():
 
 def _save_image_record(title, channel, asset_type, style, prompt, revised_prompt, image_data, file_path, ai_analysis, tags):
     conn = get_conn()
-    conn.execute(f"""
+    db_exec(conn, f"""
         INSERT INTO studio_images
             (user_id, title, channel, asset_type, style, prompt, revised_prompt, image_data, file_path, ai_analysis, tags)
         VALUES ({PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH})
@@ -145,7 +145,7 @@ def _load_images(channel=None):
 
 def _save_video(title, channel, platform, video_url, embed_code, description, tags, status, publish_date, notes):
     conn = get_conn()
-    conn.execute(f"""
+    db_exec(conn, f"""
         INSERT INTO studio_videos
             (user_id, title, channel, platform, video_url, embed_code, description, tags, status, publish_date, notes)
         VALUES ({PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH})
@@ -170,7 +170,7 @@ def _load_videos(channel=None):
 
 def _save_prompt(title, prompt_text, category, channel):
     conn = get_conn()
-    conn.execute(f"""
+    db_exec(conn, f"""
         INSERT INTO studio_prompts (user_id, title, prompt_text, category, channel)
         VALUES ({PH},{PH},{PH},{PH},{PH})
     """, (_get_user_id(), title, prompt_text, category, channel))

@@ -323,7 +323,7 @@ def _save_draft(data: dict) -> int:
         data.get("status", "draft"),
     ))
     conn.commit()
-    last_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0] if not USE_POSTGRES else 0
+    last_id = db_exec(conn, "SELECT last_insert_rowid()").fetchone()[0] if not USE_POSTGRES else 0
     conn.close()
     return last_id
 
