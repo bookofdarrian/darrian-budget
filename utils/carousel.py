@@ -349,6 +349,16 @@ def _build_track(cards_html: str, theme: str, slow: bool = False,
     return f'<div class="car-track-wrap car-track-wrap-{theme}">{inner}</div>'
 
 
+# ─── PROCESS-LEVEL CAROUSEL CACHE ────────────────────────────────────────────
+# Stores rendered card HTML strings so repeated Streamlit widget rerenders
+# (slider moves, button clicks, etc.) don't re-call Immich or the DB.
+# Key: "{category}_{site}_{limit}"  Value: (cards_html: str, ts: float)
+# Items expire after 30 minutes to pick up newly indexed photos.
+
+_CAROUSEL_HTML_CACHE: dict[str, tuple[str, float]] = {}
+_CAROUSEL_CACHE_TTL = 1800  # 30 minutes
+
+
 # ─── IMMICH INTEGRATION HELPERS ──────────────────────────────────────────────
 
 _CATEGORY_EMOJI: dict[str, str] = {
@@ -371,14 +381,29 @@ _CATEGORY_BG: dict[str, tuple[str, str]] = {
 def _build_immich_cards_for_category(
     category: str,
     site: str,
-    limit: int = 12,
+    limit: int = 8,
     accent: str = "#22D47E",
 ) -> str:
     """
     Try to build carousel cards from real Immich photos.
-    Returns empty string ("") on any failure so callers fall back to static placeholders.
-    Fetches thumbnails in parallel via get_thumbnail_data_uri_batch() and caches in DB.
+
+    Performance layers:
+      1. Process-level dict cache (_CAROUSEL_HTML_CACHE, 30 min TTL) — zero I/O
+      2. Thumbnail memory + DB cache in immich_photos — sub-ms after first fetch
+      3. Parallel Immich fetch with 6 s batch timeout — only on cold start
+
+    Returns empty string ("") on any failure so callers fall back gracefully
+    to emoji gradient placeholders. Page is NEVER blocked.
     """
+    import time as _time
+
+    cache_key = f"{category}_{site}_{limit}"
+    cached_entry = _CAROUSEL_HTML_CACHE.get(cache_key)
+    if cached_entry:
+        cards_html, ts = cached_entry
+        if _time.monotonic() - ts < _CAROUSEL_CACHE_TTL:
+            return cards_html
+
     try:
         from utils.immich_photos import (
             get_carousel_photos,
@@ -391,7 +416,7 @@ def _build_immich_cards_for_category(
         if not photos:
             return ""
 
-        # Parallel-fetch all thumbnails (cached after first call)
+        # Parallel-fetch all thumbnails (memory/DB cached after first fetch)
         asset_ids = [p.get("asset_id", "") for p in photos if p.get("asset_id")]
         thumb_map = get_thumbnail_data_uri_batch(asset_ids, size="thumbnail")
 
@@ -405,6 +430,9 @@ def _build_immich_cards_for_category(
             alt = photo.get("seo_alt_text", f"Darrian Belcher {category} photo")
             caption = photo.get("caption", "")
             cards += _build_card(emoji, alt, caption, bg_f, bg_t, accent, photo_src=data_uri)
+
+        # Store in process cache (even an empty string, so we don't retry immediately)
+        _CAROUSEL_HTML_CACHE[cache_key] = (cards, _time.monotonic())
         return cards
     except Exception:
         return ""
