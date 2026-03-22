@@ -4,6 +4,9 @@
 > This file is read by Claude Code at startup. It contains everything needed to
 > understand the project, standards, and current priorities.
 
+> 🔴 **MANDATORY FIRST READ:** [`LESSONS_LEARNED.md`](./LESSONS_LEARNED.md) — read this before every session.
+> It contains past mistakes with root causes and never-again rules. Violating these rules has already wasted real time.
+
 ---
 
 ## 🚨 CRITICAL ANTI-PATTERNS — Production Killers
