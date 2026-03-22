@@ -1,198 +1,75 @@
 #!/bin/bash
 # ============================================================
-# College Confused — One-Click Deployment Script
-# Run this on CT100 (100.95.125.112) after git pull origin main
-# Usage: bash deploy_college_confused.sh
+# College Confused — Correct Deployment Script
+# Updated: 2026-03-22 — reflects actual production setup
 #
-# Starts College Confused on port 8503, configures Nginx, SSL
+# ACTUAL ARCHITECTURE:
+#   collegeconfused.org → Nginx Proxy Manager → port 8502
+#   port 8502 → college-confused systemd service
+#   systemd working dir: /opt/college-confused  (NOT a git repo)
+#   git repo: /opt/darrian-budget
+#
+#   Files must be COPIED from /opt/darrian-budget to /opt/college-confused
+#   git pull alone does NOT update what the service serves
+#
+# Usage:
+#   bash deploy_college_confused.sh
+#   OR: bash deploy_college_confused.sh pages/80_cc_home.py  (single file)
 # ============================================================
 
-set -e  # Exit on any error
+set -e
 
-# ── Config ────────────────────────────────────────────────────
-DOMAIN="collegeconfused.org"
-PORT=8503
-APP_DIR="/opt/darrian-budget"
-APP_FILE="cc_app.py"
-SERVICE_NAME="college-confused"
+CC_SOURCE="/opt/darrian-budget"
+CC_SERVE="/opt/college-confused"
+SERVICE="college-confused"
+SERVER="root@100.95.125.112"
 
 echo ""
-echo "🎓 College Confused — Deployment Script"
-echo "========================================"
-echo "  Domain : $DOMAIN"
-echo "  Port   : $PORT"
-echo "  App    : $APP_DIR/$APP_FILE"
+echo "🎓 College Confused — Deploy Script"
+echo "====================================="
+echo "  Source (git): $CC_SOURCE"
+echo "  Serving dir:  $CC_SERVE  (systemd, port 8502)"
 echo ""
 
-# ── 1. Git pull latest code ──────────────────────────────────
-echo "📥 Step 1/5: Pulling latest code from main..."
-cd "$APP_DIR"
-git pull origin main
-echo "✅ Code updated."
+# ── 1. Pull latest code to git repo ────────────────────────
+echo "📥 Step 1/4: Pulling latest code to git repo..."
+ssh "$SERVER" "cd $CC_SOURCE && git pull origin main 2>&1 | tail -3"
+echo "✅ Git repo updated."
 echo ""
 
-# ── 2. Install/verify requirements ──────────────────────────
-echo "📦 Step 2/5: Checking Python requirements..."
-if [ -d "venv" ]; then
-    source venv/bin/activate
-    pip install -q -r requirements.txt
-    echo "✅ Requirements up to date."
+# ── 2. Copy updated files to serving directory ─────────────
+echo "📁 Step 2/4: Copying pages to $CC_SERVE..."
+
+if [ -n "$1" ]; then
+    # Single file mode: bash deploy_college_confused.sh pages/80_cc_home.py
+    FILE="$1"
+    echo "  Copying single file: $FILE"
+    ssh "$SERVER" "cp $CC_SOURCE/$FILE $CC_SERVE/$FILE"
+    echo "✅ Copied $FILE"
 else
-    python3 -m venv venv
-    source venv/bin/activate
-    pip install -q -r requirements.txt
-    echo "✅ Virtual environment created and requirements installed."
+    # Full sync: copy all pages and utils
+    echo "  Syncing all pages/ and utils/ ..."
+    ssh "$SERVER" "rsync -av --exclude='__pycache__' $CC_SOURCE/pages/ $CC_SERVE/pages/ 2>&1 | tail -5"
+    ssh "$SERVER" "rsync -av --exclude='__pycache__' $CC_SOURCE/utils/ $CC_SERVE/utils/ 2>&1 | tail -3"
+    echo "✅ Full sync complete."
 fi
 echo ""
 
-# ── 3. Create systemd service ────────────────────────────────
-echo "⚙️  Step 3/5: Creating systemd service for College Confused..."
-
-STREAMLIT="$APP_DIR/venv/bin/streamlit"
-
-sudo tee "/etc/systemd/system/${SERVICE_NAME}.service" > /dev/null << SERVICE_EOF
-[Unit]
-Description=College Confused AI College Prep (port $PORT)
-After=network.target
-
-[Service]
-Type=simple
-User=root
-WorkingDirectory=$APP_DIR
-ExecStart=$STREAMLIT run $APP_FILE \
-    --server.port=$PORT \
-    --server.address=0.0.0.0 \
-    --server.headless=true \
-    --server.enableCORS=false \
-    --server.enableXsrfProtection=false
-Restart=always
-RestartSec=5
-EnvironmentFile=$APP_DIR/.env
-
-[Install]
-WantedBy=multi-user.target
-SERVICE_EOF
-
-sudo systemctl daemon-reload
-sudo systemctl enable "$SERVICE_NAME"
-sudo systemctl restart "$SERVICE_NAME"
-
-# Wait a moment then check
-sleep 3
-if sudo systemctl is-active --quiet "$SERVICE_NAME"; then
-    echo "✅ College Confused service running on port $PORT."
-else
-    echo "⚠️  Service may have failed. Check: sudo journalctl -u $SERVICE_NAME -n 50"
-fi
+# ── 3. Restart the service ──────────────────────────────────
+echo "🔄 Step 3/4: Restarting college-confused service..."
+ssh "$SERVER" "systemctl restart $SERVICE && sleep 4"
+ssh "$SERVER" "systemctl status $SERVICE --no-pager | grep -E 'Active|PID'"
 echo ""
 
-# ── 4. Configure Nginx ───────────────────────────────────────
-echo "🌐 Step 4/5: Configuring Nginx for $DOMAIN..."
-
-NGINX_CONF="/etc/nginx/sites-available/$DOMAIN"
-
-sudo tee "$NGINX_CONF" > /dev/null << 'NGINX_EOF'
-server {
-    listen 80;
-    server_name collegeconfused.org www.collegeconfused.org;
-
-    # Security headers
-    add_header X-Frame-Options "SAMEORIGIN";
-    add_header X-Content-Type-Options "nosniff";
-    add_header X-XSS-Protection "1; mode=block";
-
-    location / {
-        proxy_pass http://127.0.0.1:8503;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_read_timeout 86400;
-        proxy_buffering off;
-    }
-
-    # Streamlit websocket support
-    location /_stcore/stream {
-        proxy_pass http://127.0.0.1:8503/_stcore/stream;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_read_timeout 86400;
-    }
-
-    # SEO: robots.txt
-    location = /robots.txt {
-        add_header Content-Type text/plain;
-        return 200 "User-agent: *\nAllow: /\nSitemap: https://collegeconfused.org/sitemap.xml\n";
-    }
-}
-NGINX_EOF
-
-# Enable the site
-if [ ! -f "/etc/nginx/sites-enabled/$DOMAIN" ]; then
-    sudo ln -s "$NGINX_CONF" "/etc/nginx/sites-enabled/$DOMAIN"
-    echo "✅ Nginx site enabled."
-else
-    echo "✅ Nginx site already enabled."
-fi
-
-# Test and reload Nginx
-sudo nginx -t
-sudo systemctl reload nginx
-echo "✅ Nginx reloaded."
+# ── 4. Verify ──────────────────────────────────────────────
+echo "🔍 Step 4/4: Verifying serving directory is correct..."
+ssh "$SERVER" "grep -n '1\.5M\|10+' $CC_SERVE/pages/80_cc_home.py 2>/dev/null | head -5 || echo 'No 80_cc_home.py found'"
 echo ""
 
-# ── 5. SSL Certificate via Let's Encrypt ─────────────────────
-echo "🔐 Step 5/5: Setting up SSL certificate..."
-
-if ! command -v certbot &> /dev/null; then
-    echo "  Installing certbot..."
-    sudo apt-get install -y certbot python3-certbot-nginx -q
-fi
-
-if sudo certbot certificates 2>/dev/null | grep -q "collegeconfused.org"; then
-    echo "✅ SSL certificate already exists. Renewing if needed..."
-    sudo certbot renew --quiet
-else
-    echo "  Requesting new SSL certificate..."
-    read -p "  Enter your email for SSL certificate notifications: " SSL_EMAIL
-    sudo certbot --nginx \
-        -d collegeconfused.org \
-        -d www.collegeconfused.org \
-        --non-interactive \
-        --agree-tos \
-        --email "$SSL_EMAIL" \
-        --redirect
-    echo "✅ SSL certificate installed. HTTPS enabled!"
-fi
+echo "====================================="
+echo "✅ Deployment complete!"
+echo "   Live: https://collegeconfused.org/cc_home"
 echo ""
-
-# ── Done ──────────────────────────────────────────────────────
-echo "========================================"
-echo "🎉 College Confused deployment complete!"
-echo ""
-echo "📍 Pages live at:"
-echo "   https://collegeconfused.org              → 🏠 Landing"
-echo "   https://collegeconfused.org/cc_home      → 🎓 Dashboard"
-echo "   https://collegeconfused.org/My_Timeline  → 📅 Timeline"
-echo "   https://collegeconfused.org/Scholarships → 💰 Scholarships"
-echo "   https://collegeconfused.org/Essay_Station → ✍️ Essays"
-echo "   https://collegeconfused.org/SATACT_Prep  → 📚 SAT/ACT Prep"
-echo "   https://collegeconfused.org/College_List → 🏫 College List"
-echo "   https://collegeconfused.org/FAFSA_Guide  → 📋 FAFSA Guide"
-echo ""
-echo "🔧 Service management:"
-echo "   sudo systemctl status college-confused"
-echo "   sudo systemctl restart college-confused"
-echo "   sudo journalctl -u college-confused -f"
-echo ""
-echo "⚠️  DNS REQUIRED — Add these records at your registrar:"
-echo "   A    @      → <your public IP>  (run: curl ifconfig.me)"
-echo "   A    www    → <your public IP>"
-echo "   Or add both as Cloudflare proxied A records."
-echo ""
-echo "⏰ DNS propagation can take up to 24h if records are new."
-echo "========================================"
+echo "⚠️  If changes still don't show: the service was just restarted."
+echo "    Wait 5–10 seconds for Streamlit to fully boot, then reload."
+echo "====================================="

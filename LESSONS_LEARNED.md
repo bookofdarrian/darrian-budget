@@ -20,20 +20,29 @@ Darrian reported changes to `pages/80_cc_home.py` weren't showing on `collegecon
 3. Restarted the **wrong service** (`college-confused` systemd on port 8502) ❌
 4. Told Darrian to do a hard refresh (Cmd+Shift+R) ❌ — it didn't work
 
-### Root cause
-I assumed standard nginx + systemd was serving traffic. It's not. The actual stack is:
-- **Nginx Proxy Manager** (Docker) routes ALL domains to the **`darrian-budget` Docker container on port 8501**
-- `git pull` updates files on disk (volume-mounted) but **Streamlit caches page modules in memory**
-- The Docker container must be explicitly restarted to flush the in-memory module cache
+### Root cause (corrected after deeper investigation — two separate errors compounding)
+**Error 1:** I restarted the `college-confused` systemd service on port 8502 after git pull — thinking that was enough.
+
+**Error 2 (discovered later):** Even after restarting the right service (8502), the file still showed old content. Why? Because `collegeconfused.org` is served from `/opt/college-confused/` — a **completely separate directory that is NOT a git repo**. `git pull` updates `/opt/darrian-budget/` only. The CC systemd service reads from `/opt/college-confused/pages/80_cc_home.py` which was never updated.
+
+**The actual stack:**
+- **Nginx Proxy Manager** (Docker, `nginx-proxy-manager`) routes domains — NOT standard nginx
+- `collegeconfused.org` (NPM `3.conf`) → port **8502** → `college-confused` systemd service → `/opt/college-confused/`
+- `peachstatesavings.com` → port **8501** → `darrian-budget` Docker container → `/opt/darrian-budget/` (git repo)
+- `/opt/college-confused` is **NOT a git repo** — files must be manually copied from `/opt/darrian-budget/`
 
 ### Never-again rules
-1. **NEVER tell Darrian "try a hard refresh" until I have diagnosed which port/container is actually serving the domain**
-2. **After ANY code change, the correct deploy command is:**
+1. **NEVER tell Darrian "try a hard refresh" without first diagnosing which service + directory is actually handling the domain**
+2. **For collegeconfused.org, the correct deploy is:**
+   ```bash
+   ssh root@100.95.125.112 "cp /opt/darrian-budget/pages/XX_page.py /opt/college-confused/pages/XX_page.py && systemctl restart college-confused && sleep 3 && grep -c 'expected_string' /opt/college-confused/pages/XX_page.py && echo LIVE"
+   ```
+3. **For peachstatesavings.com, the correct deploy is:**
    ```bash
    ssh root@100.95.125.112 "cd /opt/darrian-budget && git pull origin main && docker restart darrian-budget && sleep 5 && docker exec darrian-budget grep -c 'expected_string' /app/pages/XX_page.py && echo LIVE"
    ```
-3. **Always verify content is correct INSIDE the container** with `docker exec darrian-budget grep ...` before declaring it live
-4. **The routing truth:** All domains (peachstatesavings.com, collegeconfused.org, soleops.app) → NPM → port 8501 → `darrian-budget` Docker container. Port 8502 is a secondary systemd process that does NOT serve production traffic.
+4. **Always verify in the ACTUAL serving path** — not in `/opt/darrian-budget` when the service reads from `/opt/college-confused`
+5. **The two dirs are independent:** git pull ONLY updates `/opt/darrian-budget`. CC changes must be explicitly copied.
 
 ### Signal words that should trigger re-reading this entry
 - "I don't see it" after a deploy
