@@ -200,7 +200,7 @@ if not user:
     }
     body, .stApp { background: var(--bg-main); color: var(--text-main); font-family: var(--font-sans); }
     .stApp { background: var(--bg-main) !important; }
-    #MainMenu, footer, header { visibility: hidden; }
+    #MainMenu, footer, [data-testid="stHeader"] { visibility: hidden; }
 
     /* ── Top Nav ── */
     .cc-nav {
@@ -778,11 +778,14 @@ if not user:
     # ── HERO ─────────────────────────────────────────────────────────────────
     st.markdown("""
     <header class="cc-hero" role="banner">
-      <div class="cc-eyebrow">🆓 100% Free · No Credit Card · Built for First-Gen Students</div>
-      <h1 class="cc-h1">
-        Stop Being Confused.<br><span>Start Getting In.</span>
-      </h1>
-      <p class="cc-hero-sub">
+      <div class="cc-eyebrow" style="-webkit-text-fill-color:#C4B8FF!important;color:#C4B8FF!important;">
+        🆓 100% Free · No Credit Card · Built for First-Gen Students
+      </div>
+      <div class="cc-h1" role="heading" aria-level="1" style="color:#F2F0FF;-webkit-text-fill-color:#F2F0FF;">
+        Stop Being Confused.<br>
+        <span style="background:linear-gradient(90deg,#9B8EFF 0%,#C4B8FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:inline;">Start Getting In.</span>
+      </div>
+      <p class="cc-hero-sub" style="-webkit-text-fill-color:#8A84B0!important;color:#8A84B0!important;">
         College Confused is the free AI-powered college prep platform built for students who deserve
         real guidance — not generic advice. Track deadlines, find scholarships, write better essays,
         and build your college list — all in one place, completely free.
@@ -852,7 +855,13 @@ if not user:
         """, unsafe_allow_html=True)
 
 
-        # ── STATS ─────────────────────────────────────────────────────────────────
+        st.markdown("""
+    <div style="background:rgba(155,142,255,0.06);border-bottom:1px solid rgba(155,142,255,0.15);padding:6px;text-align:center;font-size:0.7rem;color:rgba(196,184,255,0.7);letter-spacing:0.05em;">
+      ⚗️ BETA · All data is test/demo data · Not accurate · Building in public 🚧
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── STATS ─────────────────────────────────────────────────────────────────
     st.markdown("""
     <div class="cc-stats" role="region" aria-label="Platform statistics">
       <div class="cc-stat">
@@ -877,7 +886,7 @@ if not user:
     # ── FEATURES ──────────────────────────────────────────────────────────────
     st.markdown("""
     <section class="cc-section" id="features" aria-label="Features">
-      <div class="cc-eyebrow-label">Features</div>
+      <div class="cc-eyebrow-label" style="-webkit-text-fill-color:#9B8EFF!important;color:#9B8EFF!important;">Features</div>
       <h2 class="cc-h2">Everything You Need. Nothing You Don't.</h2>
       <p class="cc-section-sub">Seven AI-powered tools covering every stage of the college application journey — all free, all in one place.</p>
     </section>
@@ -909,7 +918,7 @@ if not user:
     # ── HOW IT WORKS ──────────────────────────────────────────────────────────
     st.markdown("""
     <section class="cc-section" id="how-it-works" aria-label="How College Confused works">
-      <div class="cc-eyebrow-label">How It Works</div>
+      <div class="cc-eyebrow-label" style="-webkit-text-fill-color:#9B8EFF!important;color:#9B8EFF!important;">How It Works</div>
       <h2 class="cc-h2">From Confused to Confident in 3 Steps</h2>
       <p class="cc-section-sub">No tutor fees. No counselor waitlists. Just sign up and start getting the guidance you deserve.</p>
       <div class="cc-how-grid">
