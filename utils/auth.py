@@ -1144,6 +1144,16 @@ def render_sidebar_brand():
         <div>
             <div class="brand-name">{APP_EMOJI} {APP_NAME}</div>
             <div class="brand-tagline">AI-powered budgeting</div>
+            <div style="margin-top:5px;">
+                <span style="
+                    font-size:0.62rem;
+                    font-weight:700;
+                    color:#FFB300;
+                    letter-spacing:0.06em;
+                    text-transform:uppercase;
+                    opacity:0.85;
+                ">🐾 Aggie Built · NC A&T</span>
+            </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -1213,8 +1223,10 @@ def render_sidebar_nav():
 def render_sidebar_user_widget():
     """
     Render the user account widget at the bottom of the sidebar.
-    Shows email, plan badge, upgrade button, and logout.
+    Shows profile photo (if static/photos/darrian_profile.jpg exists),
+    email, plan badge, upgrade button, and logout.
     """
+    import os as _os
     user = get_current_user()
     if not user:
         return
@@ -1225,6 +1237,24 @@ def render_sidebar_user_widget():
              if pro else f'<span class="free-badge">FREE</span>')
 
     st.sidebar.markdown("---")
+
+    # ── Profile photo ─────────────────────────────────────────────────────────
+    _profile_path = _os.path.join(
+        _os.path.dirname(_os.path.dirname(__file__)),
+        "static", "photos", "darrian_profile.jpg"
+    )
+    if _os.path.exists(_profile_path):
+        st.sidebar.image(
+            _profile_path,
+            width=72,
+            caption=None,
+            use_container_width=False,
+        )
+        st.sidebar.markdown(
+            "<style>[data-testid='stSidebar'] img { border-radius: 50%; border: 2px solid #FFB300; }</style>",
+            unsafe_allow_html=True,
+        )
+
     st.sidebar.markdown(
         f"<div style='font-size:0.78rem; color:{TEXT_MUTED};'>Signed in as</div>"
         f"<div style='font-size:0.82rem; color:{TEXT_MAIN}; font-weight:600; "
