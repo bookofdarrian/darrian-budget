@@ -15,3 +15,8 @@ VAULTWARDEN_CREDENTIALS.md
 .spotify_token_cache
 .playwright_profile/
 garmin_trigger.py
+
+# Private health information
+context/DARRIAN_HEALTH_CONTEXT.md
+context/health_raw_extractions.json
+extract_medical_docs.py
