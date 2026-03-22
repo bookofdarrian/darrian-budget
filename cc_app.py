@@ -8,6 +8,8 @@ Mobile-first design · Core Web Vitals compliant · JSON-LD + FAQPage schema.
 Authenticated users see the full dashboard.
 """
 
+import base64 as _b64
+import os as _os
 import streamlit as st
 from utils.db import init_db
 from utils.auth import (
@@ -22,6 +24,23 @@ st.set_page_config(
     page_icon="🎓",
     layout="wide",
 )
+
+
+def _load_b64(rel_path: str) -> str:
+    """Load a local image as a base64 data URI. Returns '' on error."""
+    try:
+        import pathlib
+        full = pathlib.Path(__file__).parent / rel_path
+        suffix = full.suffix.lower()
+        mime = ("image/png" if suffix == ".png" else
+                "image/gif" if suffix == ".gif" else
+                "image/webp" if suffix == ".webp" else "image/jpeg")
+        with open(full, "rb") as f:
+            data = _b64.b64encode(f.read()).decode()
+        return f"data:{mime};base64,{data}"
+    except Exception:
+        return ""
+
 
 init_db()
 inject_cc_css()
@@ -965,13 +984,32 @@ if not user:
     </section>
     """, unsafe_allow_html=True)
 
+    # Load founder photo — try carousel/lifestyle first, then root-level fallback
+    _founder_uri = (
+        _load_b64("static/photos/carousel/lifestyle/darrian_vibe.jpg") or
+        _load_b64("static/photos/darrian_vibe.jpg") or
+        _load_b64("static/photos/carousel/headshot/darrian_headshot.png") or
+        _load_b64("static/photos/darrian_headshot.png") or
+        ""
+    )
+
     _fc1, _fc2 = st.columns([2, 3], gap="large")
     with _fc1:
-        st.markdown("""
+        if _founder_uri:
+            st.markdown(f"""
+        <div style="display:flex;justify-content:center;align-items:center;padding:20px 0;">
+          <div style="width:220px;height:220px;border-radius:50%;overflow:hidden;box-shadow:0 8px 32px rgba(155,142,255,0.35);border:3px solid rgba(155,142,255,0.4);">
+            <img src="{_founder_uri}" alt="Darrian Belcher — Founder, College Confused"
+                 style="width:100%;height:100%;object-fit:cover;object-position:center top;transform:rotate(90deg) scale(1.35);" />
+          </div>
+        </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
         <div style="display:flex;justify-content:center;align-items:center;padding:20px 0;">
           <div style="width:220px;height:220px;border-radius:50%;background:linear-gradient(135deg,#9B8EFF 0%,#6C5CE7 100%);display:flex;align-items:center;justify-content:center;font-size:5rem;box-shadow:0 8px 32px rgba(155,142,255,0.3);">👤</div>
         </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
     with _fc2:
         st.markdown("""
         <div style="padding:20px 0;">
