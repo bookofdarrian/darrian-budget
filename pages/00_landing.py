@@ -7,12 +7,27 @@ Designed for peachstatesavings.com — Mobile-first, Core Web Vitals compliant.
 import streamlit as st
 import base64
 from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from utils.carousel import (
+    CAROUSEL_BASE_CSS,
+    carousel_theme_css,
+    render_headshot_lifestyle_carousel,
+    render_street_fashion_carousel,
+    render_nature_inspiration_carousel,
+    render_story_band_html,
+    render_roots_cities_band,
+)
+
+# Resolve paths relative to this file so they work regardless of CWD
+_BASE = Path(__file__).parent.parent
 
 
 def _load_b64(path: str, mime: str = "image/jpeg") -> str:
     """Load a local file as base64 data URI for HTML embedding."""
     try:
-        with open(path, "rb") as f:
+        p = Path(path) if Path(path).is_absolute() else _BASE / path
+        with open(p, "rb") as f:
             data = base64.b64encode(f.read()).decode()
         return f"data:{mime};base64,{data}"
     except Exception:
@@ -1027,6 +1042,11 @@ st.markdown(
 )
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# CAROUSEL CSS (injected once)
+# ═══════════════════════════════════════════════════════════════════════════════
+st.markdown(CAROUSEL_BASE_CSS + carousel_theme_css("peach"), unsafe_allow_html=True)
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # STATS BAR
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown("""
@@ -1050,6 +1070,23 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# VISUAL STORY CAROUSEL — Headshots + Lifestyle (between stats and features)
+# ═══════════════════════════════════════════════════════════════════════════════
+st.markdown(f"""
+<div class="carousel-section">
+  <div class="carousel-section-header">
+    <span class="carousel-eyebrow" style="color:var(--peach);">The Builder Behind the App</span>
+    <h2 class="carousel-title">Built by Someone Who Lives It</h2>
+    <p class="carousel-subtitle">
+      From Hampton Roads to Atlanta — street style, nature, and a story that
+      keeps being written one feature at a time.
+    </p>
+  </div>
+  {render_headshot_lifestyle_carousel("peach")}
+</div>
+""", unsafe_allow_html=True)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # FEATURES SECTION
@@ -1190,6 +1227,52 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ROOTS & CITIES BAND — Darrian's geographic origin story
+# ═══════════════════════════════════════════════════════════════════════════════
+st.markdown(render_roots_cities_band("peach"), unsafe_allow_html=True)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# NATURE + INSPIRATION CAROUSEL — between builder story and pricing
+# ═══════════════════════════════════════════════════════════════════════════════
+st.markdown(f"""
+<div class="carousel-section">
+  <div class="carousel-section-header">
+    <span class="carousel-eyebrow" style="color:#22C55E;">Inspiration Gallery</span>
+    <h2 class="carousel-title">The World That Fuels the Work</h2>
+    <p class="carousel-subtitle">
+      Nature, cities, light, and perspective — the creative fuel behind
+      every feature shipped at midnight.
+    </p>
+  </div>
+  {render_nature_inspiration_carousel("peach")}
+  <div style="margin-top:20px;"></div>
+  {render_story_band_html(
+    "I didn't grow up with a financial advisor. I grew up watching money be stressful. "
+    "So I built the app I wish my family had. Not to impress anyone — to actually help.",
+    "Darrian Belcher · Hampton, VA → Atlanta, GA",
+    "#FF8C42"
+  )}
+</div>
+""", unsafe_allow_html=True)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STREET + FASHION CAROUSEL — creative lifestyle band before pricing
+# ═══════════════════════════════════════════════════════════════════════════════
+st.markdown(f"""
+<div class="carousel-section">
+  <div class="carousel-section-header">
+    <span class="carousel-eyebrow" style="color:var(--peach);">Style & Culture</span>
+    <h2 class="carousel-title">The Full Picture</h2>
+    <p class="carousel-subtitle">
+      Finance is one lane. There's also street style, sneakers, creativity,
+      and a broader story worth knowing.
+    </p>
+  </div>
+  {render_street_fashion_carousel("peach")}
+</div>
+""", unsafe_allow_html=True)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # PRICING

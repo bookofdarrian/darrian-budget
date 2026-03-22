@@ -9,6 +9,18 @@ Authenticated users see the full dashboard.
 """
 
 import streamlit as st
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent))
+from utils.carousel import (
+    CAROUSEL_BASE_CSS,
+    carousel_theme_css,
+    render_nature_inspiration_carousel,
+    render_street_fashion_carousel,
+    render_headshot_lifestyle_carousel,
+    render_story_band_html,
+    render_roots_cities_band,
+)
 from utils.db import init_db
 from utils.auth import (
     inject_cc_css,
@@ -711,6 +723,30 @@ if not user:
       </div>
     </div>
     """, unsafe_allow_html=True)
+
+    # ── CAROUSEL: NATURE + CITIES INSPIRATION ────────────────────────────────
+    st.markdown(CAROUSEL_BASE_CSS + carousel_theme_css("blue"), unsafe_allow_html=True)
+    st.markdown(f"""
+<div class="carousel-section">
+  <div class="carousel-section-header">
+    <span class="carousel-eyebrow" style="color:#9B8EFF;">From Hampton to Atlanta</span>
+    <h2 class="carousel-title">Your Journey Is the Story</h2>
+    <p class="carousel-subtitle">
+      Every student's path is unique. College Confused was built by someone who lived the
+      confusion — and came out the other side. Your story is worth telling.
+    </p>
+  </div>
+  {render_nature_inspiration_carousel("blue")}
+  {render_roots_cities_band("#9B8EFF")}
+  {render_story_band_html(
+    "I grew up in Hampton, VA with a mom who interned in NYC and a dad from Chicago who interned in ATL. "
+    "That cross-cultural upbringing taught me that every student's story is valid, powerful, and worth amplifying. "
+    "College Confused exists so no student has to navigate this alone.",
+    "Darrian Belcher · Founder · Hampton, VA → Atlanta, GA",
+    "#9B8EFF"
+  )}
+</div>
+""", unsafe_allow_html=True)
 
     # ── FEATURES ──────────────────────────────────────────────────────────────
     st.markdown("""
