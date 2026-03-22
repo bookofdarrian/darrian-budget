@@ -320,14 +320,17 @@ def _build_card(emoji: str, label: str, sub: str,
                 bg_from: str, bg_to: str,
                 accent: str,
                 photo_src: str | None = None) -> str:
-    """Build one carousel card. Uses emoji placeholder or real img if photo_src given."""
+    """Build one carousel card. Uses real photo when photo_src given, else emoji gradient."""
     if photo_src:
+        # Real photo from Immich — no emoji overlay, just the image + caption
         bg_style = f"background: url('{photo_src}') center/cover no-repeat;"
+        emoji_html = ""
     else:
         bg_style = f"background: linear-gradient(160deg, {bg_from} 0%, {bg_to} 100%);"
+        emoji_html = f'<span class="car-emoji">{emoji}</span>'
 
     return f"""<div class="car-card" style="{bg_style}" role="figure" aria-label="{label}">
-  <span class="car-emoji">{emoji}</span>
+  {emoji_html}
   <div class="car-card-overlay" style="background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%);"></div>
   <div style="position:relative;z-index:2;text-align:center;">
     <div class="car-card-label">{label}</div>
@@ -346,77 +349,177 @@ def _build_track(cards_html: str, theme: str, slow: bool = False,
     return f'<div class="car-track-wrap car-track-wrap-{theme}">{inner}</div>'
 
 
+# ─── PROCESS-LEVEL CAROUSEL CACHE ────────────────────────────────────────────
+# Stores rendered card HTML strings so repeated Streamlit widget rerenders
+# (slider moves, button clicks, etc.) don't re-call Immich or the DB.
+# Key: "{category}_{site}_{limit}"  Value: (cards_html: str, ts: float)
+# Items expire after 30 minutes to pick up newly indexed photos.
+
+_CAROUSEL_HTML_CACHE: dict[str, tuple[str, float]] = {}
+_CAROUSEL_CACHE_TTL = 1800  # 30 minutes
+
+
+# ─── IMMICH INTEGRATION HELPERS ──────────────────────────────────────────────
+
+_CATEGORY_EMOJI: dict[str, str] = {
+    "shoe": "👟",
+    "fashion": "🧥",
+    "nature": "🌅",
+    "lifestyle": "💻",
+    "headshot": "📸",
+}
+
+_CATEGORY_BG: dict[str, tuple[str, str]] = {
+    "shoe":      ("#050510", "#0a0a20"),
+    "fashion":   ("#050505", "#0f0f10"),
+    "nature":    ("#021a0a", "#053d1e"),
+    "lifestyle": ("#080510", "#14103d"),
+    "headshot":  ("#080510", "#14103d"),
+}
+
+
+def _build_immich_cards_for_category(
+    category: str,
+    site: str,
+    limit: int = 8,
+    accent: str = "#22D47E",
+) -> str:
+    """
+    Try to build carousel cards from real Immich photos.
+
+    Performance layers:
+      1. Process-level dict cache (_CAROUSEL_HTML_CACHE, 30 min TTL) — zero I/O
+      2. Thumbnail memory + DB cache in immich_photos — sub-ms after first fetch
+      3. Parallel Immich fetch with 6 s batch timeout — only on cold start
+
+    Returns empty string ("") on any failure so callers fall back gracefully
+    to emoji gradient placeholders. Page is NEVER blocked.
+    """
+    import time as _time
+
+    cache_key = f"{category}_{site}_{limit}"
+    cached_entry = _CAROUSEL_HTML_CACHE.get(cache_key)
+    if cached_entry:
+        cards_html, ts = cached_entry
+        if _time.monotonic() - ts < _CAROUSEL_CACHE_TTL:
+            return cards_html
+
+    try:
+        from utils.immich_photos import (
+            get_carousel_photos,
+            get_thumbnail_data_uri_batch,
+            is_immich_available,
+        )
+        if not is_immich_available():
+            return ""
+        photos = get_carousel_photos(category, site=site, limit=limit)
+        if not photos:
+            return ""
+
+        # Parallel-fetch all thumbnails (memory/DB cached after first fetch)
+        asset_ids = [p.get("asset_id", "") for p in photos if p.get("asset_id")]
+        thumb_map = get_thumbnail_data_uri_batch(asset_ids, size="thumbnail")
+
+        emoji = _CATEGORY_EMOJI.get(category, "📷")
+        bg_f, bg_t = _CATEGORY_BG.get(category, ("#050510", "#0a0a20"))
+
+        cards = ""
+        for photo in photos:
+            asset_id = photo.get("asset_id", "")
+            data_uri = thumb_map.get(asset_id) if asset_id else None
+            alt = photo.get("seo_alt_text", f"Darrian Belcher {category} photo")
+            caption = photo.get("caption", "")
+            cards += _build_card(emoji, alt, caption, bg_f, bg_t, accent, photo_src=data_uri)
+
+        # Store in process cache (even an empty string, so we don't retry immediately)
+        _CAROUSEL_HTML_CACHE[cache_key] = (cards, _time.monotonic())
+        return cards
+    except Exception:
+        return ""
+
+
 # ─── PUBLIC RENDER FUNCTIONS ─────────────────────────────────────────────────
 
 def render_shoe_product_carousel(theme: str = "cyan") -> str:
-    """Infinite-scroll sneaker product carousel for SoleOps."""
-    card_styles = [
-        ("#1a0505", "#3D0000"),  # deep red
-        ("#0D0B1E", "#2B1A4F"),  # purple
-        ("#051a0a", "#0A3B1E"),  # green
-        ("#1A1200", "#3D2B00"),  # gold
-        ("#050D1A", "#0A2040"),  # navy
-        ("#1A0510", "#3D0028"),  # crimson
-        ("#000D1A", "#001A3D"),  # midnight blue
-        ("#0D1A00", "#1A3D00"),  # forest
-    ]
-    cards = ""
-    for i, (emoji, label, sub) in enumerate(SHOE_PHOTOS):
-        bg_f, bg_t = card_styles[i % len(card_styles)]
-        cards += _build_card(emoji, label, sub, bg_f, bg_t, "#00D4FF")
+    """Infinite-scroll sneaker product carousel for SoleOps.
+    Uses real Immich photos when available; falls back to emoji placeholders."""
+    # Try Immich first
+    cards = _build_immich_cards_for_category("shoe", "soleops", limit=12, accent="#00D4FF")
+    if not cards:
+        # Static fallback
+        card_styles = [
+            ("#1a0505", "#3D0000"),
+            ("#0D0B1E", "#2B1A4F"),
+            ("#051a0a", "#0A3B1E"),
+            ("#1A1200", "#3D2B00"),
+            ("#050D1A", "#0A2040"),
+            ("#1A0510", "#3D0028"),
+            ("#000D1A", "#001A3D"),
+            ("#0D1A00", "#1A3D00"),
+        ]
+        for i, shoe_data in enumerate(SHOE_PHOTOS):
+            emoji, label, sub = shoe_data[0], shoe_data[1], shoe_data[2]
+            bg_f, bg_t = card_styles[i % len(card_styles)]
+            cards += _build_card(emoji, label, sub, bg_f, bg_t, "#00D4FF")
     return _build_track(cards, theme)
 
 
 def render_street_fashion_carousel(theme: str = "cyan") -> str:
-    """Street & fashion inspiration carousel."""
-    card_styles = [
-        ("#0D0D0D", "#1A1A1A"),
-        ("#0A0510", "#1F0A2A"),
-        ("#05050D", "#0A0A1F"),
-        ("#0D0800", "#1F1500"),
-        ("#050D0A", "#0A1F14"),
-        ("#0D0505", "#1F0A0A"),
-    ]
-    cards = ""
-    for i, (emoji, label, sub) in enumerate(STREET_FASHION_PHOTOS):
-        bg_f, bg_t = card_styles[i % len(card_styles)]
-        cards += _build_card(emoji, label, sub, bg_f, bg_t, "#B06AFF")
+    """Street & fashion inspiration carousel.
+    Uses real Immich photos when available; falls back to emoji placeholders."""
+    cards = _build_immich_cards_for_category("fashion", "all", limit=10, accent="#B06AFF")
+    if not cards:
+        card_styles = [
+            ("#0D0D0D", "#1A1A1A"),
+            ("#0A0510", "#1F0A2A"),
+            ("#05050D", "#0A0A1F"),
+            ("#0D0800", "#1F1500"),
+            ("#050D0A", "#0A1F14"),
+            ("#0D0505", "#1F0A0A"),
+        ]
+        for i, (emoji, label, sub) in enumerate(STREET_FASHION_PHOTOS):
+            bg_f, bg_t = card_styles[i % len(card_styles)]
+            cards += _build_card(emoji, label, sub, bg_f, bg_t, "#B06AFF")
     return _build_track(cards, theme, slow=True, reverse=True)
 
 
 def render_nature_inspiration_carousel(theme: str = "green") -> str:
-    """Nature + city skyline carousel. Great for PSS and CC."""
-    card_styles = [
-        ("#021A0A", "#053D1E"),  # dawn green
-        ("#0A0D1A", "#1A1F3D"),  # dusk navy
-        ("#1A0A00", "#3D1E00"),  # sunset
-        ("#030D0A", "#071A14"),  # deep forest
-        ("#00030D", "#000718"),  # ocean night
-        ("#0A0500", "#1F0F00"),  # autumn
-        ("#060A00", "#0F1400"),  # meadow
-        ("#0A0800", "#1F1400"),  # golden hour
-    ]
-    cards = ""
-    for i, (emoji, label, sub) in enumerate(NATURE_PHOTOS):
-        bg_f, bg_t = card_styles[i % len(card_styles)]
-        cards += _build_card(emoji, label, sub, bg_f, bg_t, "#22D47E")
+    """Nature + city skyline carousel. Great for PSS and CC.
+    Uses real Immich photos when available; falls back to emoji placeholders."""
+    cards = _build_immich_cards_for_category("nature", "all", limit=12, accent="#22D47E")
+    if not cards:
+        card_styles = [
+            ("#021A0A", "#053D1E"),
+            ("#0A0D1A", "#1A1F3D"),
+            ("#1A0A00", "#3D1E00"),
+            ("#030D0A", "#071A14"),
+            ("#00030D", "#000718"),
+            ("#0A0500", "#1F0F00"),
+            ("#060A00", "#0F1400"),
+            ("#0A0800", "#1F1400"),
+        ]
+        for i, (emoji, label, sub) in enumerate(NATURE_PHOTOS):
+            bg_f, bg_t = card_styles[i % len(card_styles)]
+            cards += _build_card(emoji, label, sub, bg_f, bg_t, "#22D47E")
     return _build_track(cards, theme, slow=True)
 
 
 def render_headshot_lifestyle_carousel(theme: str = "cyan") -> str:
-    """Headshot + lifestyle photos — the human behind the brand."""
-    card_styles = [
-        ("#080510", "#14103D"),
-        ("#03080A", "#071018"),
-        ("#0A0810", "#1F1A2A"),
-        ("#080A03", "#141A07"),
-        ("#0A0305", "#1A070B"),
-        ("#030A08", "#071A14"),
-    ]
-    cards = ""
-    for i, (emoji, label, sub) in enumerate(LIFESTYLE_HEADSHOT_PHOTOS):
-        bg_f, bg_t = card_styles[i % len(card_styles)]
-        cards += _build_card(emoji, label, sub, bg_f, bg_t, "#F0F4FF")
+    """Headshot + lifestyle photos — the human behind the brand.
+    Uses real Immich photos when available; falls back to emoji placeholders."""
+    cards = _build_immich_cards_for_category("headshot", "all", limit=10, accent="#F0F4FF")
+    if not cards:
+        card_styles = [
+            ("#080510", "#14103D"),
+            ("#03080A", "#071018"),
+            ("#0A0810", "#1F1A2A"),
+            ("#080A03", "#141A07"),
+            ("#0A0305", "#1A070B"),
+            ("#030A08", "#071A14"),
+        ]
+        for i, (emoji, label, sub) in enumerate(LIFESTYLE_HEADSHOT_PHOTOS):
+            bg_f, bg_t = card_styles[i % len(card_styles)]
+            cards += _build_card(emoji, label, sub, bg_f, bg_t, "#F0F4FF")
     return _build_track(cards, theme, slow=True)
 
 

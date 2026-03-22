@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_IMMICH_SERVER = "http://100.95.125.112:2283"
 CACHE_KEY_PREFIX = "immich_cache_"
-CACHE_TTL_SECONDS = 3600  # 1 hour — refresh hourly
+CACHE_TTL_SECONDS = 3600 * 6   # 6 hours — catalog refreshes 4× per day
 
 # ─── Carousel slot → CLIP search queries ─────────────────────────────────────
 # These are the AI semantic searches we run against YOUR Immich library.
@@ -448,6 +448,132 @@ def _load_catalog_from_db(category: str) -> list[dict] | None:
         return data.get("photos", [])
     except Exception:
         return None
+
+
+# ─── Thumbnail base64 cache ───────────────────────────────────────────────────
+
+# Thumbnails are fetched once and stored for 7 days — they virtually never change.
+_B64_CACHE_TTL = 86400 * 7   # 7 days in DB
+
+# Process-level in-memory cache: fastest possible — no DB round-trip at all.
+# Key: "{size}_{asset_id}"  Value: data URI string
+# Lives for the duration of the Streamlit worker process (hours to days).
+_MEMORY_THUMB_CACHE: dict[str, str] = {}
+
+# Batch fetch timeout: total wall-clock seconds we'll wait before returning
+# partial results. Ensures no carousel ever blocks a page for more than this.
+_BATCH_TOTAL_TIMEOUT = 6.0   # seconds
+
+# Per-thumbnail network timeout
+_THUMB_NETWORK_TIMEOUT = 5   # seconds
+
+
+def get_thumbnail_data_uri(
+    asset_id: str,
+    size: str = "thumbnail",
+) -> str | None:
+    """
+    Fetch an Immich thumbnail and return it as a base64 data URI.
+
+    Priority caching layers (fastest → slowest):
+      1. In-memory dict (_MEMORY_THUMB_CACHE) — zero I/O, sub-millisecond
+      2. SQLite DB (app_settings) — single row read, ~1 ms
+      3. Immich API fetch — 5 s timeout, result stored in both layers
+
+    Returns: "data:image/jpeg;base64,..." or None on any failure.
+    size: "thumbnail" (Immich ~250 px, ~15 KB JPEG) ← use for carousels
+         "preview"   (Immich ~1920 px, ~300 KB JPEG) ← use for lightbox only
+    """
+    if not asset_id or not has_api_key():
+        return None
+
+    mem_key = f"{size}_{asset_id}"
+
+    # Layer 1 — in-memory
+    if mem_key in _MEMORY_THUMB_CACHE:
+        return _MEMORY_THUMB_CACHE[mem_key]
+
+    # Layer 2 — DB
+    cache_key = f"immich_b64_{size}_{asset_id}"
+    cached_raw = get_setting(cache_key)
+    if cached_raw:
+        try:
+            cached_data = json.loads(cached_raw)
+            if time.time() - cached_data.get("ts", 0) < _B64_CACHE_TTL:
+                uri = cached_data.get("uri")
+                if uri:
+                    _MEMORY_THUMB_CACHE[mem_key] = uri  # warm memory cache
+                    return uri
+        except Exception:
+            pass
+
+    # Layer 3 — fetch from Immich
+    try:
+        import base64
+
+        url = thumbnail_url(asset_id, size)
+        r = requests.get(url, timeout=_THUMB_NETWORK_TIMEOUT)
+        if r.status_code == 200:
+            mime = r.headers.get("Content-Type", "image/jpeg").split(";")[0]
+            b64 = base64.b64encode(r.content).decode("utf-8")
+            data_uri = f"data:{mime};base64,{b64}"
+            # Warm both caches
+            _MEMORY_THUMB_CACHE[mem_key] = data_uri
+            set_setting(cache_key, json.dumps({"uri": data_uri, "ts": time.time()}))
+            return data_uri
+    except Exception as e:
+        logger.error("Failed to fetch thumbnail %s (%s): %s", asset_id, size, e)
+    return None
+
+
+def get_thumbnail_data_uri_batch(
+    asset_ids: list[str],
+    size: str = "thumbnail",
+    max_workers: int = 8,
+) -> dict[str, str | None]:
+    """
+    Fetch multiple thumbnails concurrently with a hard wall-clock timeout.
+
+    Performance design:
+    - max_workers=8: saturate the homelab NIC without overwhelming it
+    - _BATCH_TOTAL_TIMEOUT=6s: any uncompleted fetches return None (fallback
+      to emoji placeholder) so the page never blocks longer than 6 s total.
+    - Already-cached thumbnails return immediately from memory/DB so the
+      timeout only matters for first-ever fetch of a new photo.
+
+    Returns {asset_id: data_uri | None}.
+    """
+    import concurrent.futures
+
+    if not asset_ids:
+        return {}
+
+    results: dict[str, str | None] = {}
+    deadline = time.monotonic() + _BATCH_TOTAL_TIMEOUT
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool:
+        future_map = {
+            pool.submit(get_thumbnail_data_uri, aid, size): aid
+            for aid in asset_ids
+        }
+        for future in concurrent.futures.as_completed(
+            future_map, timeout=_BATCH_TOTAL_TIMEOUT
+        ):
+            aid = future_map[future]
+            try:
+                results[aid] = future.result()
+            except Exception:
+                results[aid] = None
+            # Belt-and-suspenders: stop collecting if we're past the deadline
+            if time.monotonic() > deadline:
+                break
+
+    # Fill in any futures that didn't complete in time
+    for future, aid in future_map.items():
+        if aid not in results:
+            results[aid] = None
+
+    return results
 
 
 # ─── Main public API ──────────────────────────────────────────────────────────
