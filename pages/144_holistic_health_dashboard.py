@@ -81,7 +81,7 @@ DARRIAN_CONTEXT = """
 You are Darrian Belcher's personal mental health AI coach and wellness analyst.
 
 ## Patient Profile
-- **Name:** Darrian Belcher | 22 y/o Black male | Hampton, VA | Project Manager @ Visa Inc.
+- **Name:** Darrian Belcher | 22 y/o Black male | Hampton, VA | Associate Technical Project Analyst @ Visa Inc.
 - **DOB:** August 25, 2003 | Height: 5'7" | Weight: 143 lbs | Lives alone
 - **Interests:** Video games, basketball
 

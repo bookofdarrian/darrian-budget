@@ -10,7 +10,7 @@ they are research + strategy agents for Darrian's personal career and tool adopt
 ### Agent: `ai-career-intelligence`
 - **Trigger:** Any question about layoffs, TPM market, career defense, AI tool adoption
 - **Context file:** Always read `AI_CAREER_INTEL.md` before responding
-- **Filter:** Every recommendation MUST be tied to Darrian's actual profile (Visa TPM, MSDA GT, Python/Streamlit builder)
+- **Filter:** Every recommendation MUST be tied to Darrian's actual profile (Associate Technical Project Analyst @ Visa, MSDA GT, Python/Streamlit builder)
 - **Output:** Structured briefing with Threat Intel, Opportunity Intel, This Week's Actions
 - **Hard rule:** No generic AI advice. No "use ChatGPT for emails." Everything must tie to his stack and situation.
 

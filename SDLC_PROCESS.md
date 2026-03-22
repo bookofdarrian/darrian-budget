@@ -316,6 +316,54 @@ git push origin main
 - ✅ Docker image tested
 - ✅ **Manual approval from you**
 - ✅ Release tag created
+- ✅ **Screenshot approval for any UI/visual change** (see below)
+
+---
+
+## Screenshot Approval — MANDATORY FOR ALL UI CHANGES
+
+**Any commit that touches a page's visual output MUST include a screenshot verification step before the branch is promoted past DEV.**
+
+### What counts as a UI change?
+- New pages, layouts, carousels, banners, CSS
+- Photo additions or replacements in `static/photos/`
+- Changes to landing pages (`00_landing.py`, `cc_app.py`, `soleops_app.py`)
+- Any HTML/CSS injection via `st.markdown(..., unsafe_allow_html=True)`
+
+### Screenshot Approval Process
+
+**Step 1 — Capture the rendered output:**
+```bash
+# Option A: Open the app in browser and take a manual screenshot
+open http://100.95.125.112:8501
+
+# Option B: Use the built-in screenshot script
+cd /Users/darrianbelcher/Downloads/darrian-budget
+source venv/bin/activate
+python3 take_dashboard_screenshot.sh
+```
+
+**Step 2 — Visual checklist (must confirm ALL before promoting):**
+- [ ] New content is visible and correctly positioned
+- [ ] No broken layouts or missing assets
+- [ ] No doubled icons, garbled text, or encoding issues
+- [ ] Photos are correctly oriented (not sideways/rotated)
+- [ ] Mobile breakpoints look acceptable
+- [ ] No regressions on existing content
+
+**Step 3 — Attach screenshot to commit or PR body:**
+```bash
+# Add a note in your commit message confirming visual review
+git commit -m "feat: add vibe photo to carousel
+
+- Verified rendering at http://100.95.125.112:8501
+- Screenshot confirmed: photo displays upright, centered, correct orientation
+- No layout regressions observed"
+```
+
+**Hard rule:** If you cannot visually confirm the change rendered correctly, **do not promote past DEV**. Fix it first.
+
+> "Committed ≠ Live. Live ≠ Verified. Verified = Screenshot + Eyes."
 
 ---
 
