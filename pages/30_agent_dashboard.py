@@ -171,7 +171,7 @@ def _calc_next_run(schedule_type: str, schedule_day: int, schedule_hour: int) ->
 
 def _list_scheduled_tasks() -> list[dict]:
     conn = get_conn()
-    rows = conn.execute(
+    rows = db_exec(conn, 
         "SELECT * FROM agent_scheduled_tasks ORDER BY next_run ASC"
     ).fetchall()
     conn.close()

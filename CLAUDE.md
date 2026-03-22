@@ -6,6 +6,56 @@
 
 ---
 
+## 🚨 CRITICAL ANTI-PATTERNS — Production Killers
+
+> See `BUGFIX_PATTERNS.md` for full details on each bug, root causes, and fixes.
+> These patterns WILL crash the app in production (PostgreSQL) even though they work in dev (SQLite).
+
+### ❌ #1 — `conn.execute()` — CRASHES ON POSTGRESQL
+```python
+# ❌ NEVER DO THIS:
+conn.execute("CREATE TABLE IF NOT EXISTS ...")
+rows = conn.execute("SELECT * FROM ...").fetchall()
+
+# ✅ ALWAYS DO THIS:
+from utils.db import execute as db_exec
+db_exec(conn, "CREATE TABLE IF NOT EXISTS ...")
+rows = db_exec(conn, "SELECT * FROM ...").fetchall()
+```
+**Root cause:** SQLite allows `connection.execute()` but psycopg2 does NOT. Use `db_exec(conn, ...)` always.
+**Detection:** `grep -rn "conn\.execute(" pages/ --include="*.py"` (must return empty)
+
+### ❌ #2 — `conn.executescript()` — CRASHES ON POSTGRESQL
+```python
+# ❌ NEVER: conn.executescript("CREATE TABLE a; CREATE TABLE b;")
+# ✅ ALWAYS: separate db_exec() calls, one per statement
+```
+
+### ❌ #3 — Direct `?` placeholders with raw psycopg2 cursor
+Use `db_exec()` which auto-translates `?` → `%s` for PostgreSQL.
+
+### ❌ #4 — Hardcoded API keys
+```python
+# ❌ NEVER: api_key = "sk-ant-abc123"
+# ✅ ALWAYS: api_key = get_setting("anthropic_api_key")
+```
+
+### ❌ #5 — `st.experimental_rerun()`
+```python
+# ❌ NEVER: st.experimental_rerun()
+# ✅ ALWAYS: st.rerun()
+```
+
+### PRE-COMMIT SCAN (Run before EVERY commit)
+```bash
+# These must ALL return empty output:
+grep -rn "conn\.execute(" pages/ --include="*.py"
+grep -rn "conn\.executescript(" pages/ --include="*.py"  
+grep -rn "experimental_rerun" pages/ --include="*.py"
+```
+
+---
+
 ## 🎯 PRIMARY GOALS RIGHT NOW: SoleOps SaaS + College Confused
 
 ### 🔥 Goal 1 — SoleOps (Monetization Priority)

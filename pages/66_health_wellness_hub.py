@@ -49,7 +49,7 @@ def _ensure_tables():
     ph = "%s" if USE_POSTGRES else "?"
     auto = "SERIAL PRIMARY KEY" if USE_POSTGRES else "INTEGER PRIMARY KEY AUTOINCREMENT"
 
-    conn.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS hw_mood_logs (
             id          {auto},
             log_date    DATE NOT NULL,
@@ -61,7 +61,7 @@ def _ensure_tables():
             created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    conn.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS hw_workouts (
             id          {auto},
             workout_date DATE NOT NULL,
@@ -73,7 +73,7 @@ def _ensure_tables():
             created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    conn.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS hw_medications (
             id          {auto},
             name        TEXT NOT NULL,
@@ -86,7 +86,7 @@ def _ensure_tables():
             created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    conn.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS hw_health_goals (
             id          {auto},
             goal        TEXT NOT NULL,
@@ -96,7 +96,7 @@ def _ensure_tables():
             created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    conn.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS hw_doctor_visits (
             id          {auto},
             visit_date  DATE NOT NULL,
@@ -107,7 +107,7 @@ def _ensure_tables():
             created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    conn.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS hw_vaccines (
             id          {auto},
             vaccine     TEXT NOT NULL,
@@ -129,7 +129,7 @@ def _load_mood_logs(days: int = 30):
     conn = get_conn()
     ph = "%s" if USE_POSTGRES else "?"
     since = (date.today() - timedelta(days=days)).isoformat()
-    cur = conn.execute(f"SELECT * FROM hw_mood_logs WHERE log_date >= {ph} ORDER BY log_date DESC", (since,))
+    cur = db_exec(conn, f"SELECT * FROM hw_mood_logs WHERE log_date >= {ph} ORDER BY log_date DESC", (since,))
     rows = cur.fetchall()
     cols = [d[0] for d in cur.description]
     conn.close()
@@ -140,7 +140,7 @@ def _load_workouts(days: int = 90):
     conn = get_conn()
     ph = "%s" if USE_POSTGRES else "?"
     since = (date.today() - timedelta(days=days)).isoformat()
-    cur = conn.execute(f"SELECT * FROM hw_workouts WHERE workout_date >= {ph} ORDER BY workout_date DESC", (since,))
+    cur = db_exec(conn, f"SELECT * FROM hw_workouts WHERE workout_date >= {ph} ORDER BY workout_date DESC", (since,))
     rows = cur.fetchall()
     cols = [d[0] for d in cur.description]
     conn.close()
@@ -149,7 +149,7 @@ def _load_workouts(days: int = 90):
 
 def _load_medications():
     conn = get_conn()
-    cur = conn.execute("SELECT * FROM hw_medications WHERE active = 1 ORDER BY name")
+    cur = db_exec(conn, "SELECT * FROM hw_medications WHERE active = 1 ORDER BY name")
     rows = cur.fetchall()
     cols = [d[0] for d in cur.description]
     conn.close()
@@ -158,7 +158,7 @@ def _load_medications():
 
 def _load_doctor_visits():
     conn = get_conn()
-    cur = conn.execute("SELECT * FROM hw_doctor_visits ORDER BY visit_date DESC")
+    cur = db_exec(conn, "SELECT * FROM hw_doctor_visits ORDER BY visit_date DESC")
     rows = cur.fetchall()
     cols = [d[0] for d in cur.description]
     conn.close()
@@ -167,7 +167,7 @@ def _load_doctor_visits():
 
 def _load_vaccines():
     conn = get_conn()
-    cur = conn.execute("SELECT * FROM hw_vaccines ORDER BY date_given DESC")
+    cur = db_exec(conn, "SELECT * FROM hw_vaccines ORDER BY date_given DESC")
     rows = cur.fetchall()
     cols = [d[0] for d in cur.description]
     conn.close()
@@ -176,7 +176,7 @@ def _load_vaccines():
 
 def _load_goals():
     conn = get_conn()
-    cur = conn.execute("SELECT * FROM hw_health_goals ORDER BY completed, target_date")
+    cur = db_exec(conn, "SELECT * FROM hw_health_goals ORDER BY completed, target_date")
     rows = cur.fetchall()
     cols = [d[0] for d in cur.description]
     conn.close()
@@ -186,7 +186,7 @@ def _load_goals():
 def _log_mood(log_date, mood, energy, sleep_hours, notes, meds_taken):
     conn = get_conn()
     ph = "%s" if USE_POSTGRES else "?"
-    conn.execute(
+    db_exec(conn, 
         f"INSERT INTO hw_mood_logs (log_date, mood, energy, sleep_hours, notes, medications_taken) VALUES ({ph},{ph},{ph},{ph},{ph},{ph})",
         (log_date, mood, energy, sleep_hours, notes, meds_taken)
     )
@@ -197,7 +197,7 @@ def _log_mood(log_date, mood, energy, sleep_hours, notes, meds_taken):
 def _log_workout(workout_date, wtype, duration, exercises, notes, calories):
     conn = get_conn()
     ph = "%s" if USE_POSTGRES else "?"
-    conn.execute(
+    db_exec(conn, 
         f"INSERT INTO hw_workouts (workout_date, type, duration_min, exercises, notes, calories_burned) VALUES ({ph},{ph},{ph},{ph},{ph},{ph})",
         (workout_date, wtype, duration, exercises, notes, calories)
     )
@@ -208,7 +208,7 @@ def _log_workout(workout_date, wtype, duration, exercises, notes, calories):
 def _add_medication(name, dosage, frequency, start_date, refill_date, notes):
     conn = get_conn()
     ph = "%s" if USE_POSTGRES else "?"
-    conn.execute(
+    db_exec(conn, 
         f"INSERT INTO hw_medications (name, dosage, frequency, start_date, refill_date, notes) VALUES ({ph},{ph},{ph},{ph},{ph},{ph})",
         (name, dosage, frequency, start_date, refill_date, notes)
     )
@@ -219,7 +219,7 @@ def _add_medication(name, dosage, frequency, start_date, refill_date, notes):
 def _deactivate_medication(med_id):
     conn = get_conn()
     ph = "%s" if USE_POSTGRES else "?"
-    conn.execute(f"UPDATE hw_medications SET active = 0 WHERE id = {ph}", (med_id,))
+    db_exec(conn, f"UPDATE hw_medications SET active = 0 WHERE id = {ph}", (med_id,))
     conn.commit()
     conn.close()
 
@@ -227,7 +227,7 @@ def _deactivate_medication(med_id):
 def _add_doctor_visit(visit_date, doctor_type, doctor_name, notes, next_visit):
     conn = get_conn()
     ph = "%s" if USE_POSTGRES else "?"
-    conn.execute(
+    db_exec(conn, 
         f"INSERT INTO hw_doctor_visits (visit_date, doctor_type, doctor_name, notes, next_visit) VALUES ({ph},{ph},{ph},{ph},{ph})",
         (visit_date, doctor_type, doctor_name, notes, next_visit)
     )
@@ -238,7 +238,7 @@ def _add_doctor_visit(visit_date, doctor_type, doctor_name, notes, next_visit):
 def _add_vaccine(vaccine, date_given, next_due, notes):
     conn = get_conn()
     ph = "%s" if USE_POSTGRES else "?"
-    conn.execute(
+    db_exec(conn, 
         f"INSERT INTO hw_vaccines (vaccine, date_given, next_due, notes) VALUES ({ph},{ph},{ph},{ph})",
         (vaccine, date_given, next_due, notes)
     )
@@ -249,7 +249,7 @@ def _add_vaccine(vaccine, date_given, next_due, notes):
 def _add_goal(goal, target_date, progress):
     conn = get_conn()
     ph = "%s" if USE_POSTGRES else "?"
-    conn.execute(
+    db_exec(conn, 
         f"INSERT INTO hw_health_goals (goal, target_date, progress) VALUES ({ph},{ph},{ph})",
         (goal, target_date, progress)
     )
@@ -260,7 +260,7 @@ def _add_goal(goal, target_date, progress):
 def _complete_goal(goal_id):
     conn = get_conn()
     ph = "%s" if USE_POSTGRES else "?"
-    conn.execute(f"UPDATE hw_health_goals SET completed = 1 WHERE id = {ph}", (goal_id,))
+    db_exec(conn, f"UPDATE hw_health_goals SET completed = 1 WHERE id = {ph}", (goal_id,))
     conn.commit()
     conn.close()
 
