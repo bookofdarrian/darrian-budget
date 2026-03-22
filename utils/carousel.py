@@ -65,9 +65,16 @@ def _get_local_carousel_photos(category: str) -> list[tuple[str, str, str]]:
                     label = f.stem.replace("_", " ").replace("-", " ").title()
                     results.append((uri, label, ""))
 
-    # 2. Seed fallback for headshot / lifestyle (always show real photos)
-    if not results and category in ("headshot", "lifestyle"):
+    # 2. Seed fallback for ALL categories — always show real photos, never an empty carousel
+    if not results:
         seeds = [
+            ("static/photos/carousel/headshot/darrian_headshot.png",
+             "Darrian Belcher", "Founder · Builder · ATL"),
+            ("static/photos/carousel/headshot/darrian_professional.jpg",
+             "Darrian Belcher", "Technical Project Analyst @ Visa"),
+            ("static/photos/carousel/lifestyle/darrian_lifestyle.jpg",
+             "Darrian Belcher", "Builder · Atlanta GA"),
+            # root-level fallbacks
             ("static/photos/darrian_headshot.png",
              "Darrian Belcher", "Founder · Builder · ATL"),
             ("static/photos/darrian_professional.jpg",
@@ -77,6 +84,8 @@ def _get_local_carousel_photos(category: str) -> list[tuple[str, str, str]]:
             uri = _load_photo_b64(path)
             if uri:
                 results.append((uri, label, sub))
+                if len(results) >= 2:  # 2 fallback photos is enough
+                    break
 
     return results
 
