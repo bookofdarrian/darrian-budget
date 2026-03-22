@@ -269,6 +269,124 @@ grep "execute as db_exec" pages/NEW_PAGE.py  # should show the import line
 
 ---
 
+---
+
+## 🔴 BUG #8 — CC Landing Page Hero Text Invisible (`-webkit-text-fill-color` CSS Conflict)
+
+### Status: FIXED (2026-03-22) — collegeconfused.org landing page
+### Files Fixed: `/opt/college-confused/app.py`, `/opt/college-confused/cc_global_css.py`
+
+### The Bug
+The entire hero section on collegeconfused.org was invisible:
+- `.cc-eyebrow` (eyebrow badge) — invisible
+- `.cc-h1` (headline "Stop Being Confused") — invisible
+- `.cc-hero-sub` (subtitle paragraph) — invisible
+
+### Root Cause — Two Layers
+
+**Layer 1 — Global CSS aggressive override (`cc_global_css.py`)**
+```css
+/* ❌ THIS WAS THE OLD RULE — REMOVED */
+h1, h2, h3, h4, h5, h6, p, li, span, div, label,
+.stMarkdown, .stText, [class*="css"] { color: #f0f0ff !important; }
+```
+Setting `color: #f0f0ff` on `div` and `span` in global CSS doesn't make things visible when
+`-webkit-text-fill-color` is also set — because in CSS/WebKit, `-webkit-text-fill-color`
+**overrides `color`** entirely. So `color: white` is meaningless if `text-fill-color: transparent`.
+
+**Layer 2 — `inject_cc_css()` in `utils/auth.py` sets all h1 transparent**
+```css
+/* This runs first, before any page CSS */
+h1 {
+  background: linear-gradient(90deg, var(--cc-primary), var(--cc-coral)) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;  ← makes ALL h1 invisible
+  background-clip: text !important;
+}
+.cc-hero h1 { /* same — transparent fill for gradient */ }
+```
+This is correct for CC dashboard pages where h1 IS a gradient. But on the public landing page,
+`.cc-h1` sets `color: var(--text-main)` in the master CSS — however, `color` doesn't override
+`-webkit-text-fill-color`. The text stayed transparent.
+
+### Why `cc_global_css.py` Fix Alone Wasn't Enough
+`cc_global_css.py` is only imported by sub-pages via their `inject_cc_css()` path.
+The landing `app.py` does NOT import `cc_global_css.py` — only `inject_cc_css()` from `utils/auth.py`.
+So the `cc_global_css.py` fix only helps the dashboard pages, not the landing page.
+
+### The Full Fix
+
+**Fix 1 — `cc_global_css.py`: Remove aggressive universal color rule**
+```css
+/* ❌ REMOVED: */
+h1, h2, h3, h4, h5, h6, p, li, span, div, label,
+.stMarkdown, .stText, [class*="css"] { color: #f0f0ff !important; }
+
+/* ✅ REPLACED WITH: target only Streamlit elements, add explicit .cc-* overrides */
+.stMarkdown > div, .stText, [data-testid="stMarkdownContainer"] { color: #f0f0ff; }
+.cc-eyebrow { color: #C4B8FF !important; -webkit-text-fill-color: #C4B8FF !important; ... }
+.cc-h1 { color: #F2F0FF !important; -webkit-text-fill-color: #F2F0FF !important; ... }
+.cc-hero-sub { color: #8A84B0 !important; -webkit-text-fill-color: #8A84B0 !important; ... }
+```
+
+**Fix 2 — `app.py` master CSS: Add `-webkit-text-fill-color` to all hero classes**
+```css
+/* ✅ Added to each hero class in the inline master CSS: */
+.cc-eyebrow {
+  color: var(--violet-light);
+  -webkit-text-fill-color: #C4B8FF !important;  /* ← added */
+  ...
+}
+.cc-h1 {
+  color: var(--text-main);
+  -webkit-text-fill-color: #F2F0FF !important;  /* ← added */
+  ...
+}
+.cc-hero-sub {
+  color: var(--text-muted);
+  -webkit-text-fill-color: #8A84B0 !important;  /* ← added */
+  ...
+}
+/* .cc-h1 span STAYS transparent for gradient — intentional */
+.cc-h1 span {
+  background: var(--grad-violet);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;  /* ← keep for gradient */
+}
+```
+
+### The CSS Rule You Must Know
+> **`-webkit-text-fill-color` OVERRIDES `color` in WebKit/Blink browsers.**
+> Setting `color: white !important` does NOTHING if `-webkit-text-fill-color: transparent` is active.
+> You MUST explicitly set `-webkit-text-fill-color: <visible-color>` to make text visible.
+
+### When This Happens
+Any time you have:
+1. A global theme CSS that sets `-webkit-text-fill-color` on broad selectors (e.g., `h1`, `p`, `span`)
+2. A page-specific CSS that sets `color` on a custom class
+3. The global rule runs first → page rule overrides `color` but NOT `text-fill-color`
+→ Text is invisible
+
+### Detection
+```bash
+# Find pages that set color but not -webkit-text-fill-color on the same selector
+grep -n "color: var(" /opt/college-confused/app.py | head -20
+# Then check if inject_cc_css() sets -webkit-text-fill-color on those same element types
+grep -n "webkit-text-fill-color" /opt/college-confused/utils/auth.py
+```
+
+### Prevention Rule
+**When writing custom `.cc-*` or `.pss-*` CSS classes for elements that `inject_cc_css()`
+touches (h1, h2, p, span), ALWAYS set both:**
+```css
+.your-class {
+  color: #FFFFFF;
+  -webkit-text-fill-color: #FFFFFF !important;  /* required — overrides global theme */
+}
+```
+
+---
+
 ## 🔍 FULL CODEBASE SCAN COMMANDS
 
 ```bash
