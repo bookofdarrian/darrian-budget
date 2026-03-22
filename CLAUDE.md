@@ -237,12 +237,16 @@ _ensure_tables()
 # Sidebar
 render_sidebar_brand()
 st.sidebar.markdown("---")
-st.sidebar.page_link("app.py",                          label="Overview",          icon="📊")
-st.sidebar.page_link("pages/22_todo.py",                label="✅ Todo",           icon="✅")
-st.sidebar.page_link("pages/24_creator_companion.py",   label="🎬 Creator",        icon="🎬")
-st.sidebar.page_link("pages/25_notes.py",               label="📝 Notes",          icon="📝")
-st.sidebar.page_link("pages/26_media_library.py",       label="🎵 Media Library",  icon="🎵")
-st.sidebar.page_link("pages/17_personal_assistant.py",  label="Personal Assistant",icon="🤖")
+# ⚠️ CRITICAL: Do NOT put emojis in label= when icon= is also set.
+# Streamlit renders icon= as the left icon AND also renders label= text.
+# Emoji in both = doubled icons on every page. Use icon= only for the emoji.
+st.sidebar.page_link("app.py",                          label="Overview",           icon="📊")
+st.sidebar.page_link("pages/22_todo.py",                label="Todo",               icon="✅")
+st.sidebar.page_link("pages/24_creator_companion.py",   label="Creator",            icon="🎬")
+st.sidebar.page_link("pages/25_notes.py",               label="Notes",              icon="📝")
+st.sidebar.page_link("pages/26_media_library.py",       label="Media Library",      icon="🎵")
+st.sidebar.page_link("pages/17_personal_assistant.py",  label="Personal Assistant", icon="🤖")
+st.sidebar.page_link("pages/147_proactive_ai_engine.py",label="Proactive AI",       icon="🧠")
 render_sidebar_user_widget()
 
 # Content
