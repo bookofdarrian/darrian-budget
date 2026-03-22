@@ -956,31 +956,31 @@ if not user:
     </section>
     """, unsafe_allow_html=True)
 
-    # ── TESTIMONIALS ──────────────────────────────────────────────────────────
+    # ── FOUNDER'S NOTE ─────────────────────────────────────────────────────
     st.markdown("""
-    <section class="cc-section" id="testimonials" aria-label="Student success stories">
-      <div class="cc-eyebrow-label">Success Stories</div>
-      <h2 class="cc-h2">Students Who Got In</h2>
-      <p class="cc-section-sub">Real students who used College Confused to navigate their application journey — and got accepted.</p>
+    <section class="cc-section" id="founder" aria-label="From the founder">
+      <div class="cc-eyebrow-label">From the Founder</div>
+      <h2 class="cc-h2">Built From the Inside</h2>
+      <p class="cc-section-sub">No paid counselors. No family connections. Just a first-gen student who figured it out — and built the tool he wished he had.</p>
     </section>
     """, unsafe_allow_html=True)
 
-    t1, t2, t3 = st.columns(3, gap="medium")
-    testimonials = [
-        ("★★★★★", "\"I was so lost with the Common App until I found College Confused. The timeline feature alone saved me from missing 3 deadlines. The AI essay station helped me find my voice — my counselor said it was the best draft she'd read all year.\"", "Aaliyah T.", "🎉 Accepted to Georgia Tech — Computer Science"),
-        ("★★★★★", "\"Found $12,000 in scholarships I never would have found on my own. The scholarship tracker made it actually manageable to apply to 8 of them. As a first-gen student I had no idea where to even start — this changed everything.\"", "Priya K.", "🎉 Accepted to University of Florida — Pre-Med"),
-        ("★★★★★", "\"The AI essay station helped me find my story. I went through 6 drafts in one night. My essay went from generic to genuinely me. I got into my top choice school and my scholarship essay landed me $15K.\"", "Marcus J.", "🎉 Accepted to Howard University — Business"),
-    ]
-    for col, (stars, quote, author, result) in zip([t1, t2, t3], testimonials):
-        with col:
-            st.markdown(f"""
-            <article class="cc-testimonial-card" itemscope itemtype="https://schema.org/Review">
-              <div class="cc-stars" aria-label="5 out of 5 stars">{stars}</div>
-              <p class="cc-quote-text" itemprop="reviewBody">{quote}</p>
-              <div class="cc-quote-author" itemprop="author">{author}</div>
-              <div class="cc-quote-result">{result}</div>
-            </article>
-            """, unsafe_allow_html=True)
+    _fc1, _fc2 = st.columns([2, 3], gap="large")
+    with _fc1:
+        st.markdown("""
+        <div style="display:flex;justify-content:center;align-items:center;padding:20px 0;">
+          <div style="width:220px;height:220px;border-radius:50%;background:linear-gradient(135deg,#9B8EFF 0%,#6C5CE7 100%);display:flex;align-items:center;justify-content:center;font-size:5rem;box-shadow:0 8px 32px rgba(155,142,255,0.3);">👤</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with _fc2:
+        st.markdown("""
+        <div style="padding:20px 0;">
+          <div style="font-size:1.3rem;font-weight:700;color:#F2F0FF;margin-bottom:4px;">Darrian Belcher</div>
+          <div style="font-size:0.85rem;color:#9B8EFF;margin-bottom:20px;font-weight:500;">Founder, College Confused &nbsp;&middot;&nbsp; Software Engineer @ Visa &nbsp;&middot;&nbsp; Atlanta, GA</div>
+          <p style="color:#8A84B0;line-height:1.8;font-size:1.05rem;">"I built College Confused because I was one of those confused students. No one in my family had navigated a four-year university before me. I figured it out — and then I built the tool that would have saved me months of stress and thousands in missed scholarships. Every student deserves this guidance, not just the ones whose parents can afford a $400/hour counselor."</p>
+          <div style="margin-top:16px;font-size:0.8rem;color:#6B6590;font-style:italic;">Testimonials from real users coming soon — be the first story.</div>
+        </div>
+        """, unsafe_allow_html=True)
 
     # ── MISSION ───────────────────────────────────────────────────────────────
     st.markdown("""
