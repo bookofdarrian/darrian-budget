@@ -341,7 +341,7 @@ sign to gently encourage rest and possibly reach out to his doctor.
 **Current medications:**
 - **Atomoxetine (Strattera)** — for ADHD focus
 - **Quetiapine (Seroquel)** — for mood stability
-- **Escitalopram (Lexapro)** — for anxiety
+- **Mirtazapine 15mg** — for sleep and mood support
 
 **What helps most:**
 - Consistent sleep schedule
