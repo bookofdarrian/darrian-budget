@@ -995,9 +995,20 @@ st.markdown("""
 # ═══════════════════════════════════════════════════════════════════════════════
 # HERO
 # ═══════════════════════════════════════════════════════════════════════════════
-st.markdown("""
+# ── Pre-compute avatar HTML (safe even if headshot missing) ──────────────────
+_AVATAR_HTML = (
+    f'<img src="{_HEADSHOT}" alt="Darrian Belcher" '
+    'style="width:42px;height:42px;border-radius:50%;object-fit:cover;'
+    'border:2px solid rgba(255,140,66,0.5);flex-shrink:0;'
+    'box-shadow:0 0 12px rgba(255,140,66,0.35);" />'
+) if _HEADSHOT else ""
+
+st.markdown(f"""
 <div class="hero" role="banner">
-  <div class="hero-eyebrow">🚀 Built by a TPM at Visa · 73+ Finance Tools · Self-Hosted &amp; Private</div>
+  <div class="hero-eyebrow" style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;">
+    {_AVATAR_HTML}
+    <span>🚀 Built by a TPM at Visa · 73+ Finance Tools · Self-Hosted &amp; Private</span>
+  </div>
   <h1 class="hero-h1">
     The <span>Free AI Personal Finance App</span><br>Built for Real Life
   </h1>
