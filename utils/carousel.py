@@ -520,6 +520,14 @@ def _build_immich_cards_for_category(
             caption = photo.get("caption", "")
             cards += _build_card(emoji, alt, caption, bg_f, bg_t, accent, photo_src=data_uri)
 
+        # If Immich returned photo records but ALL thumbnails failed (all None),
+        # we get emoji cards — fall back to local static photos instead.
+        if cards and "url(" not in cards:
+            local = _build_local_photo_cards(category, accent)
+            if local:
+                _CAROUSEL_HTML_CACHE[cache_key] = (local, _time.monotonic())
+                return local
+
         # Store in process cache (even an empty string, so we don't retry immediately)
         _CAROUSEL_HTML_CACHE[cache_key] = (cards, _time.monotonic())
         return cards
