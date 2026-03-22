@@ -1202,6 +1202,8 @@ def render_sidebar_nav():
         st.sidebar.page_link("pages/25_notes.py",               label="📝 Notes")
         st.sidebar.page_link("pages/24_creator_companion.py",   label="🎬 Creator Companion")
         st.sidebar.page_link("pages/17_personal_assistant.py",  label="🤖 AI Assistant")
+        st.sidebar.page_link("pages/144_holistic_health_dashboard.py", label="🌿 Health Dashboard")
+        st.sidebar.page_link("pages/145_family_health_portal.py",      label="💚 Family Health Portal")
     else:
         # ── Upgrade prompt for free users ─────────────────────────────────────
         st.sidebar.markdown("---")
