@@ -976,7 +976,7 @@ if not user:
         st.markdown("""
         <div style="padding:20px 0;">
           <div style="font-size:1.3rem;font-weight:700;color:#F2F0FF;margin-bottom:4px;">Darrian Belcher</div>
-          <div style="font-size:0.85rem;color:#9B8EFF;margin-bottom:20px;font-weight:500;">Founder, College Confused &nbsp;&middot;&nbsp; Software Engineer @ Visa &nbsp;&middot;&nbsp; Atlanta, GA</div>
+          <div style="font-size:0.85rem;color:#9B8EFF;margin-bottom:20px;font-weight:500;">Founder, College Confused &nbsp;&middot;&nbsp; Associate Technical Project Analyst @ Visa &nbsp;&middot;&nbsp; Atlanta, GA</div>
           <p style="color:#8A84B0;line-height:1.8;font-size:1.05rem;">"I built College Confused because I was one of those confused students. No one in my family had navigated a four-year university before me. I figured it out — and then I built the tool that would have saved me months of stress and thousands in missed scholarships. Every student deserves this guidance, not just the ones whose parents can afford a $400/hour counselor."</p>
           <div style="margin-top:16px;font-size:0.8rem;color:#6B6590;font-style:italic;">Testimonials from real users coming soon — be the first story.</div>
         </div>

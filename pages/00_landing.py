@@ -127,7 +127,7 @@ st.markdown("""
       "author": {
         "@type": "Person",
         "name": "Darrian Belcher",
-        "jobTitle": "Technical Project Analyst",
+        "jobTitle": "Associate Technical Project Analyst",
         "worksFor": { "@type": "Organization", "name": "Visa" },
         "url": "https://www.linkedin.com/in/darrian-belcher/"
       },
@@ -1216,7 +1216,7 @@ st.markdown(f"""
       </div>
       <div>
         <div class="builder-name">Darrian Belcher</div>
-        <div class="builder-role">Technical Project Analyst @ Visa · Atlanta, GA</div>
+        <div class="builder-role">Associate Technical Project Analyst @ Visa · Atlanta, GA</div>
       </div>
     </div>
     <div class="builder-quote">
