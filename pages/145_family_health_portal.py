@@ -44,7 +44,8 @@ DEFAULT_PIN = "2025"  # Family can change this in settings
 # ── Tables ─────────────────────────────────────────────────────────────────────
 def _ensure_tables():
     conn = get_conn()
-    conn.execute(f"""
+    cur = conn.cursor()
+    cur.execute(f"""
         CREATE TABLE IF NOT EXISTS hh_daily_checkin (
             id                {AUTO},
             user_id           INTEGER NOT NULL DEFAULT 1,
@@ -62,6 +63,7 @@ def _ensure_tables():
         )
     """)
     conn.commit()
+    cur.close()
     conn.close()
 
 _ensure_tables()
