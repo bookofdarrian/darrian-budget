@@ -74,6 +74,8 @@ def _get_local_carousel_photos(category: str) -> list[tuple[str, str, str]]:
              "Darrian Belcher", "Associate Technical Project Analyst @ Visa"),
             ("static/photos/carousel/lifestyle/darrian_lifestyle.jpg",
              "Darrian Belcher", "Builder · Atlanta GA"),
+            ("static/photos/carousel/lifestyle/darrian_vibe.jpg",
+             "Darrian Belcher", "Vibing · Atlanta GA"),
             # root-level fallbacks
             ("static/photos/darrian_headshot.png",
              "Darrian Belcher", "Founder · Builder · ATL"),
