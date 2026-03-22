@@ -140,7 +140,11 @@ class TestCarouselModule(unittest.TestCase):
 
     def test_immich_helper_returns_empty_string_when_unavailable(self):
         """_build_immich_cards_for_category() returns '' when Immich is down."""
+        import utils.carousel as _car_mod
         from utils.carousel import _build_immich_cards_for_category
+        # Clear process-level cache so this test isn't served a stale hit
+        # from test_immich_cards_with_real_photos which runs before this.
+        _car_mod._CAROUSEL_HTML_CACHE.clear()
         with patch("utils.immich_photos.is_immich_available", return_value=False):
             result = _build_immich_cards_for_category("shoe", "soleops")
         self.assertEqual(result, "")
