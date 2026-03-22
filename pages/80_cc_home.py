@@ -2,6 +2,15 @@
 import streamlit as st
 from utils.db import get_conn, USE_POSTGRES, execute as db_exec, init_db, get_setting, set_setting
 from utils.auth import require_login, render_sidebar_brand, render_sidebar_user_widget, inject_cc_css
+from utils.carousel import (
+    CAROUSEL_BASE_CSS,
+    carousel_theme_css,
+    render_headshot_lifestyle_carousel,
+    render_nature_inspiration_carousel,
+    render_roots_cities_band,
+    _load_photo_b64,
+)
+
 st.set_page_config(
     page_title="College Confused — Simplify Your College Journey",
     page_icon="🎓",
@@ -11,6 +20,12 @@ st.set_page_config(
 init_db()
 inject_cc_css()
 require_login()
+
+# ── Load founder photos ───────────────────────────────────────────────────────
+_FOUNDER_HEADSHOT = (
+    _load_photo_b64("static/photos/carousel/headshot/darrian_headshot.png")
+    or _load_photo_b64("static/photos/darrian_headshot.png")
+)
 
 # ── DB Tables ─────────────────────────────────────────────────────────────────
 
@@ -444,9 +459,17 @@ with mission_col:
     """, unsafe_allow_html=True)
 
 with founder_col:
-    st.markdown("""
+    _photo_html = (
+        f'<img src="{_FOUNDER_HEADSHOT}" '
+        f'style="width:90px;height:90px;border-radius:50%;object-fit:cover;'
+        f'border:3px solid #6C63FF;margin-bottom:12px;display:block;" '
+        f'alt="Darrian Belcher - Founder of College Confused">'
+        if _FOUNDER_HEADSHOT else
+        '<span class="cc-card-icon">🧑🏾‍🎓</span>'
+    )
+    st.markdown(f"""
     <div class="cc-card" style="border-left: 4px solid #FF6B6B;">
-        <span class="cc-card-icon">🧑🏾‍🎓</span>
+        {_photo_html}
         <div class="cc-card-title">Meet the Founder</div>
         <div class="cc-card-body">
             <strong style="color:#fafafa;">Darrian Belcher</strong> is a GSST senior fellow and the founder of College Confused.<br><br>
@@ -458,6 +481,29 @@ with founder_col:
         </div>
     </div>
     """, unsafe_allow_html=True)
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FOUNDER PHOTO CAROUSEL — The person behind College Confused
+# ═══════════════════════════════════════════════════════════════════════════════
+
+st.markdown(CAROUSEL_BASE_CSS + carousel_theme_css("blue"), unsafe_allow_html=True)
+st.markdown(f"""
+<div class="carousel-section">
+  <div class="carousel-section-header">
+    <span class="carousel-eyebrow" style="color:#6C63FF;">The Builder Behind It All</span>
+    <h2 class="carousel-title">Built by Someone Who Lived It</h2>
+    <p class="carousel-subtitle">
+      From Hampton Roads to Atlanta — 25+ acceptances, 10+ full rides, $1.5M+ in scholarships.
+      Now giving everyone the same playbook. For free.
+    </p>
+  </div>
+  {render_headshot_lifestyle_carousel("blue")}
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown(render_roots_cities_band(accent="#6C63FF"), unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
