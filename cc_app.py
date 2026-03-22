@@ -808,8 +808,23 @@ if not user:
 
     # ── PRODUCT MOCKUP ────────────────────────────────────────────────────────
     _ml, _mc, _mr = st.columns([1, 4, 1])
+    import datetime as _dt
+    _demo_data = [
+        ("Aaliyah", "47 days until Common App ED deadline"),
+        ("Marcus", "Gates Scholarship essay due in 12 days"),
+        ("Priya", "3 schools added to your list this week"),
+        ("Jaylen", "FAFSA opens Oct 1 — you're on track"),
+        ("Sofia", "SAT prep: 82 practice questions completed"),
+        ("DeShawn", "Howard University app: 2 steps left"),
+        ("Amara", "Essay draft ready for review"),
+        ("Carlos", "Financial aid deadline: 30 days away"),
+        ("Kezia", "4 scholarships match your profile"),
+        ("Isaiah", "Spelman application: Essay complete ✓"),
+    ]
+    _di = int(_dt.datetime.now().minute / 6) % len(_demo_data)
+    _dn, _ds = _demo_data[_di]
     with _mc:
-        st.markdown("""
+        st.markdown(f"""
         <div class="cc-mockup-wrap">
           <div class="cc-mockup-browser">
             <div class="cc-mockup-bar">
@@ -817,7 +832,7 @@ if not user:
               <div class="cc-mockup-url">app.collegeconfused.org — Your Dashboard</div>
             </div>
             <div class="cc-mockup-screen">
-              <div class="cc-mock-greeting">👋 Welcome back, Aaliyah — 47 days until Common App ED deadline</div>
+              <div class="cc-mock-greeting">👋 Welcome back, {_dn} — {_ds}</div>
               <div class="cc-mock-stats-row">
                 <div class="cc-mock-stat">
                   <span class="cc-mock-stat-num">7</span>
