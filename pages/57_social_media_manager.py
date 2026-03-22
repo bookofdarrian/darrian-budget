@@ -326,7 +326,8 @@ m6.metric("Campaigns", len(campaigns))
 
 st.divider()
 
-tab_compose, tab_queue, tab_calendar, tab_analytics, tab_ai, tab_accounts, tab_campaigns, tab_hashtags = st.tabs([
+tab_launch, tab_compose, tab_queue, tab_calendar, tab_analytics, tab_ai, tab_accounts, tab_campaigns, tab_hashtags = st.tabs([
+    "🚀 Launch Pad",
     "✍️ Compose",
     "📋 Queue",
     "🗓️ Calendar",
@@ -336,6 +337,322 @@ tab_compose, tab_queue, tab_calendar, tab_analytics, tab_ai, tab_accounts, tab_c
     "🎯 Campaigns",
     "🏷️ Hashtags",
 ])
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TAB 0 — LAUNCH PAD  (beautiful one-click posting UI)
+# ══════════════════════════════════════════════════════════════════════════════
+with tab_launch:
+    # ── Inline CSS for post cards ─────────────────────────────────────────────
+    st.markdown("""
+    <style>
+    .lp-card {
+        background: #1a1a2e;
+        border-radius: 14px;
+        padding: 20px 22px 16px 22px;
+        margin-bottom: 4px;
+        position: relative;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+    }
+    .lp-card-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .lp-platform-dot {
+        width: 11px; height: 11px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+    .lp-title { font-size: 15px; font-weight: 700; color: #f0f0f0; margin: 0; }
+    .lp-meta  { font-size: 12px; color: #aaa; margin: 2px 0 0 0; }
+    .lp-time-badge {
+        display: inline-block;
+        background: rgba(255,165,0,0.18);
+        color: #ffa726;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: bold;
+        padding: 2px 8px;
+        margin-right: 6px;
+    }
+    .lp-status-posted { color: #4caf50; font-size: 11px; font-weight: bold; }
+    .lp-media-badge {
+        display: inline-block;
+        background: rgba(100,200,255,0.12);
+        color: #64c8ff;
+        border-radius: 6px;
+        font-size: 11px;
+        padding: 2px 8px;
+        margin-top: 6px;
+    }
+    .lp-notes-box {
+        background: rgba(255,167,38,0.08);
+        border-left: 3px solid #ffa726;
+        border-radius: 0 6px 6px 0;
+        padding: 7px 12px;
+        font-size: 12px;
+        color: #ccc;
+        margin-top: 10px;
+    }
+    .lp-divider { border: none; border-top: 1px solid #2a2a4a; margin: 20px 0; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # ── Campaign selector ─────────────────────────────────────────────────────
+    lp_all_campaigns = list(dict.fromkeys(
+        [p.get("campaign","") for p in all_posts if p.get("campaign","").strip()]
+    ))
+    lp_campaign_opts = ["🔴→✅ Comeback Campaign — March 22, 2026"] + [
+        c for c in lp_all_campaigns if c != "🔴→✅ Comeback Campaign — March 22, 2026"
+    ]
+    if not lp_campaign_opts:
+        lp_campaign_opts = ["(all posts)"]
+
+    lp_col1, lp_col2, lp_col3 = st.columns([3, 2, 2])
+    sel_campaign = lp_col1.selectbox(
+        "📋 Campaign",
+        lp_campaign_opts,
+        key="lp_campaign",
+    )
+    lp_status_filter = lp_col2.selectbox(
+        "Status",
+        ["draft", "ready", "all", "posted"],
+        key="lp_status",
+    )
+    lp_sort = lp_col3.selectbox("Sort", ["posting order", "newest first"], key="lp_sort")
+
+    # Load posts for this campaign
+    lp_posts = _load_posts(
+        status=None if lp_status_filter == "all" else lp_status_filter,
+        campaign=sel_campaign if sel_campaign != "(all posts)" else None,
+    )
+    if lp_sort == "newest first":
+        lp_posts = sorted(lp_posts, key=lambda x: x.get("created_at",""), reverse=True)
+
+    not_posted = [p for p in lp_posts if p.get("status") != "posted"]
+    posted_done = [p for p in lp_posts if p.get("status") == "posted"]
+
+    # ── Header stats banner ───────────────────────────────────────────────────
+    st.markdown(
+        f"""
+        <div style="background:linear-gradient(90deg,#1a1a2e,#16213e);
+                    border:1px solid #2a2a4a; border-radius:12px;
+                    padding:16px 24px; margin-bottom:20px;
+                    display:flex; gap:40px; align-items:center">
+          <div>
+            <div style="color:#aaa;font-size:11px;text-transform:uppercase;letter-spacing:1px">Campaign</div>
+            <div style="font-weight:700;font-size:15px;color:#fff">{sel_campaign}</div>
+          </div>
+          <div>
+            <div style="color:#aaa;font-size:11px;text-transform:uppercase;letter-spacing:1px">To Post</div>
+            <div style="font-weight:700;font-size:22px;color:#ffa726">{len(not_posted)}</div>
+          </div>
+          <div>
+            <div style="color:#aaa;font-size:11px;text-transform:uppercase;letter-spacing:1px">Done</div>
+            <div style="font-weight:700;font-size:22px;color:#4caf50">{len(posted_done)} ✅</div>
+          </div>
+          <div>
+            <div style="color:#aaa;font-size:11px;text-transform:uppercase;letter-spacing:1px">Total</div>
+            <div style="font-weight:700;font-size:22px;color:#64c8ff">{len(lp_posts)}</div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if not lp_posts:
+        st.info("No posts found. Run `python3 seed_comeback_posts.py` to load the comeback campaign posts.")
+    else:
+        # Posting time guide banner (only for comeback campaign)
+        if "Comeback" in sel_campaign:
+            st.markdown("""
+            <div style="background:#0d1b2a;border:1px solid #1565c0;border-radius:10px;padding:14px 20px;margin-bottom:18px">
+            <div style="color:#64b5f6;font-weight:bold;font-size:13px;margin-bottom:8px">📅 TODAY'S POSTING SCHEDULE — Sunday March 22, 2026</div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:#ccc">
+              <span style="background:#1565c020;padding:3px 10px;border-radius:6px;border:1px solid #1565c0">🕘 9am → Twitter/X thread</span>
+              <span style="background:#1565c020;padding:3px 10px;border-radius:6px;border:1px solid #1565c0">🕙 10am → Instagram + TikTok</span>
+              <span style="background:#1565c020;padding:3px 10px;border-radius:6px;border:1px solid #1565c0">🕚 11am → LinkedIn</span>
+              <span style="background:#1565c020;padding:3px 10px;border-radius:6px;border:1px solid #1565c0">🕛 12pm → PSS Instagram</span>
+              <span style="background:#1565c020;padding:3px 10px;border-radius:6px;border:1px solid #1565c0">🕐 1pm → Facebook (both)</span>
+              <span style="background:#1565c020;padding:3px 10px;border-radius:6px;border:1px solid #1565c0">🕖 7pm → TikTok SoleOps</span>
+            </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # ── Post cards ────────────────────────────────────────────────────────
+        for idx, post in enumerate(lp_posts):
+            acc_ids = _parse_account_ids(post.get("account_ids", ""))
+            accs    = [account_map[int(aid)] for aid in acc_ids if int(aid) in account_map]
+            plats   = list(dict.fromkeys([a["platform"] for a in accs]))
+            status  = post.get("status", "draft")
+            is_done = status == "posted"
+
+            # Pick primary platform color for the card accent
+            primary_plat  = plats[0] if plats else "Instagram"
+            primary_color = PLATFORM_COLORS.get(primary_plat, "#607d8b")
+            primary_icon  = PLATFORM_ICONS.get(primary_plat, "📱")
+
+            # Status color
+            st_color = STATUS_COLORS.get(status, "#607d8b")
+
+            # Platform pills HTML
+            plat_pills_html = " ".join([
+                f'<span style="background:{PLATFORM_COLORS.get(p,"#607d8b")};color:#fff;'
+                f'padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;margin-right:3px">'
+                f'{PLATFORM_ICONS.get(p,"📱")} {p}</span>'
+                for p in plats
+            ])
+
+            # Card left border color based on primary platform
+            opacity = "55" if is_done else "ff"
+            card_style = (
+                f"background:#1a1a2e;border-radius:14px;padding:20px 22px 16px 22px;"
+                f"margin-bottom:4px;border-left:4px solid {primary_color}{opacity};"
+                f"box-shadow:0 2px 12px rgba(0,0,0,0.35);"
+                f"{'opacity:0.6;' if is_done else ''}"
+            )
+
+            st.markdown(f'<div style="{card_style}">', unsafe_allow_html=True)
+
+            # Card header row
+            hcol1, hcol2 = st.columns([7, 2])
+            with hcol1:
+                posted_check = " ✅ POSTED" if is_done else ""
+                st.markdown(
+                    f'<div style="font-size:15px;font-weight:700;color:#f0f0f0;margin-bottom:5px">'
+                    f'{idx + 1}. {post["title"]}'
+                    f'<span style="color:#4caf50;font-size:12px">{posted_check}</span></div>'
+                    f'<div>{plat_pills_html}'
+                    f' &nbsp;<span style="background:{st_color};color:#fff;padding:2px 8px;'
+                    f'border-radius:10px;font-size:11px;font-weight:bold">{status.upper()}</span>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+
+            with hcol2:
+                if not is_done:
+                    if st.button("✅ Mark Posted", key=f"lp_mark_{post['id']}", type="primary",
+                                  use_container_width=True):
+                        conn = get_conn()
+                        db_exec(conn,
+                            "UPDATE smm_posts SET status='posted', published_at=? WHERE id=?",
+                            (datetime.now().strftime("%Y-%m-%d %H:%M"), post["id"]))
+                        conn.commit(); conn.close()
+                        st.rerun()
+                else:
+                    pub = str(post.get("published_at",""))[:16] or "✅"
+                    st.markdown(f'<div style="color:#4caf50;font-size:12px;text-align:right;padding-top:6px">Posted {pub}</div>',
+                                unsafe_allow_html=True)
+
+            st.markdown('</div>', unsafe_allow_html=True)
+            st.divider()
+
+            # ── Caption area with big copy button ────────────────────────────
+            cap_col, act_col = st.columns([4, 1])
+            caption_full = post.get("caption","")
+            hashtags     = post.get("hashtags","")
+            # Show caption + hashtags combined for copy
+            copy_text = caption_full
+            if hashtags and hashtags not in caption_full:
+                copy_text = caption_full + "\n\n" + hashtags
+
+            with cap_col:
+                st.text_area(
+                    f"📋 Caption — select all (Ctrl+A / Cmd+A) → Copy",
+                    value=copy_text,
+                    height=160,
+                    key=f"lp_cap_{post['id']}",
+                    help="Click inside, press Cmd+A then Cmd+C to copy the full caption",
+                )
+
+            with act_col:
+                st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+                # Link button
+                if post.get("link"):
+                    st.markdown(
+                        f'<a href="{post["link"]}" target="_blank">'
+                        f'<button style="width:100%;background:#1565c0;color:#fff;border:none;'
+                        f'border-radius:8px;padding:8px;cursor:pointer;font-size:12px;margin-bottom:6px">'
+                        f'🔗 Open Link</button></a>',
+                        unsafe_allow_html=True,
+                    )
+                # Quick status toggle: ready ↔ draft
+                if status == "draft":
+                    if st.button("⬆️ Mark Ready", key=f"lp_ready_{post['id']}", use_container_width=True):
+                        conn = get_conn()
+                        db_exec(conn, "UPDATE smm_posts SET status='ready' WHERE id=?", (post["id"],))
+                        conn.commit(); conn.close()
+                        st.rerun()
+                elif status == "ready":
+                    if st.button("⬇️ Back to Draft", key=f"lp_draft_{post['id']}", use_container_width=True):
+                        conn = get_conn()
+                        db_exec(conn, "UPDATE smm_posts SET status='draft' WHERE id=?", (post["id"],))
+                        conn.commit(); conn.close()
+                        st.rerun()
+
+            # ── Media + Notes row ─────────────────────────────────────────────
+            media_notes_cols = st.columns([3, 4])
+            with media_notes_cols[0]:
+                if post.get("media_urls"):
+                    media_files = [m.strip() for m in post["media_urls"].split(",") if m.strip()]
+                    for mf in media_files:
+                        fname = mf.split("/")[-1]
+                        ext = fname.rsplit(".", 1)[-1].lower() if "." in fname else ""
+                        if ext in ("mp4", "mov", "avi", "webm"):
+                            icon_m = "🎬"
+                        elif ext in ("png", "jpg", "jpeg", "gif", "webp"):
+                            icon_m = "🖼️"
+                        else:
+                            icon_m = "📎"
+                        st.markdown(
+                            f'<div style="background:rgba(100,200,255,0.08);border:1px solid #1565c0;'
+                            f'border-radius:8px;padding:8px 12px;margin-top:4px;font-size:12px;color:#64c8ff">'
+                            f'{icon_m} <b>Attach:</b> {mf}</div>',
+                            unsafe_allow_html=True,
+                        )
+
+            with media_notes_cols[1]:
+                if post.get("notes"):
+                    st.markdown(
+                        f'<div style="background:rgba(255,167,38,0.07);border-left:3px solid #ffa726;'
+                        f'border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#ccc;margin-top:4px">'
+                        f'<span style="color:#ffa726;font-weight:bold">📌 POSTING NOTES: </span>'
+                        f'{post["notes"]}</div>',
+                        unsafe_allow_html=True,
+                    )
+
+            # Hashtags quick copy if separate
+            if hashtags and hashtags not in caption_full:
+                st.text_area(
+                    "🏷️ Hashtags (copy separately if needed)",
+                    value=hashtags,
+                    height=60,
+                    key=f"lp_ht_{post['id']}",
+                )
+
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.divider()
+
+    # ── Progress bar at bottom ────────────────────────────────────────────────
+    if lp_posts:
+        done_pct = int((len(posted_done) / len(lp_posts)) * 100)
+        st.markdown(
+            f"""
+            <div style="margin-top:10px">
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:#aaa;margin-bottom:4px">
+                <span>Campaign Progress</span>
+                <span>{len(posted_done)} / {len(lp_posts)} posted ({done_pct}%)</span>
+              </div>
+              <div style="background:#1a1a2e;border-radius:8px;height:10px;overflow:hidden">
+                <div style="background:linear-gradient(90deg,#4caf50,#00e676);width:{done_pct}%;height:100%;
+                            border-radius:8px;transition:width 0.5s ease"></div>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 1 — COMPOSE
