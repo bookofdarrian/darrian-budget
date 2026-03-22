@@ -1206,8 +1206,8 @@ st.markdown("""
 st.markdown(f"""
 <div class="section" aria-label="About the builder">
   <div class="section-eyebrow">The Builder</div>
-  <h2 class="section-h2">Built by Someone Who Actually Needed It</h2>
-  <p class="section-sub">Not a VC-backed startup. Not a growth-hacked SaaS. Just a builder who wanted better tools for his own money.</p>
+  <h2 class="section-h2">Built for the Community. By Someone From It.</h2>
+  <p class="section-sub">Not a VC-backed startup. Not a growth-hacked SaaS. A builder from Atlanta who believes financial tools should serve the people banks left behind.</p>
   <div class="builder-card">
     <div class="builder-header">
       <div class="builder-avatar" style="overflow:hidden;padding:0;background:none;">

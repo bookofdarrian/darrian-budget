@@ -9,6 +9,15 @@
 
 ---
 
+## 🌍 IDEOLOGY & VALUES
+
+**Community Sovereignty** — every tool, agent, and feature must empower communities
+excluded from wealth and power. See `COMMUNITY_SOVEREIGNTY.md` for the full framework.
+
+One-sentence filter: *"Does this empower communities or extract from them?"*
+
+---
+
 ## 🚨 CRITICAL ANTI-PATTERNS — Production Killers
 
 > See `BUGFIX_PATTERNS.md` for full details on each bug, root causes, and fixes.
