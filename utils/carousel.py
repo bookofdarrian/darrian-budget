@@ -21,6 +21,95 @@ Carousel types:
 
 from __future__ import annotations
 
+import base64 as _base64
+import os as _os
+from pathlib import Path as _Path
+
+# Repo root — works whether this file is imported from utils/ or pages/
+_REPO_ROOT: _Path = _Path(__file__).parent.parent
+
+# ─── LOCAL STATIC PHOTO HELPERS ──────────────────────────────────────────────
+
+def _load_photo_b64(rel_path: str) -> str:
+    """Load a local image file as a base64 data URI. Returns '' on any error."""
+    try:
+        full = _REPO_ROOT / rel_path
+        suffix = full.suffix.lower()
+        mime = "image/png" if suffix == ".png" else (
+               "image/gif" if suffix == ".gif" else
+               "image/webp" if suffix == ".webp" else "image/jpeg")
+        with open(full, "rb") as f:
+            data = _base64.b64encode(f.read()).decode()
+        return f"data:{mime};base64,{data}"
+    except Exception:
+        return ""
+
+
+def _get_local_carousel_photos(category: str) -> list[tuple[str, str, str]]:
+    """
+    Scan static/photos/carousel/{category}/ for .jpg/.jpeg/.png/.webp files.
+    Returns list of (data_uri, label, sublabel).
+    Also seeds headshot/lifestyle with the two root-level photos when the
+    category folder is empty so those carousels always have something real.
+    """
+    results: list[tuple[str, str, str]] = []
+
+    # 1. Scan dedicated carousel category subdirectory
+    cat_dir = _REPO_ROOT / "static" / "photos" / "carousel" / category
+    if cat_dir.exists():
+        for f in sorted(cat_dir.iterdir()):
+            if f.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"):
+                rel = str(f.relative_to(_REPO_ROOT))
+                uri = _load_photo_b64(rel)
+                if uri:
+                    label = f.stem.replace("_", " ").replace("-", " ").title()
+                    results.append((uri, label, ""))
+
+    # 2. Seed fallback for headshot / lifestyle (always show real photos)
+    if not results and category in ("headshot", "lifestyle"):
+        seeds = [
+            ("static/photos/darrian_headshot.png",
+             "Darrian Belcher", "Founder · Builder · ATL"),
+            ("static/photos/darrian_professional.jpg",
+             "Darrian Belcher", "Technical Project Analyst @ Visa"),
+        ]
+        for path, label, sub in seeds:
+            uri = _load_photo_b64(path)
+            if uri:
+                results.append((uri, label, sub))
+
+    return results
+
+
+def _build_local_photo_cards(category: str, accent: str = "#22D47E") -> str:
+    """
+    Build carousel cards from local static/photos/carousel/{category}/ images.
+    Returns empty string if no local photos are found for this category.
+    """
+    photos = _get_local_carousel_photos(category)
+    if not photos:
+        return ""
+    emoji = _CATEGORY_EMOJI_STUB.get(category, "📷")
+    bg_f, bg_t = _CATEGORY_BG_STUB.get(category, ("#050510", "#0a0a20"))
+    cards = ""
+    for uri, label, sub in photos:
+        cards += _build_card(emoji, label, sub, bg_f, bg_t, accent, photo_src=uri)
+    return cards
+
+
+# Stubs used before full _CATEGORY_EMOJI/_CATEGORY_BG are defined below
+_CATEGORY_EMOJI_STUB: dict[str, str] = {
+    "shoe": "👟", "fashion": "🧥", "nature": "🌅", "lifestyle": "💻", "headshot": "📸",
+}
+_CATEGORY_BG_STUB: dict[str, tuple[str, str]] = {
+    "shoe":      ("#050510", "#0a0a20"),
+    "fashion":   ("#050505", "#0f0f10"),
+    "nature":    ("#021a0a", "#053d1e"),
+    "lifestyle": ("#080510", "#14103d"),
+    "headshot":  ("#080510", "#14103d"),
+}
+
+
 # ─── PLACEHOLDER PHOTO CATALOG ────────────────────────────────────────────────
 # Each entry: (emoji, label, sublabel, accent_color_hex)
 # When real photos are uploaded to /static/photos/ replace src with <img> tags.
@@ -411,10 +500,10 @@ def _build_immich_cards_for_category(
             is_immich_available,
         )
         if not is_immich_available():
-            return ""
+            return _build_local_photo_cards(category, accent)
         photos = get_carousel_photos(category, site=site, limit=limit)
         if not photos:
-            return ""
+            return _build_local_photo_cards(category, accent)
 
         # Parallel-fetch all thumbnails (memory/DB cached after first fetch)
         asset_ids = [p.get("asset_id", "") for p in photos if p.get("asset_id")]
@@ -435,7 +524,8 @@ def _build_immich_cards_for_category(
         _CAROUSEL_HTML_CACHE[cache_key] = (cards, _time.monotonic())
         return cards
     except Exception:
-        return ""
+        # Immich import/call failed — fall back to local static photos
+        return _build_local_photo_cards(category, accent)
 
 
 # ─── PUBLIC RENDER FUNCTIONS ─────────────────────────────────────────────────
