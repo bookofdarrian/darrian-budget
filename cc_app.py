@@ -975,6 +975,8 @@ st.sidebar.page_link("pages/83_cc_essay_station.py",    label="✍️ Essay Stat
 st.sidebar.page_link("pages/84_cc_test_prep.py",        label="📚 SAT/ACT Prep",    icon="📚")
 st.sidebar.page_link("pages/87_cc_college_list.py",     label="🏫 College List",    icon="🏫")
 st.sidebar.page_link("pages/88_cc_fafsa_guide.py",      label="📋 FAFSA Guide",     icon="📋")
+st.sidebar.markdown("---")
+st.sidebar.page_link("pages/146_immich_photo_manager.py", label="Photo Library",    icon="📸")
 render_sidebar_user_widget()
 
 st.title("🎓 College Confused")

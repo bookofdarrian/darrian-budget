@@ -450,6 +450,78 @@ def _load_catalog_from_db(category: str) -> list[dict] | None:
         return None
 
 
+# ─── Thumbnail base64 cache ───────────────────────────────────────────────────
+
+_B64_CACHE_TTL = 86400  # 24 hours
+
+
+def get_thumbnail_data_uri(
+    asset_id: str,
+    size: str = "thumbnail",
+) -> str | None:
+    """
+    Fetch an Immich thumbnail and return it as a base64 data URI.
+    Cached in DB for 24 h so carousels load fast after first render.
+
+    Returns: "data:image/jpeg;base64,..." or None on any failure.
+    size: "thumbnail" (~128 px square) | "preview" (~1280 px, larger file)
+    """
+    if not asset_id or not has_api_key():
+        return None
+
+    cache_key = f"immich_b64_{size}_{asset_id}"
+    cached_raw = get_setting(cache_key)
+    if cached_raw:
+        try:
+            cached_data = json.loads(cached_raw)
+            if time.time() - cached_data.get("ts", 0) < _B64_CACHE_TTL:
+                return cached_data.get("uri")
+        except Exception:
+            pass
+
+    try:
+        import base64
+
+        url = thumbnail_url(asset_id, size)
+        r = requests.get(url, timeout=10)
+        if r.status_code == 200:
+            mime = r.headers.get("Content-Type", "image/jpeg").split(";")[0]
+            b64 = base64.b64encode(r.content).decode("utf-8")
+            data_uri = f"data:{mime};base64,{b64}"
+            # Store with timestamp for TTL enforcement
+            set_setting(cache_key, json.dumps({"uri": data_uri, "ts": time.time()}))
+            return data_uri
+    except Exception as e:
+        logger.error("Failed to fetch thumbnail %s (%s): %s", asset_id, size, e)
+    return None
+
+
+def get_thumbnail_data_uri_batch(
+    asset_ids: list[str],
+    size: str = "thumbnail",
+    max_workers: int = 4,
+) -> dict[str, str | None]:
+    """
+    Fetch multiple thumbnails concurrently. Returns {asset_id: data_uri | None}.
+    Used by carousel.py to pre-fetch all photos for a carousel in parallel.
+    """
+    import concurrent.futures
+
+    results: dict[str, str | None] = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool:
+        future_map = {
+            pool.submit(get_thumbnail_data_uri, aid, size): aid
+            for aid in asset_ids
+        }
+        for future in concurrent.futures.as_completed(future_map):
+            aid = future_map[future]
+            try:
+                results[aid] = future.result()
+            except Exception:
+                results[aid] = None
+    return results
+
+
 # ─── Main public API ──────────────────────────────────────────────────────────
 
 
