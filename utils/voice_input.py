@@ -31,6 +31,26 @@ VENV_PYTHON = os.path.join(
 )
 
 
+def _read_audio_bytes(audio_bytes) -> bytes:
+    """
+    Safely extract raw bytes from whatever st.audio_input() returns.
+    Handles:
+      - bytes / bytearray         (newer Streamlit returns raw bytes)
+      - UploadedFile / BytesIO    (older Streamlit returns file-like)
+    """
+    if isinstance(audio_bytes, (bytes, bytearray)):
+        return bytes(audio_bytes)
+    # file-like object — seek to start just in case the pointer moved
+    if hasattr(audio_bytes, "seek"):
+        audio_bytes.seek(0)
+    if hasattr(audio_bytes, "getvalue"):
+        return audio_bytes.getvalue()
+    if hasattr(audio_bytes, "read"):
+        return audio_bytes.read()
+    # last resort
+    return bytes(audio_bytes)
+
+
 def render_voice_input(
     label: str = "🎤 Click to record, click again to stop",
     key: str = "voice_input",
@@ -52,9 +72,14 @@ def render_voice_input(
     if audio_bytes is None:
         return ""
 
+    raw = _read_audio_bytes(audio_bytes)
+    if not raw:
+        st.warning("⚠️ No audio data received — please try recording again.")
+        return ""
+
     with st.spinner("🎙️ Transcribing your audio..."):
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav", dir="/tmp") as f:
-            f.write(audio_bytes.read())
+            f.write(raw)
             tmp_path = f.name
         try:
             text = _transcribe_via_subprocess(tmp_path)
@@ -99,12 +124,25 @@ def _transcribe_via_subprocess(audio_path: str) -> str:
                 capture_output=True,
                 timeout=120,
             )
+            # Check for subprocess errors and surface them
+            if result.returncode != 0:
+                stderr = result.stderr.decode("utf-8", errors="replace").strip()
+                stdout = result.stdout.decode("utf-8", errors="replace").strip()
+                raise Exception(
+                    f"Whisper exited with code {result.returncode}. "
+                    f"stderr: {stderr[:400] or '(none)'} | stdout: {stdout[:200] or '(none)'}"
+                )
             if os.path.exists(txt_file):
                 text = open(txt_file).read().strip()
-                os.remove(txt_file)
+                try:
+                    os.remove(txt_file)
+                except OSError:
+                    pass
                 return text
+            # whisper ran OK but no txt file — empty audio
+            return ""
         except subprocess.TimeoutExpired:
-            raise Exception("Transcription timed out — audio may be too long")
+            raise Exception("Transcription timed out — audio may be too long (max ~2 min)")
         except FileNotFoundError:
             pass  # fall through to Python import
 
