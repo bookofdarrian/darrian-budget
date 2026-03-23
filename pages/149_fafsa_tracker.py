@@ -166,7 +166,7 @@ def _get_user_id():
 def _load_profile():
     conn = get_conn()
     uid = _get_user_id()
-    cur = conn.execute("SELECT * FROM fafsa_profile WHERE user_id = ?", (uid,))
+    cur = db_exec(conn, "SELECT * FROM fafsa_profile WHERE user_id = ?", (uid,))
     row = cur.fetchone()
     conn.close()
     return dict(row) if row else {}
@@ -199,7 +199,7 @@ def _save_profile(income, household, dependents, state, filed, filed_date, efc, 
 def _load_schools():
     conn = get_conn()
     uid = _get_user_id()
-    cur = conn.execute(
+    cur = db_exec(conn, 
         "SELECT * FROM fafsa_schools WHERE user_id = ? ORDER BY school_name", (uid,))
     rows = [dict(r) for r in cur.fetchall()]
     conn.close()
@@ -227,7 +227,7 @@ def _delete_school(school_id):
 def _load_awards():
     conn = get_conn()
     uid = _get_user_id()
-    cur = conn.execute(
+    cur = db_exec(conn, 
         "SELECT * FROM fafsa_aid_awards WHERE user_id = ? ORDER BY school_name, aid_type", (uid,))
     rows = [dict(r) for r in cur.fetchall()]
     conn.close()

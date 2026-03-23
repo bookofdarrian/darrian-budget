@@ -181,21 +181,63 @@ def _base_filter(width: int, height: int) -> str:
     )
 
 
+# ─── Font path detection ──────────────────────────────────────────────────────
+def _find_font() -> str:
+    """Find a system font that ffmpeg drawtext can use on macOS/Linux."""
+    candidates = [
+        # macOS
+        "/Library/Fonts/Arial.ttf",
+        "/System/Library/Fonts/Helvetica.ttc",
+        "/Library/Fonts/Helvetica.dfont",
+        "/System/Library/Fonts/SFNSDisplay.otf",
+        "/Library/Fonts/Georgia.ttf",
+        # Linux / CT100 prod server
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
+        "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
+    ]
+    for path in candidates:
+        if os.path.exists(path):
+            return path
+    return ""
+
+
 def _watermark_filter(width: int, height: int, text: str, size: int) -> str:
-    """Filter for mixing audio and scaling video.
-    Note: drawtext with alpha (@) is not supported in ffmpeg 4.3.x on macOS
-    without a fontfile= path. We use clean scale+pad instead; branding is
-    embedded in -metadata tags and the LinkedIn caption/hashtags."""
-    return _base_filter(width, height)
+    """Return filtergraph with watermark drawtext if a font is available,
+    otherwise fall back to clean scale+pad (no text overlay)."""
+    font = _find_font()
+    base = _base_filter(width, height)
+    if not font:
+        # No usable font found — skip watermark, still delivers clean video
+        return base
+
+    # Watermark: bottom-centre, semi-transparent white, small
+    watermark = (
+        f"[video_out]drawtext="
+        f"fontfile='{font}':"
+        f"text='{text}':"
+        f"fontcolor=white@0.55:"
+        f"fontsize={size}:"
+        f"x=(w-text_w)/2:"
+        f"y=h-th-24:"
+        f"box=1:boxcolor=black@0.30:boxborderw=6"
+        f"[video_out]"
+    )
+    return base + ";" + watermark
 
 
 def encode_video(
     output: Path, width: int, height: int, label: str,
     no_music: bool = False
 ) -> bool:
-    """Encode a single LinkedIn video format."""
+    """Encode a single LinkedIn video format.
+    Uses atomic write: renders to .tmp file first, then renames on success.
+    This prevents a half-written file from being mistaken for a valid output.
+    """
     music_input = "" if no_music else f'-i "{MUSIC_LOOPED}"'
     filter_text  = _watermark_filter(width, height, WATERMARK, 26)
+    tmp_output   = output.with_suffix(".tmp.mp4")
 
     if no_music:
         # Voice-only path: scale + pad, no music mixing
@@ -207,24 +249,34 @@ def encode_video(
     else:
         map_audio = '-map "[audio_out]"'
 
+    # Clean up any previous failed temp file
+    if tmp_output.exists():
+        tmp_output.unlink()
+
     cmd = (
         f'ffmpeg -y '
         f'-i "{SOURCE_VIDEO}" {music_input} '
         f'-filter_complex "{filter_text}" '
         f'-map "[video_out]" {map_audio} '
-        f'-c:v libx264 -preset medium -crf 22 -profile:v high -level 4.0 '
+        f'-c:v libx264 -preset medium -crf 28 -profile:v high -level 4.0 '
         f'-c:a aac -b:a 192k -ar 44100 '
         f'-movflags +faststart '
         f'-metadata title="Darrian Belcher — Autonomous AI SDLC Pipeline" '
         f'-metadata artist="{AUTHOR}" '
         f'-metadata comment="peachstatesavings.com | AI automation | SDLC | Python" '
-        f'"{output}" 2>&1'
+        f'"{tmp_output}" 2>&1'
     )
     ok, _ = run_cmd(cmd, f"{label} → {output.name}")
-    if ok and output.exists():
+    if ok and tmp_output.exists():
+        # Atomic promotion: rename temp → final
+        tmp_output.rename(output)
         size_mb = output.stat().st_size / (1024 * 1024)
         print(f"     📦 File size: {size_mb:.1f} MB")
-    return ok
+        return True
+    # Cleanup failed temp
+    if tmp_output.exists():
+        tmp_output.unlink()
+    return False
 
 
 # ──────────────────────────────────────────────────────────────────────────────

@@ -533,14 +533,23 @@ with tab_launch:
 
             with hcol2:
                 if not is_done:
-                    if st.button("✅ Mark Posted", key=f"lp_mark_{post['id']}", type="primary",
-                                  use_container_width=True):
+                    guard_key = f"lp_confirm_{post['id']}"
+                    if st.session_state.get(guard_key):
+                        # Second click — actually mark posted
                         conn = get_conn()
                         db_exec(conn,
                             "UPDATE smm_posts SET status='posted', published_at=? WHERE id=?",
                             (datetime.now().strftime("%Y-%m-%d %H:%M"), post["id"]))
                         conn.commit(); conn.close()
+                        st.session_state.pop(guard_key, None)
                         st.rerun()
+                    else:
+                        if st.button("✅ Mark Posted", key=f"lp_mark_{post['id']}", type="primary",
+                                      use_container_width=True):
+                            st.session_state[guard_key] = True
+                            st.rerun()
+                        if st.session_state.get(guard_key):
+                            st.caption("⚠️ Click again to confirm")
                 else:
                     pub = str(post.get("published_at",""))[:16] or "✅"
                     st.markdown(f'<div style="color:#4caf50;font-size:12px;text-align:right;padding-top:6px">Posted {pub}</div>',
