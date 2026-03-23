@@ -57,7 +57,7 @@ def _ensure_sovereign_tables():
     """Create sovereign_applications table if it doesn't exist."""
     try:
         conn = get_conn()
-        conn.execute("""
+        db_exec(conn, """
             CREATE TABLE IF NOT EXISTS sovereign_applications (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
                 email       TEXT NOT NULL,
@@ -437,14 +437,14 @@ if user and not is_sov and not is_owner:
                 try:
                     conn = get_conn()
                     # Check for duplicate
-                    exists = conn.execute(
+                    exists = db_exec(conn, 
                         "SELECT id FROM sovereign_applications WHERE email=? AND status='pending'",
                         (user.get("email", ""),)
                     ).fetchone()
                     if exists:
                         st.info("Your expression of interest is already on file.")
                     else:
-                        conn.execute(
+                        db_exec(conn, 
                             "INSERT INTO sovereign_applications (email, name, why_worthy, age_confirm) VALUES (?,?,?,?)",
                             (user.get("email", ""), sov_name.strip(), sov_why.strip(), 1)
                         )
@@ -518,7 +518,7 @@ if is_owner:
 
     try:
         conn = get_conn()
-        apps = conn.execute(
+        apps = db_exec(conn, 
             "SELECT id, email, name, why_worthy, age_confirm, status, created_at "
             "FROM sovereign_applications ORDER BY created_at DESC LIMIT 50"
         ).fetchall()
@@ -539,11 +539,11 @@ if is_owner:
                                     # Update user plan in auth DB
                                     from utils.db import get_conn as _auth_conn
                                     aconn = _auth_conn()
-                                    aconn.execute(
+                                    db_exec(aconn, 
                                         "UPDATE users SET plan='sovereign', subscription_status='active' WHERE email=?",
                                         (email,)
                                     )
-                                    aconn.execute(
+                                    db_exec(aconn, 
                                         "UPDATE sovereign_applications SET status='granted', reviewed_at=datetime('now'), reviewed_by=? WHERE id=?",
                                         (user.get("email"), app_id)
                                     )
@@ -557,7 +557,7 @@ if is_owner:
                             if st.button(f"❌ Deny — {email}", key=f"deny_{app_id}"):
                                 try:
                                     dconn = get_conn()
-                                    dconn.execute(
+                                    db_exec(dconn, 
                                         "UPDATE sovereign_applications SET status='denied', reviewed_at=datetime('now'), reviewed_by=? WHERE id=?",
                                         (user.get("email"), app_id)
                                     )
@@ -581,7 +581,7 @@ if is_owner:
                 if direct_email and "@" in direct_email:
                     try:
                         gconn = get_conn()
-                        updated = gconn.execute(
+                        updated = db_exec(gconn, 
                             "UPDATE users SET plan='sovereign', subscription_status='active' WHERE LOWER(email)=LOWER(?)",
                             (direct_email.strip(),)
                         ).rowcount
@@ -603,7 +603,7 @@ if is_owner:
             if revoke_email and "@" in revoke_email:
                 try:
                     rconn = get_conn()
-                    rconn.execute(
+                    db_exec(rconn, 
                         "UPDATE users SET plan='free', subscription_status='inactive' WHERE LOWER(email)=LOWER(?)",
                         (revoke_email.strip(),)
                     )

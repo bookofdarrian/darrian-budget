@@ -1064,8 +1064,7 @@ with hero_c:
     """, unsafe_allow_html=True)
 
 # Hero screenshot mockup
-_HERO_IMG = _load_b64("static/dashboard_screenshot.png", "image/png")
-if _HERO_IMG:
+if _HERO_IMG_SRC:
     st.markdown(
         f'''<div class="hero-mockup">
   <div class="hero-mockup-bar">
@@ -1073,7 +1072,7 @@ if _HERO_IMG:
     <span class="hero-mockup-dot" style="background:#febc2e;"></span>
     <span class="hero-mockup-dot" style="background:#28c840;"></span>
   </div>
-  <img src="{_HERO_IMG}" alt="Peach State Savings Dashboard" loading="lazy" />
+  <img src="{_HERO_IMG_SRC}" alt="Peach State Savings Dashboard" loading="lazy" />
 </div>''',
         unsafe_allow_html=True,
     )

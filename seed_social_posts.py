@@ -438,8 +438,9 @@ def main():
     for i, (title, *_) in enumerate(posts, 1):
         print(f"  {i:2}. {title}")
     print()
+    app_host = os.environ.get("PSS_APP_URL", "http://localhost:8501")
     print("  Next step:")
-    print("  → Open your app: http://100.95.125.112:8501/social_media_manager")
+    print(f"  → Open your app: {app_host}/social_media_manager")
     print("  → Go to 'Queue' tab")
     print("  → Review each draft and copy captions to the real platform")
     print()
