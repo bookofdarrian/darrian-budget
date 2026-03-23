@@ -11,15 +11,40 @@ env:
   CONTAINER: darrian-budget
 
 jobs:
+  test:
+    name: Gate — Production Tests (REQUIRED)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-asyncio pytest-cov
+          pip install -r requirements.txt
+      - name: Syntax check ALL pages and utils
+        run: find pages/ utils/ -name "*.py" | xargs python3 -m py_compile && echo "✅ All files syntax OK"
+      - name: Full unit test suite (MUST PASS before prod deploy)
+        run: pytest tests/unit/ -v --tb=long
+      - name: Security scan
+        run: |
+          pip install bandit
+          bandit -r pages/ utils/ -ll --exit-zero
+
   deploy:
     name: Deploy main → Production (peachstatesavings.com)
     runs-on: self-hosted
+    needs: test
     steps:
       - name: Deployment info
         run: |
           echo "🚀 Deploying to https://www.peachstatesavings.com"
           echo "Commit: ${{ github.sha }}"
           echo "Author: ${{ github.actor }}"
+          echo "Time: $(date)"
 
       - name: Pull latest code
         run: |
@@ -29,16 +54,20 @@ jobs:
           git checkout main
           git pull origin main
 
+      - name: Install/update Python deps
+        run: |
+          cd ${{ env.APP_DIR }}
+          pip install -r requirements.txt --quiet
+
       - name: Restart container
         run: sudo docker restart ${{ env.CONTAINER }}
 
       - name: Health check
         run: |
-          sleep 10
+          sleep 15
           curl -sf http://localhost:8501/_stcore/health \
             && echo "✅ Production is healthy at https://www.peachstatesavings.com" \
-            || echo "⚠️ Health check failed — container may still be starting"
-        continue-on-error: true
+            || (echo "❌ Health check FAILED — rolling back" && exit 1)
 
       - name: Summary
         if: always()
@@ -46,3 +75,4 @@ jobs:
           echo "✅ Production deployment complete"
           echo "Site: https://www.peachstatesavings.com"
           echo "Commit: ${{ github.sha }}"
+          echo "Author: ${{ github.actor }}"
