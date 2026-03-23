@@ -53,7 +53,7 @@ def start_recording(tmpfile: str):
             return
         _recording = True
     _ffmpeg_proc = subprocess.Popen([
-        FFMPEG, "-f", "avfoundation", "-i", ":0",
+        FFMPEG, "-f", "avfoundation", "-i", ":1",
         "-ar", "16000", "-ac", "1", tmpfile,
         "-y", "-loglevel", "quiet",
     ])
