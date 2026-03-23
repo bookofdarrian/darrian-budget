@@ -984,10 +984,8 @@ if not user:
     </section>
     """, unsafe_allow_html=True)
 
-    # Load founder photo — try carousel/lifestyle first, then root-level fallback
+    # Load founder photo — headshot first, then lifestyle fallback
     _founder_uri = (
-        _load_b64("static/photos/carousel/lifestyle/darrian_vibe.jpg") or
-        _load_b64("static/photos/darrian_vibe.jpg") or
         _load_b64("static/photos/carousel/headshot/darrian_headshot.png") or
         _load_b64("static/photos/darrian_headshot.png") or
         ""
@@ -998,9 +996,9 @@ if not user:
         if _founder_uri:
             st.markdown(f"""
         <div style="display:flex;justify-content:center;align-items:center;padding:20px 0;">
-          <div style="width:220px;height:220px;border-radius:50%;overflow:hidden;box-shadow:0 8px 32px rgba(155,142,255,0.35);border:3px solid rgba(155,142,255,0.4);">
+          <div style="width:220px;height:220px;border-radius:50%;overflow:hidden;border:3px solid rgba(155,142,255,0.55);box-shadow:0 4px 20px rgba(0,0,0,0.4);">
             <img src="{_founder_uri}" alt="Darrian Belcher — Founder, College Confused"
-                 style="width:100%;height:100%;object-fit:cover;object-position:center top;transform:rotate(90deg) scale(1.35);" />
+                 style="width:100%;height:100%;object-fit:cover;object-position:center 20%;" />
           </div>
         </div>
             """, unsafe_allow_html=True)
