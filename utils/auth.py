@@ -1074,6 +1074,25 @@ def current_user_is_pro() -> bool:
     return is_pro_user(get_current_user())
 
 
+def is_sovereign_user(user: dict | None) -> bool:
+    """Return True if user is on the invite-only Sovereign plan."""
+    if not user:
+        return False
+    plan   = user.get("plan", "free")
+    status = user.get("subscription_status", "")
+    # sovereign users always have full access regardless of stripe status
+    return plan == "sovereign"
+
+
+def current_user_is_sovereign() -> bool:
+    """Return True if current session is on the Sovereign plan."""
+    return is_sovereign_user(get_current_user())
+
+
+# Sovereign emails — Darrian grants these manually
+SOVEREIGN_OWNER_EMAIL = "darrianbelcher@gmail.com"
+
+
 def require_pro(feature_name: str = "this feature"):
     """
     Gate: show a paywall if the user is not on Pro.
