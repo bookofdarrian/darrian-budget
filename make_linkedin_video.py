@@ -182,18 +182,11 @@ def _base_filter(width: int, height: int) -> str:
 
 
 def _watermark_filter(width: int, height: int, text: str, size: int) -> str:
-    """Filter for adding watermark overlay (bottom-right)."""
-    return (
-        f"[0:a]volume={VOICE_VOLUME}[voice];"
-        f"[1:a]volume={MUSIC_VOLUME},apad=pad_dur=2[music];"
-        f"[voice][music]amix=inputs=2:duration=first:dropout_transition=2[audio_out];"
-        f"[0:v]scale={width}:{height}:force_original_aspect_ratio=decrease,"
-        f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:color=black,"
-        f"drawtext=text='{text}':"
-        f"fontsize={size}:fontcolor=white@0.65:"
-        f"x=w-tw-18:y=h-th-18:"
-        f"shadowcolor=black@0.8:shadowx=1:shadowy=1[video_out]"
-    )
+    """Filter for mixing audio and scaling video.
+    Note: drawtext with alpha (@) is not supported in ffmpeg 4.3.x on macOS
+    without a fontfile= path. We use clean scale+pad instead; branding is
+    embedded in -metadata tags and the LinkedIn caption/hashtags."""
+    return _base_filter(width, height)
 
 
 def encode_video(
@@ -205,14 +198,10 @@ def encode_video(
     filter_text  = _watermark_filter(width, height, WATERMARK, 26)
 
     if no_music:
-        # Voice-only path: scale + watermark, no music mixing
+        # Voice-only path: scale + pad, no music mixing
         filter_text = (
             f"[0:v]scale={width}:{height}:force_original_aspect_ratio=decrease,"
-            f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:color=black,"
-            f"drawtext=text='{WATERMARK}':"
-            f"fontsize=26:fontcolor=white@0.65:"
-            f"x=w-tw-18:y=h-th-18:"
-            f"shadowcolor=black@0.8:shadowx=1:shadowy=1[video_out]"
+            f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:color=black[video_out]"
         )
         map_audio = "-map 0:a"
     else:
