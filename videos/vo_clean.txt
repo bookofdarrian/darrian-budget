@@ -1,15 +1,17 @@
-My computer built me a new feature while I was sleeping.
+My computer builds me new features while I sleep.
 
-Here's everything I've built.
+Here's what I've built so far.
 
-Peach State Savings — personal finance operating system. 140 pages. Budget, income, investments, RSU calendar — all in one place. Free.
+Peach State Savings — personal finance OS. Budget, income tracker, investments, RSU calendar, AI assistant. 140 pages deep. Completely free.
 
-SoleOps — my sneaker resale suite. AI listing generator, ARB scanner that texts me when a pair drops below my buy price. Made me $200 before breakfast.
+SoleOps — sneaker resale suite. AI listing generator, arbitrage scanner that texts me when a shoe drops below my buy price. It made me $200 before I had breakfast.
 
-College Confused — free AI college prep. FAFSA, essays, mock interviews. Built for students who need it. Always free.
+College Confused — free AI college prep for students who actually need it. FAFSA tracker, essay coach, mock interviews. Always free.
 
-All of this runs on a server in my house. AI builds features while I sleep.
+All of it runs on a server in my house. Built with Python, AI, and a lot of late nights.
 
-peachstatesavings.com — free. getsoleops.com — April launch. collegeconfused.org — always free.
+peachstatesavings.com — free.
+getsoleops.com — dropping in April.
+collegeconfused.org — always free.
 
-Follow the build. At Darrian Belcher-Singh.
+Follow the build.
