@@ -9,17 +9,17 @@
 
 **Option A (Technical + Business):**
 ```
-Software Engineer @ Visa · Built peachstatesavings.com from scratch · 154 pages · 92K lines · Self-hosted · SoleOps · bookofdarrian
+Associate Technical Project Analyst @ Visa · Built peachstatesavings.com from scratch · 154 pages · 92K lines · Self-hosted · SoleOps · bookofdarrian
 ```
 
 **Option B (Builder Energy):**
 ```
-SWE @ Visa · Building personal finance OS at peachstatesavings.com · Sneaker reseller · Content creator · HBCU proud · The marathon continues
+ATPA @ Visa · Building personal finance OS at peachstatesavings.com · Sneaker reseller · Content creator · HBCU proud · The marathon continues
 ```
 
 **Option C (Most Punchy):**
 ```
-Software Engineer @ Visa · Founder @ Peach State Savings & SoleOps · 92,000 lines of code, self-hosted, all mine · NC A&T 🐾
+Associate Technical Project Analyst @ Visa · Founder @ Peach State Savings & SoleOps · 92,000 lines of code, self-hosted, all mine · NC A&T 🐾
 ```
 
 ---
@@ -27,11 +27,13 @@ Software Engineer @ Visa · Founder @ Peach State Savings & SoleOps · 92,000 li
 ### About Section (2,600 chars max)
 
 ```
-I'm a Software Engineer at Visa and I build things that actually matter to me — nights, weekends, and every spare moment in between.
+I'm an Associate Technical Project Analyst at Visa and I build things that actually matter to me — nights, weekends, and every spare moment in between.
 
 The main project: Peach State Savings (peachstatesavings.com) — a full-stack personal finance OS I built entirely from scratch. What started as a simple budget tracker turned into 154+ pages, 92,000+ lines of Python, a self-hosted homelab deployment on Proxmox + Docker, a CI/CD pipeline across 5 environments, Stripe payments, Anthropic Claude AI integration, and a three-tier subscription model with a Sovereign tier that's invite-only and earned — not bought.
 
 I also built SoleOps — a full sneaker resale platform with AI-powered listing generation, inventory management, profit tracking, competitor price monitoring, and cross-platform sales sync. Running my 404 Sole Archive resale business out of it.
+
+Before my current role, I interned at Visa as a Software Test Engineer on the FXTI platform — FX spot, forward, and outright trades. That's where I learned production-grade testing, QA pipelines, and the discipline behind gated deployments.
 
 On the content side: bookofdarrian and College Confused are channels I'm building to give game back to the community — finance, tech, college navigation, real life stuff.
 
@@ -64,7 +66,7 @@ I'm 22. I'm just getting started. And yes — I built all of this.
 Python · Streamlit · PostgreSQL · SQLite · Docker · Linux · Proxmox · 
 GitHub Actions · CI/CD · Stripe API · Anthropic Claude AI · REST APIs · 
 Personal Finance · Product Development · Full-Stack Development · 
-Software Engineering · HBCU · Community Building
+Technical Project Management · HBCU · Community Building · QA/Testing · FX Trading Systems
 ```
 
 ---
@@ -78,7 +80,7 @@ Software Engineering · HBCU · Community Building
 
 > *"Dedication + Consistency = Inevitable."* — Nipsey Hussle
 
-Software Engineer @ Visa · Builder · Reseller · Creator · HBCU Proud
+Associate Technical Project Analyst @ Visa · Builder · Reseller · Creator · HBCU Proud
 
 ---
 
@@ -134,7 +136,7 @@ Voice:      OpenAI Whisper (local, on-device)
 
 ### Bio (160 chars max)
 ```
-SWE @Visa · Built peachstatesavings.com from scratch (154 pages, 92K lines) · SoleOps · bookofdarrian · NC A&T 🐾 · The Marathon Continues 💜
+ATPA @Visa · Built peachstatesavings.com from scratch (154 pages, 92K lines) · SoleOps · bookofdarrian · NC A&T 🐾 · The Marathon Continues 💜
 ```
 
 ### Location
@@ -177,7 +179,7 @@ the marathon continues 💜
 
 ### Bio (150 chars max)
 ```
-SWE @Visa 💳 · Built peachstatesavings.com from scratch 🍑 · SoleOps 👟 · HBCU 🐾 · Creator 🎬 · 22 · The Marathon Continues 💜
+ATPA @Visa 💳 · Built peachstatesavings.com from scratch 🍑 · SoleOps 👟 · HBCU 🐾 · Creator 🎬 · 22 · The Marathon Continues 💜
 ```
 
 ### Link in bio
@@ -198,7 +200,7 @@ peachstatesavings.com
 
 ### Bio
 ```
-SWE @Visa 💳 | Built my own fintech app | SoleOps sneaker reseller 👟 | NC A&T 🐾 | 22 & building | peachstatesavings.com
+ATPA @Visa 💳 | Built my own fintech app | SoleOps sneaker reseller 👟 | NC A&T 🐾 | 22 & building | peachstatesavings.com
 ```
 
 ### Content Angles for First 5 Videos
@@ -214,7 +216,7 @@ SWE @Visa 💳 | Built my own fintech app | SoleOps sneaker reseller 👟 | NC A
 
 ```
 Darrian Belcher
-Software Engineer · Visa Inc.
+Associate Technical Project Analyst · Visa Inc.
 Founder · Peach State Savings | peachstatesavings.com
 Founder · SoleOps | 404 Sole Archive
 LinkedIn: linkedin.com/in/darrianbelcher
@@ -227,17 +229,19 @@ GitHub: github.com/bookofdarrian
 
 **Short (1 sentence):**
 ```
-Software Engineer at Visa who built a 154-page personal finance OS from scratch and self-hosts it on his own home lab.
+Associate Technical Project Analyst at Visa who built a 154-page personal finance OS from scratch and self-hosts it on his own home lab.
 ```
 
 **Medium (3 sentences):**
 ```
-Darrian Belcher is a Software Engineer at Visa and the builder behind Peach State Savings (peachstatesavings.com) — a self-hosted personal finance OS with 154+ pages, 92K+ lines of code, and a full CI/CD pipeline. He also built SoleOps, an AI-powered sneaker resale platform for his 404 Sole Archive business. NC A&T alumnus, Gullah Geechee, Virginia/North Carolina roots, building tools to put power back in the hands of the community.
+Darrian Belcher is an Associate Technical Project Analyst at Visa and the builder behind Peach State Savings (peachstatesavings.com) — a self-hosted personal finance OS with 154+ pages, 92K+ lines of code, and a full CI/CD pipeline. He also built SoleOps, an AI-powered sneaker resale platform for his 404 Sole Archive business. NC A&T alumnus, Gullah Geechee, Virginia/North Carolina roots, building tools to put power back in the hands of the community.
 ```
 
 **Long (bio for press/speaking):**
 ```
-Darrian Belcher is a 22-year-old Software Engineer at Visa Inc. and founder of Peach State Savings, a self-hosted personal finance operating system he built entirely in his free time. The platform spans 154+ pages, 92,000+ lines of Python code, and 688+ git commits — covering personal finance, a full sneaker resale business platform (SoleOps), AI-powered tools, content creation, and a private creative studio for manga and film development. It runs on his personal home lab (Proxmox, Docker, Nginx, Tailscale) with a complete GitHub Actions CI/CD pipeline across five environments.
+Darrian Belcher is a 22-year-old Associate Technical Project Analyst at Visa Inc. and founder of Peach State Savings, a self-hosted personal finance operating system he built entirely in his free time. The platform spans 154+ pages, 92,000+ lines of Python code, and 688+ git commits — covering personal finance, a full sneaker resale business platform (SoleOps), AI-powered tools, content creation, and a private creative studio for manga and film development. It runs on his personal home lab (Proxmox, Docker, Nginx, Tailscale) with a complete GitHub Actions CI/CD pipeline across five environments.
+
+Before his current role, Darrian interned at Visa as a Software Test Engineer on the FXTI platform, gaining hands-on experience with FX spot, forward, and outright trade systems — where he developed the production-grade testing discipline that now runs through every line of Peach State Savings.
 
 A graduate of NC A&T State University (HBCU), Darrian brings Gullah Geechee heritage, Virginia and North Carolina roots, and a deep commitment to using technology as a tool for community liberation. His work is guided by the principle that wealth, knowledge, and power should stay in the hands of the people who need them most.
 
