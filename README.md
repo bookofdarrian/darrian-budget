@@ -4,7 +4,7 @@
 
 **Live at → [peachstatesavings.com](https://peachstatesavings.com)**
 
-A full-stack, self-hosted personal finance and life operating system built entirely from scratch by **Darrian Belcher** — Software Engineer at Visa, HBCU grad, reseller, creator, and community builder.
+A full-stack, self-hosted personal finance and life operating system built entirely from scratch by **Darrian Belcher** — Associate Technical Project Analyst at Visa, HBCU grad, reseller, creator, and community builder.
 
 ---
 
@@ -162,10 +162,11 @@ feature/* → dev → qa → staging → main (prod)
 
 ## 👤 About the Builder
 
-**Darrian Belcher** — Software Engineer at Visa Inc., HBCU alumnus, sneaker reseller, content creator, and community builder.
+**Darrian Belcher** — Associate Technical Project Analyst at Visa Inc., HBCU alumnus, sneaker reseller, content creator, and community builder.
 
 - 🏛️ NC A&T State University (HBCU)
-- 💳 Full-time SWE at Visa
+- 💳 Associate Technical Project Analyst at Visa
+- 🔬 Previously: Software Test Engineer Intern @ Visa — FXTI platform (FX spot, forward, outright trades)
 - 👟 404 Sole Archive — sneaker resale business
 - 🎬 bookofdarrian · College Confused · SoleOps (YouTube/content)
 - 🌍 Virginia · North Carolina · The Peach State
