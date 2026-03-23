@@ -77,7 +77,7 @@ if not user:
         { name: 'robots', content: 'index, follow' },
         { name: 'keywords', content: 'free college prep app, AI essay help college application, scholarship finder for students, college application deadline tracker, FAFSA guide for students, SAT ACT prep free, Common App essay helper, first gen college student tools, college list builder AI' },
         { name: 'author', content: 'Darrian Belcher' },
-        { name: 'theme-color', content: '#9B8EFF' }
+        { name: 'theme-color', content: '#C44200' }
       ];
       metas.forEach(function(attrs) {
         var existing = attrs.name ? document.querySelector('meta[name="'+attrs.name+'"]') : document.querySelector('meta[property="'+attrs.property+'"]');
@@ -183,31 +183,43 @@ if not user:
     # ── Master CSS ─────────────────────────────────────────────────────────────
     st.markdown("""
     <style>
-    /* ── CSS Custom Properties ── */
+    @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&display=swap');
+
+    /* ══════════════════════════════════════════════════════
+       COLLEGE CONFUSED — GRISELDA DESIGN SYSTEM
+       Real street wisdom. Real information. No fluff.
+       Grungy · Modern · Accessible · WCAG AA
+       ══════════════════════════════════════════════════════ */
     :root {
-      --violet: #9B8EFF;
-      --violet-light: #C4B8FF;
-      --violet-dark: #6C5CE7;
-      --violet-dim: rgba(155,142,255,0.12);
-      --violet-glow: rgba(155,142,255,0.18);
-      --bg-main: #08071A;
-      --bg-surface: #0E0C2A;
-      --bg-card: #12102A;
-      --bg-border: #1E1C42;
-      --text-main: #F2F0FF;
-      --text-muted: #8A84B0;
-      --text-dim: #3A385A;
+      /* ── Palette: True Black + Bone White + Rust ── */
+      --violet: #C44200;                      /* rust — replaces purple everywhere */
+      --violet-light: #E8571E;
+      --violet-dark: #8B2F00;
+      --violet-dim: rgba(196,66,0,0.10);
+      --violet-glow: rgba(196,66,0,0.06);
+      --bg-main: #080808;                     /* near-true black */
+      --bg-surface: #111111;
+      --bg-card: #181818;
+      --bg-border: #2A2A2A;
+      --text-main: #F0EBE3;                   /* warm bone white */
+      --text-muted: #857E76;
+      --text-dim: #3A3530;
       --success: #22D47E;
-      --gold: #FFD166;
-      --radius-sm: 8px;
-      --radius-md: 14px;
-      --radius-lg: 20px;
-      --radius-xl: 28px;
-      --shadow-violet: 0 0 40px rgba(155,142,255,0.12);
-      --grad-violet: linear-gradient(135deg, #9B8EFF, #C4B8FF);
-      --grad-bg: linear-gradient(135deg, #0E0C2A, #1A1640);
-      --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
-      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Helvetica Neue', sans-serif;
+      --gold: #C8910A;                        /* muted amber */
+      /* ── Geometry: Brutalist — no rounding ── */
+      --radius-sm: 2px;
+      --radius-md: 3px;
+      --radius-lg: 4px;
+      --radius-xl: 4px;
+      /* ── No glows, no gradients ── */
+      --shadow-violet: none;
+      --grad-violet: #C44200;                 /* flat rust replaces gradient */
+      --grad-bg: #111111;
+      --transition: 0.15s ease;
+      --font-sans: 'Oswald', 'Arial Narrow', Arial, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+      /* ── Alias ── */
+      --rust: #C44200;
     }
 
     /* ── Base ── */
@@ -217,40 +229,58 @@ if not user:
       padding: 0 1.5rem 5rem 1.5rem;
       margin: 0 auto;
     }
-    body, .stApp { background: var(--bg-main); color: var(--text-main); font-family: var(--font-sans); }
+    /* ── Body: use system font for body, Oswald for display ── */
+    body, .stApp { background: var(--bg-main); color: var(--text-main); font-family: var(--font-body); }
     .stApp { background: var(--bg-main) !important; }
     #MainMenu, footer, [data-testid="stHeader"] { visibility: hidden; }
+    /* Apply grain texture */
+    .stApp::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      opacity: 0.028;
+      pointer-events: none;
+      z-index: 9999;
+    }
+    /* Oswald on all display elements */
+    .cc-h1, .cc-h2, .cc-cta-h2, .cc-nav-brand, .cc-stat-num, .cc-mission-stat-num,
+    .cc-eyebrow, .cc-eyebrow-label, .cc-how-num, .cc-feat-title, .cc-mission-h3 {
+      font-family: var(--font-sans) !important;
+    }
 
     /* ── Top Nav ── */
     .cc-nav {
       position: sticky;
       top: 0;
       z-index: 100;
-      background: rgba(8,7,26,0.88);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border-bottom: 1px solid var(--bg-border);
-      padding: 12px 24px;
+      background: rgba(8,8,8,0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 2px solid var(--bg-border);
+      padding: 14px 28px;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
     .cc-nav-brand {
-      font-size: 1.1rem;
-      font-weight: 800;
-      background: var(--grad-violet);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      letter-spacing: -0.02em;
+      font-family: var(--font-sans);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main) !important;
+      -webkit-text-fill-color: var(--text-main) !important;
+      letter-spacing: 0.04em;
       text-decoration: none;
+      text-transform: uppercase;
     }
-    .cc-nav-links { display: flex; gap: 24px; align-items: center; }
+    .cc-nav-links { display: flex; gap: 28px; align-items: center; }
     .cc-nav-link {
       color: var(--text-muted);
-      font-size: 0.88rem;
+      font-size: 0.8rem;
       font-weight: 500;
       text-decoration: none;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
       transition: color var(--transition);
     }
     .cc-nav-link:hover { color: var(--text-main); }
@@ -258,56 +288,53 @@ if not user:
     /* ── Hero ── */
     .cc-hero {
       text-align: center;
-      padding: 96px 20px 72px;
+      padding: 88px 20px 64px;
       position: relative;
-    }
-    .cc-hero::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 50%;
-      transform: translateX(-50%);
-      width: 700px; height: 500px;
-      background: radial-gradient(ellipse at top, rgba(155,142,255,0.1) 0%, rgba(108,92,231,0.04) 40%, transparent 70%);
-      pointer-events: none;
+      border-bottom: 1px solid var(--bg-border);
     }
     .cc-eyebrow {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      background: var(--violet-dim);
-      border: 1px solid rgba(155,142,255,0.3);
-      color: var(--violet-light);
-      -webkit-text-fill-color: #C4B8FF !important;
-      font-size: 0.78rem;
-      font-weight: 700;
+      gap: 8px;
+      background: transparent;
+      border: 1px solid var(--bg-border);
+      color: var(--violet) !important;
+      -webkit-text-fill-color: var(--violet) !important;
+      font-family: var(--font-sans);
+      font-size: 0.72rem;
+      font-weight: 600;
       padding: 5px 14px;
-      border-radius: 100px;
-      letter-spacing: 0.06em;
+      border-radius: var(--radius);
+      letter-spacing: 0.1em;
       text-transform: uppercase;
       margin-bottom: 28px;
     }
     .cc-h1 {
-      font-size: clamp(2.2rem, 5vw, 3.8rem);
-      font-weight: 900;
-      color: var(--text-main);
-      -webkit-text-fill-color: #F2F0FF !important;
-      line-height: 1.08;
-      letter-spacing: -0.04em;
+      font-family: var(--font-sans);
+      font-size: clamp(2.8rem, 6vw, 5rem);
+      font-weight: 700;
+      color: var(--text-main) !important;
+      -webkit-text-fill-color: var(--text-main) !important;
+      line-height: 1.0;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
       margin-bottom: 20px;
     }
     .cc-h1 span {
-      background: var(--grad-violet);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      color: var(--rust) !important;
+      -webkit-text-fill-color: var(--rust) !important;
+      background: none;
+      -webkit-background-clip: unset;
+      background-clip: unset;
     }
     .cc-hero-sub {
-      font-size: clamp(1rem, 2vw, 1.2rem);
-      color: var(--text-muted);
-      -webkit-text-fill-color: #8A84B0 !important;
-      max-width: 580px;
+      font-size: clamp(0.95rem, 1.8vw, 1.1rem);
+      color: var(--text-muted) !important;
+      -webkit-text-fill-color: var(--text-muted) !important;
+      max-width: 560px;
       margin: 0 auto 40px;
-      line-height: 1.7;
+      line-height: 1.75;
+      font-family: var(--font-body);
     }
     .cc-trust {
       display: flex;
@@ -426,15 +453,15 @@ if not user:
     /* ── Product Mockup Preview ── */
     .cc-mockup-wrap { max-width: 680px; margin: 28px auto 0; }
     .cc-mockup-browser {
-      background: #16143A;
-      border: 1px solid rgba(155,142,255,0.25);
-      border-radius: 14px;
+      background: #141414;
+      border: 1px solid #2A2A2A;
+      border-radius: 4px;
       overflow: hidden;
-      box-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 0 0 1px rgba(155,142,255,0.12);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.7);
     }
     .cc-mockup-bar {
-      background: #0E0C26;
-      border-bottom: 1px solid rgba(155,142,255,0.15);
+      background: #0E0E0E;
+      border-bottom: 1px solid #222;
       padding: 9px 16px;
       display: flex;
       align-items: center;
@@ -446,24 +473,26 @@ if not user:
     .cc-mockup-dots span:nth-child(2) { background: #FFBD2E; }
     .cc-mockup-dots span:nth-child(3) { background: #28CA41; }
     .cc-mockup-url {
-      background: rgba(155,142,255,0.07);
-      border: 1px solid rgba(155,142,255,0.18);
-      border-radius: 5px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid #2A2A2A;
+      border-radius: 2px;
       padding: 3px 12px;
       font-size: 0.7rem;
-      color: #8A84B0;
-      -webkit-text-fill-color: #8A84B0 !important;
+      color: #857E76;
+      -webkit-text-fill-color: #857E76 !important;
       flex: 1;
       text-align: center;
       letter-spacing: 0.01em;
     }
-    .cc-mockup-screen { padding: 18px 20px 20px; }
+    .cc-mockup-screen { padding: 18px 20px 20px; background: #111; }
     .cc-mock-greeting {
       font-size: 0.72rem;
       font-weight: 600;
-      color: #C4B8FF;
-      -webkit-text-fill-color: #C4B8FF !important;
+      color: #C44200;
+      -webkit-text-fill-color: #C44200 !important;
       margin-bottom: 14px;
+      font-family: var(--font-sans);
+      letter-spacing: 0.04em;
     }
     .cc-mock-stats-row {
       display: grid;
@@ -472,66 +501,69 @@ if not user:
       margin-bottom: 14px;
     }
     .cc-mock-stat {
-      background: rgba(155,142,255,0.08);
-      border: 1px solid rgba(155,142,255,0.2);
-      border-radius: 8px;
+      background: rgba(196,66,0,0.07);
+      border: 1px solid rgba(196,66,0,0.18);
+      border-radius: 2px;
       padding: 10px;
       text-align: center;
     }
     .cc-mock-stat-num {
       font-size: 1.15rem;
-      font-weight: 800;
-      background: linear-gradient(90deg, #9B8EFF 0%, #C4B8FF 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      font-weight: 700;
+      color: #E8571E;
+      -webkit-text-fill-color: #E8571E !important;
       display: block;
       line-height: 1.2;
+      font-family: var(--font-sans);
     }
     .cc-mock-stat-lbl {
       font-size: 0.62rem;
-      color: #8A84B0;
-      -webkit-text-fill-color: #8A84B0 !important;
+      color: #857E76;
+      -webkit-text-fill-color: #857E76 !important;
       display: block;
       margin-top: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
     .cc-mock-tasks { display: flex; flex-direction: column; gap: 6px; }
     .cc-mock-task {
       display: flex;
       align-items: center;
       gap: 10px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(155,142,255,0.12);
-      border-radius: 8px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid #222;
+      border-radius: 2px;
       padding: 8px 12px;
     }
     .cc-mock-task-icon { font-size: 0.9rem; }
     .cc-mock-task-text {
       flex: 1;
       font-size: 0.73rem;
-      color: #F2F0FF;
-      -webkit-text-fill-color: #F2F0FF !important;
+      color: #F0EBE3;
+      -webkit-text-fill-color: #F0EBE3 !important;
     }
     .cc-mock-badge {
       font-size: 0.63rem;
       font-weight: 700;
       padding: 2px 8px;
-      border-radius: 20px;
+      border-radius: 2px;
+      font-family: var(--font-sans);
+      letter-spacing: 0.05em;
     }
     .cc-mock-badge-violet {
-      background: rgba(155,142,255,0.15);
-      color: #C4B8FF;
-      -webkit-text-fill-color: #C4B8FF !important;
+      background: rgba(196,66,0,0.12);
+      color: #E8571E;
+      -webkit-text-fill-color: #E8571E !important;
     }
     .cc-mock-badge-orange {
-      background: rgba(255,179,71,0.15);
-      color: #FFB347;
-      -webkit-text-fill-color: #FFB347 !important;
+      background: rgba(200,145,10,0.12);
+      color: #C8910A;
+      -webkit-text-fill-color: #C8910A !important;
     }
     .cc-mock-badge-teal {
-      background: rgba(78,205,196,0.15);
-      color: #4ECDC4;
-      -webkit-text-fill-color: #4ECDC4 !important;
+      background: rgba(34,212,126,0.10);
+      color: #22D47E;
+      -webkit-text-fill-color: #22D47E !important;
     }
 
     /* ── How It Works ── */
@@ -584,8 +616,9 @@ if not user:
 
     /* ── Mission Banner ── */
     .cc-mission {
-      background: linear-gradient(135deg, rgba(155,142,255,0.08) 0%, rgba(108,92,231,0.05) 100%);
-      border: 1px solid rgba(155,142,255,0.2);
+      background: #141414;
+      border: 2px solid var(--bg-border);
+      border-left: 4px solid var(--violet);
       border-radius: var(--radius-xl);
       padding: 52px 48px;
     }
@@ -634,28 +667,20 @@ if not user:
       background: var(--bg-card);
       transition: border-color var(--transition);
     }
-    .cc-faq-item:hover { border-color: rgba(155,142,255,0.3); }
+    .cc-faq-item:hover { border-color: var(--violet); border-left: 3px solid var(--violet); }
     .cc-faq-q { font-size: 0.96rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; }
     .cc-faq-a { font-size: 0.86rem; color: var(--text-muted); line-height: 1.7; }
 
     /* ── CTA ── */
     .cc-cta-section {
-      background: linear-gradient(135deg, rgba(155,142,255,0.09) 0%, rgba(108,92,231,0.04) 100%);
-      border: 1px solid rgba(155,142,255,0.22);
+      background: #141414;
+      border: 2px solid var(--bg-border);
+      border-top: 3px solid var(--violet);
       border-radius: var(--radius-xl);
       padding: 72px 40px;
       text-align: center;
       position: relative;
       overflow: hidden;
-    }
-    .cc-cta-section::before {
-      content: '';
-      position: absolute;
-      top: -60px; left: 50%;
-      transform: translateX(-50%);
-      width: 600px; height: 300px;
-      background: radial-gradient(ellipse, rgba(155,142,255,0.1) 0%, transparent 70%);
-      pointer-events: none;
     }
     .cc-cta-h2 {
       font-size: clamp(1.6rem, 3vw, 2.4rem);
@@ -725,36 +750,40 @@ if not user:
     }
     .cc-footer-bottom a { color: var(--violet-light); text-decoration: none; }
 
-    /* ── Buttons ── */
+    /* ── Buttons: flat rust, no glow ── */
     .stButton > button[kind="primary"] {
-      background: linear-gradient(135deg, #9B8EFF, #6C5CE7) !important;
-      color: #fff !important;
+      background: #C44200 !important;
+      color: #F0EBE3 !important;
       border: none !important;
-      font-weight: 800 !important;
-      font-size: 0.97rem !important;
+      font-family: var(--font-sans) !important;
+      font-weight: 600 !important;
+      font-size: 1rem !important;
       padding: 14px 32px !important;
-      border-radius: 10px !important;
+      border-radius: var(--radius) !important;
       min-height: 52px !important;
-      letter-spacing: -0.01em !important;
-      box-shadow: 0 4px 28px rgba(155,142,255,0.25) !important;
-      transition: all var(--transition) !important;
+      letter-spacing: 0.05em !important;
+      text-transform: uppercase !important;
+      box-shadow: none !important;
+      transition: background var(--transition) !important;
     }
     .stButton > button[kind="primary"]:hover {
-      box-shadow: 0 6px 36px rgba(155,142,255,0.35) !important;
-      transform: translateY(-1px);
+      background: #E05010 !important;
+      box-shadow: none !important;
     }
     .stButton > button:not([kind="primary"]) {
       background: transparent !important;
       border: 1px solid var(--bg-border) !important;
       color: var(--text-muted) !important;
-      font-size: 0.9rem !important;
+      font-size: 0.88rem !important;
       padding: 12px 24px !important;
-      border-radius: 10px !important;
+      border-radius: var(--radius) !important;
       min-height: 46px !important;
+      letter-spacing: 0.04em !important;
+      text-transform: uppercase !important;
       transition: all var(--transition) !important;
     }
     .stButton > button:not([kind="primary"]):hover {
-      border-color: rgba(155,142,255,0.3) !important;
+      border-color: var(--violet) !important;
       color: var(--text-main) !important;
     }
 
@@ -797,14 +826,14 @@ if not user:
     # ── HERO ─────────────────────────────────────────────────────────────────
     st.markdown("""
     <header class="cc-hero" role="banner">
-      <div class="cc-eyebrow" style="-webkit-text-fill-color:#C4B8FF!important;color:#C4B8FF!important;">
-        🆓 100% Free · No Credit Card · Built for First-Gen Students
+      <div class="cc-eyebrow">
+        FREE · NO CREDIT CARD · BUILT FOR FIRST-GEN STUDENTS
       </div>
-      <div class="cc-h1" role="heading" aria-level="1" style="color:#F2F0FF;-webkit-text-fill-color:#F2F0FF;">
+      <div class="cc-h1" role="heading" aria-level="1">
         Stop Being Confused.<br>
-        <span style="background:linear-gradient(90deg,#9B8EFF 0%,#C4B8FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:inline;">Start Getting In.</span>
+        <span>Start Getting In.</span>
       </div>
-      <p class="cc-hero-sub" style="-webkit-text-fill-color:#8A84B0!important;color:#8A84B0!important;">
+      <p class="cc-hero-sub">
         College Confused is the free AI-powered college prep platform built for students who deserve
         real guidance — not generic advice. Track deadlines, find scholarships, write better essays,
         and build your college list — all in one place, completely free.
@@ -890,8 +919,8 @@ if not user:
 
 
         st.markdown("""
-    <div style="background:rgba(155,142,255,0.06);border-bottom:1px solid rgba(155,142,255,0.15);padding:6px;text-align:center;font-size:0.7rem;color:rgba(196,184,255,0.7);letter-spacing:0.05em;">
-      ⚗️ BETA · All data is test/demo data · Not accurate · Building in public 🚧
+    <div style="background:rgba(196,66,0,0.04);border-top:1px solid rgba(196,66,0,0.15);padding:6px;text-align:center;font-size:0.68rem;color:#3A3530;letter-spacing:0.08em;font-family:'Oswald',sans-serif;text-transform:uppercase;">
+      BETA — All data is test/demo data · Not accurate · Building in public
     </div>
     """, unsafe_allow_html=True)
 
@@ -920,7 +949,7 @@ if not user:
     # ── FEATURES ──────────────────────────────────────────────────────────────
     st.markdown("""
     <section class="cc-section" id="features" aria-label="Features">
-      <div class="cc-eyebrow-label" style="-webkit-text-fill-color:#9B8EFF!important;color:#9B8EFF!important;">Features</div>
+      <div class="cc-eyebrow-label">Features</div>
       <h2 class="cc-h2">Everything You Need. Nothing You Don't.</h2>
       <p class="cc-section-sub">Seven AI-powered tools covering every stage of the college application journey — all free, all in one place.</p>
     </section>
@@ -952,7 +981,7 @@ if not user:
     # ── HOW IT WORKS ──────────────────────────────────────────────────────────
     st.markdown("""
     <section class="cc-section" id="how-it-works" aria-label="How College Confused works">
-      <div class="cc-eyebrow-label" style="-webkit-text-fill-color:#9B8EFF!important;color:#9B8EFF!important;">How It Works</div>
+      <div class="cc-eyebrow-label">How It Works</div>
       <h2 class="cc-h2">From Confused to Confident in 3 Steps</h2>
       <p class="cc-section-sub">No tutor fees. No counselor waitlists. Just sign up and start getting the guidance you deserve.</p>
       <div class="cc-how-grid">
@@ -996,7 +1025,7 @@ if not user:
         if _founder_uri:
             st.markdown(f"""
         <div style="display:flex;justify-content:center;align-items:center;padding:20px 0;">
-          <div style="width:220px;height:220px;border-radius:50%;overflow:hidden;border:3px solid rgba(155,142,255,0.55);box-shadow:0 4px 20px rgba(0,0,0,0.4);">
+          <div style="width:220px;height:220px;border-radius:4px;overflow:hidden;border:2px solid #2A2A2A;filter:grayscale(0.15) contrast(1.05);box-shadow:0 8px 32px rgba(0,0,0,0.6);">
             <img src="{_founder_uri}" alt="Darrian Belcher — Founder, College Confused"
                  style="width:100%;height:100%;object-fit:cover;object-position:center 20%;" />
           </div>
@@ -1005,14 +1034,14 @@ if not user:
         else:
             st.markdown("""
         <div style="display:flex;justify-content:center;align-items:center;padding:20px 0;">
-          <div style="width:220px;height:220px;border-radius:50%;background:linear-gradient(135deg,#9B8EFF 0%,#6C5CE7 100%);display:flex;align-items:center;justify-content:center;font-size:5rem;box-shadow:0 8px 32px rgba(155,142,255,0.3);">👤</div>
+          <div style="width:220px;height:220px;border-radius:4px;background:#181818;border:2px solid #2A2A2A;display:flex;align-items:center;justify-content:center;font-size:5rem;">👤</div>
         </div>
             """, unsafe_allow_html=True)
     with _fc2:
         st.markdown("""
         <div style="padding:20px 0;">
           <div style="font-size:1.3rem;font-weight:700;color:#F2F0FF;margin-bottom:4px;">Darrian Belcher</div>
-          <div style="font-size:0.85rem;color:#9B8EFF;margin-bottom:20px;font-weight:500;">Founder, College Confused &nbsp;&middot;&nbsp; Associate Technical Project Analyst @ Visa &nbsp;&middot;&nbsp; Atlanta, GA</div>
+          <div style="font-size:0.78rem;color:#C44200;margin-bottom:20px;font-weight:600;font-family:'Oswald',sans-serif;letter-spacing:0.06em;text-transform:uppercase;">Founder, College Confused &nbsp;&middot;&nbsp; Associate Technical Project Analyst @ Visa &nbsp;&middot;&nbsp; Atlanta, GA</div>
           <p style="color:#8A84B0;line-height:1.8;font-size:1.05rem;">"I built College Confused because I was one of those confused students. No one in my family had navigated a four-year university before me. I figured it out — and then I built the tool that would have saved me months of stress and thousands in missed scholarships. Every student deserves this guidance, not just the ones whose parents can afford a $400/hour counselor."</p>
           <div style="margin-top:16px;font-size:0.8rem;color:#6B6590;font-style:italic;">Testimonials from real users coming soon — be the first story.</div>
         </div>
