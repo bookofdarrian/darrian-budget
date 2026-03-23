@@ -1,14 +1,15 @@
 #!/Users/darrianbelcher/Downloads/darrian-budget/venv/bin/python3
 """
-Whisper Dictate Daemon — Cmd+M smart hotkey listener
-- TAP  Cmd+M (< 0.5 sec): records for 8 seconds then transcribes
-- HOLD Cmd+M (> 0.5 sec): records the entire time you hold, stops on release
+Whisper Dictate Daemon — Option+M smart hotkey listener
+- TAP  ⌥M (< 0.5 sec): records for 8 seconds then transcribes
+- HOLD ⌥M (> 0.5 sec): records the entire time you hold, stops on release
 
 Model: whisper medium (best accuracy for normal speech + accents)
 Auto-pastes transcription into whatever app is active.
 Run at login via LaunchAgent. Requires Accessibility permission.
 
-Hotkey: ⌘ + M
+Hotkey: ⌥ + M  (Option+M)
+NOTE: ⌘M is reserved by macOS to minimize windows — using ⌥M instead.
 """
 
 import subprocess
@@ -29,7 +30,7 @@ _press_time  = None
 _ffmpeg_proc = None
 _recording   = False
 _lock        = threading.Lock()
-_cmd_held    = False    # track whether Cmd is currently down
+_alt_held    = False    # track whether Option (Alt) is currently down
 
 
 # ────────────────────────────────────────────────────────────
@@ -110,24 +111,36 @@ def transcribe_and_paste(tmpfile: str):
 
 
 # ────────────────────────────────────────────────────────────
-# Key listener — Cmd + M
+# Key listener — Option (⌥) + M
+# macOS: Option+M produces µ (micro sign) as key.char
+# We detect EITHER µ directly OR alt-held + m for robustness.
 # ────────────────────────────────────────────────────────────
 
-def on_press(key):
-    global _press_time, _cmd_held
+def _is_option_m(key) -> bool:
+    """Return True if this key event is Option+M (⌥M)."""
+    try:
+        ch = key.char
+        # macOS sends µ when Option+M is pressed
+        if ch == "µ":
+            return True
+        # Fallback: alt held + plain m
+        if ch and ch.lower() == "m" and _alt_held:
+            return True
+    except AttributeError:
+        pass
+    return False
 
-    # Track Cmd key state
-    if key in (keyboard.Key.cmd, keyboard.Key.cmd_r, keyboard.Key.cmd_l):
-        _cmd_held = True
+
+def on_press(key):
+    global _press_time, _alt_held
+
+    # Track Option/Alt key state
+    if key in (keyboard.Key.alt, keyboard.Key.alt_r, keyboard.Key.alt_l):
+        _alt_held = True
         return
 
-    # Trigger on M key only when Cmd is held
-    try:
-        char = key.char
-    except AttributeError:
-        char = None
-
-    if char and char.lower() == "m" and _cmd_held:
+    # Trigger on ⌥M
+    if _is_option_m(key):
         if _press_time is not None:
             return  # already in a recording session
         _press_time = time.time()
@@ -137,20 +150,15 @@ def on_press(key):
 
 
 def on_release(key):
-    global _press_time, _cmd_held
+    global _press_time, _alt_held
 
-    # Track Cmd key state
-    if key in (keyboard.Key.cmd, keyboard.Key.cmd_r, keyboard.Key.cmd_l):
-        _cmd_held = False
+    # Track Option/Alt key state
+    if key in (keyboard.Key.alt, keyboard.Key.alt_r, keyboard.Key.alt_l):
+        _alt_held = False
         return
 
-    # Release M key → decide tap vs hold
-    try:
-        char = key.char
-    except AttributeError:
-        char = None
-
-    if char and char.lower() == "m" and _press_time is not None:
+    # Release ⌥M → decide tap vs hold
+    if _is_option_m(key) and _press_time is not None:
         held    = time.time() - _press_time
         tmpfile = getattr(on_press, "_tmpfile", None)
         _press_time = None
@@ -177,7 +185,7 @@ def on_release(key):
 # ────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    notify("✅ Whisper Daemon started — ⌘M to dictate", "Whisper Dictate")
-    print(f"Whisper Daemon running — ⌘M to dictate  (model={MODEL}, tap={TAP_DURATION}s, hold=release to stop)")
+    notify("✅ Whisper Daemon started — ⌥M to dictate", "Whisper Dictate")
+    print(f"Whisper Daemon running — ⌥M (Option+M) to dictate  (model={MODEL}, tap={TAP_DURATION}s, hold=release to stop)")
     with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
         listener.join()
