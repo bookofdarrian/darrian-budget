@@ -10,9 +10,28 @@ env:
   CONTAINER: darrian-budget
 
 jobs:
+  test:
+    name: Gate — Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          pip install pytest pytest-asyncio
+          pip install -r requirements.txt
+      - name: Syntax check
+        run: find pages/ utils/ -name "*.py" | xargs python3 -m py_compile && echo "✅ Syntax OK"
+      - name: Unit tests
+        run: pytest tests/unit/ -v --tb=short
+
   deploy:
     name: Deploy dev → Home Lab
     runs-on: self-hosted
+    needs: test
     steps:
       - name: Pull latest code
         run: |
@@ -22,15 +41,20 @@ jobs:
           git checkout dev
           git pull origin dev
 
+      - name: Install/update Python deps
+        run: |
+          cd ${{ env.APP_DIR }}
+          pip install -r requirements.txt --quiet
+
       - name: Restart container
         run: sudo docker restart ${{ env.CONTAINER }}
 
       - name: Health check
         run: |
-          sleep 8
+          sleep 10
           curl -sf http://localhost:8501/_stcore/health && echo "✅ DEV is healthy" || echo "⚠️ Still starting..."
         continue-on-error: true
 
       - name: Summary
         if: always()
-        run: echo "DEV deployed — commit ${{ github.sha }}"
+        run: echo "DEV deployed — commit ${{ github.sha }} | Next: promote dev → qa"

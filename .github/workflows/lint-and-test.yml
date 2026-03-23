@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - feature/**
+      - bugfix/**
+      - hotfix/**
       - dev
       - qa
       - staging
@@ -22,8 +24,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -34,18 +36,31 @@ jobs:
           pip install pytest pytest-cov pytest-asyncio
           pip install -r requirements.txt
 
-      - name: Run unit tests
+      - name: Syntax check all pages
         run: |
-          pytest tests/unit/ -v --tb=short 2>&1 || true
-        continue-on-error: true
+          find pages/ utils/ -name "*.py" | xargs python3 -m py_compile && echo "✅ Syntax OK"
 
-  security:
-    name: Security Scan
+      - name: Run unit tests
+        run: pytest tests/unit/ -v --tb=short
+
+  lint:
+    name: Code Quality
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install bandit
-        run: pip install bandit
-      - name: Run security scan
-        run: bandit -r pages/ utils/ -ll --exit-zero
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install lint tools
+        run: pip install flake8 bandit
+
+      - name: Flake8 (style)
+        run: flake8 pages/ utils/ --max-line-length=120 --extend-ignore=E203,W503 --count
         continue-on-error: true
+
+      - name: Security scan (bandit)
+        run: bandit -r pages/ utils/ -ll --exit-zero

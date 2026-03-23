@@ -20,3 +20,28 @@ garmin_trigger.py
 context/DARRIAN_HEALTH_CONTEXT.md
 context/health_raw_extractions.json
 extract_medical_docs.py
+
+# Video/media files — store in external storage, not git
+videos/
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+
+# Large images / generated assets
+*.png
+!static/logo.png
+!static/hero*.png
+*.jpg
+!static/*.jpg
+
+# Coverage/test artifacts
+htmlcov/
+.coverage
+coverage.xml
+.pytest_cache/
+
+# macOS
+.DS_Store
+Thumbs.db

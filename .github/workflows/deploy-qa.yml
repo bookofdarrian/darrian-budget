@@ -11,17 +11,26 @@ env:
 
 jobs:
   test:
-    name: QA Tests
+    name: Gate — QA Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
-      - run: pip install pytest pytest-asyncio && pip install -r requirements.txt
-      - run: pytest tests/unit/ -v --tb=short 2>&1 || true
-        continue-on-error: true
+      - name: Install dependencies
+        run: |
+          pip install pytest pytest-asyncio pytest-cov
+          pip install -r requirements.txt
+      - name: Syntax check
+        run: find pages/ utils/ -name "*.py" | xargs python3 -m py_compile && echo "✅ Syntax OK"
+      - name: Unit tests (must pass)
+        run: pytest tests/unit/ -v --tb=short
+      - name: Security scan
+        run: |
+          pip install bandit
+          bandit -r pages/ utils/ -ll --exit-zero
 
   deploy:
     name: Deploy qa → Home Lab
@@ -36,12 +45,17 @@ jobs:
           git checkout qa
           git pull origin qa
 
+      - name: Install/update Python deps
+        run: |
+          cd ${{ env.APP_DIR }}
+          pip install -r requirements.txt --quiet
+
       - name: Restart container
         run: sudo docker restart ${{ env.CONTAINER }}
 
       - name: Health check
         run: |
-          sleep 8
+          sleep 10
           curl -sf http://localhost:8501/_stcore/health && echo "✅ QA is healthy" || echo "⚠️ Still starting..."
         continue-on-error: true
 
