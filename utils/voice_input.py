@@ -13,6 +13,11 @@ Usage (any page):
     text = render_voice_input(label="🎤 Speak a note", key="notes_voice")
     if text:
         st.session_state.note_content = text
+
+FIX (2026-03-23): st.audio_input() returns WebM/OGG bytes from the browser,
+NOT WAV. Saving as .wav caused Whisper to misdetect the format and return
+empty/garbage. Now we detect the real format from magic bytes and save with
+the correct extension before passing to Whisper.
 """
 
 import os
@@ -51,6 +56,41 @@ def _read_audio_bytes(audio_bytes) -> bytes:
     return bytes(audio_bytes)
 
 
+def _detect_audio_extension(raw: bytes) -> str:
+    """
+    Detect the real audio container format from magic bytes.
+    Browser MediaRecorder typically outputs WebM (Chrome) or OGG (Firefox).
+    Saving with the wrong extension causes Whisper to mis-detect the format.
+
+    Returns the correct file extension (without dot) to use when writing the
+    temp file so that Whisper's ffmpeg backend handles it correctly.
+    """
+    if len(raw) < 4:
+        return "webm"
+
+    # RIFF WAV
+    if raw[:4] == b"RIFF":
+        return "wav"
+    # OGG / OGG+Opus  (Firefox MediaRecorder default)
+    if raw[:4] == b"OggS":
+        return "ogg"
+    # WebM / Matroska  (Chrome/Edge MediaRecorder default — EBML magic)
+    if raw[:4] == b"\x1a\x45\xdf\xa3":
+        return "webm"
+    # MP3 — ID3 tag or sync word
+    if raw[:3] == b"ID3" or (len(raw) >= 2 and raw[0] == 0xFF and raw[1] & 0xE0 == 0xE0):
+        return "mp3"
+    # FLAC
+    if raw[:4] == b"fLaC":
+        return "flac"
+    # MP4 / M4A  (some mobile browsers)
+    if len(raw) >= 8 and raw[4:8] in (b"ftyp", b"moov", b"mdat"):
+        return "mp4"
+
+    # Default: WebM (most common from Chrome-based browsers)
+    return "webm"
+
+
 def render_voice_input(
     label: str = "🎤 Click to record, click again to stop",
     key: str = "voice_input",
@@ -77,8 +117,13 @@ def render_voice_input(
         st.warning("⚠️ No audio data received — please try recording again.")
         return ""
 
+    # Detect the real audio format so Whisper's ffmpeg backend handles it correctly
+    ext = _detect_audio_extension(raw)
+
     with st.spinner("🎙️ Transcribing your audio..."):
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav", dir="/tmp") as f:
+        with tempfile.NamedTemporaryFile(
+            delete=False, suffix=f".{ext}", dir="/tmp"
+        ) as f:
             f.write(raw)
             tmp_path = f.name
         try:
