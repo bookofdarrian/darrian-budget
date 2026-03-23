@@ -161,7 +161,7 @@ def _transcribe_via_subprocess(audio_path: str) -> str:
             result = subprocess.run(
                 [
                     VENV_WHISPER, audio_path,
-                    "--model", "base",
+                    "--model", "medium",
                     "--language", "en",
                     "--output_format", "txt",
                     "--output_dir", out_dir,
@@ -210,7 +210,7 @@ def _transcribe_whisper_direct(audio_path: str) -> str:
     import whisper
 
     if "whisper_model" not in st.session_state:
-        st.session_state["whisper_model"] = whisper.load_model("base")
+        st.session_state["whisper_model"] = whisper.load_model("medium")
 
     model = st.session_state["whisper_model"]
     result = model.transcribe(audio_path, language="en", fp16=False)
