@@ -41,20 +41,20 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ── Color System ──────────────────────────────────────────────────────────────
-PEACH      = "#FF8C42"
-PEACH_LIGHT = "#FFA560"
-PEACH_DARK = "#E06E28"
-PEACH_GLOW = "rgba(255,140,66,0.12)"
-BG_MAIN    = "#080B12"
-BG_SURFACE = "#0F1320"
-BG_CARD    = "#141929"
-BG_BORDER  = "#1E2640"
-BG_BORDER_HOVER = "#FF8C42"
-TEXT_MAIN  = "#F5F7FF"
-TEXT_MUTED = "#7A8499"
-TEXT_DIM   = "#4A5168"
-SUCCESS    = "#22C55E"
+# ── Color System — Griselda: True Black + Amber Peach ────────────────────────
+PEACH       = "#CC5500"          # darker rust-amber, less neon
+PEACH_LIGHT = "#E8681A"
+PEACH_DARK  = "#8B3800"
+PEACH_GLOW  = "rgba(204,85,0,0.10)"
+BG_MAIN     = "#080808"          # near-true black (no navy)
+BG_SURFACE  = "#111111"
+BG_CARD     = "#181818"
+BG_BORDER   = "#2A2A2A"          # neutral dark gray
+BG_BORDER_HOVER = "#CC5500"
+TEXT_MAIN   = "#F0EBE3"          # warm bone white
+TEXT_MUTED  = "#857E76"          # warm gray
+TEXT_DIM    = "#3A3530"
+SUCCESS     = "#22C55E"
 
 # ── SEO: Inject meta tags + JSON-LD into <head> via JavaScript ───────────────
 st.markdown("""
@@ -198,6 +198,8 @@ st.markdown("""
 # ── Master CSS ────────────────────────────────────────────────────────────────
 st.markdown(f"""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&display=swap');
+
 /* ── CSS Custom Properties ── */
 :root {{
   --peach: {PEACH};
@@ -212,13 +214,14 @@ st.markdown(f"""
   --text-muted: {TEXT_MUTED};
   --text-dim: {TEXT_DIM};
   --success: {SUCCESS};
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
-  --shadow-peach: 0 0 40px rgba(255,140,66,0.15);
-  --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Helvetica Neue', sans-serif;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+  --shadow-peach: none;
+  --transition: 0.15s ease;
+  --font-sans: 'Oswald', 'Arial Narrow', Arial, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
 }}
 
 /* ── Base Reset ── */
@@ -228,8 +231,22 @@ st.markdown(f"""
   padding: 0 1.5rem 5rem 1.5rem;
   margin: 0 auto;
 }}
-body, .stApp {{ background: var(--bg-main); color: var(--text-main); font-family: var(--font-sans); }}
+body, .stApp {{ background: var(--bg-main); color: var(--text-main); font-family: var(--font-body); }}
 .stApp {{ background: var(--bg-main) !important; }}
+/* ── Grain texture overlay ── */
+.stApp::after {{
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  pointer-events: none;
+  z-index: 9999;
+}}
+/* ── Oswald on all display headings ── */
+h1, h2, h3, .section-h2, .section-eyebrow, .stat-number, .hero-title, .how-title, .how-num {{
+  font-family: var(--font-sans) !important;
+}}
 
 /* ── Hide Streamlit chrome ── */
 #MainMenu, footer, header {{ visibility: hidden; }}
@@ -241,11 +258,11 @@ body, .stApp {{ background: var(--bg-main); color: var(--text-main); font-family
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(8,11,18,0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--bg-border);
-  padding: 12px 24px;
+  background: rgba(8,8,8,0.96);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 2px solid var(--bg-border);
+  padding: 14px 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -277,15 +294,6 @@ body, .stApp {{ background: var(--bg-main); color: var(--text-main); font-family
   text-align: center;
   padding: 96px 20px 72px;
   position: relative;
-}}
-.hero::before {{
-  content: '';
-  position: absolute;
-  top: 0; left: 50%;
-  transform: translateX(-50%);
-  width: 600px; height: 400px;
-  background: radial-gradient(ellipse at top, rgba(255,140,66,0.12) 0%, transparent 65%);
-  pointer-events: none;
 }}
 .hero-eyebrow {{
   display: inline-flex;
@@ -797,37 +805,40 @@ body, .stApp {{ background: var(--bg-main); color: var(--text-main); font-family
   display: block;
 }}
 
-/* ── Primary Button Override ── */
+/* ── Primary Button Override — flat amber, no glow ── */
 .stButton > button[kind="primary"] {{
-  background: linear-gradient(135deg, var(--peach), var(--peach-dark)) !important;
-  color: #000 !important;
+  background: #CC5500 !important;
+  color: #F0EBE3 !important;
   border: none !important;
-  font-weight: 800 !important;
-  font-size: 0.97rem !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
   padding: 14px 32px !important;
-  border-radius: 10px !important;
+  border-radius: var(--radius-sm) !important;
   min-height: 52px !important;
-  letter-spacing: -0.01em !important;
-  box-shadow: 0 4px 24px rgba(255,140,66,0.25) !important;
-  transition: all var(--transition) !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  box-shadow: none !important;
+  transition: background var(--transition) !important;
 }}
 .stButton > button[kind="primary"]:hover {{
-  background: linear-gradient(135deg, var(--peach-light), var(--peach)) !important;
-  box-shadow: 0 6px 32px rgba(255,140,66,0.35) !important;
-  transform: translateY(-1px);
+  background: #E06010 !important;
+  box-shadow: none !important;
 }}
 .stButton > button:not([kind="primary"]) {{
   background: transparent !important;
   border: 1px solid var(--bg-border) !important;
   color: var(--text-muted) !important;
-  font-size: 0.9rem !important;
+  font-size: 0.88rem !important;
   padding: 12px 24px !important;
-  border-radius: 10px !important;
+  border-radius: var(--radius-sm) !important;
   min-height: 46px !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
   transition: all var(--transition) !important;
 }}
 .stButton > button:not([kind="primary"]):hover {{
-  border-color: rgba(255,140,66,0.4) !important;
+  border-color: var(--peach) !important;
   color: var(--text-main) !important;
 }}
 
