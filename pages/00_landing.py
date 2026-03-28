@@ -42,20 +42,23 @@ st.set_page_config(
 )
 
 # ── Color System ─────────────────────────────────────────────────────────────
-PEACH       = "#CC5500"
-PEACH_LIGHT = "#E8681A"
-PEACH_DARK  = "#8B3800"
-PEACH_GLOW  = "rgba(204,85,0,0.10)"
-BG_MAIN     = "#080808"
-BG_SURFACE  = "#111111"
-BG_CARD     = "#181818"
-BG_BORDER   = "#2A2A2A"
-TEXT_MAIN   = "#F0EBE3"
-TEXT_MUTED  = "#857E76"
-TEXT_DIM    = "#3A3530"
-SUCCESS     = "#22C55E"
-GOLD        = "#C9A84C"   # Pusha's gold — earned, not given
-VERSE_COLOR = "#D4C5A9"   # aged paper, manuscript warmth
+# Vibe: young, campus energy, first-gen ambition — warm & vibrant, not harsh
+PEACH       = "#FF6B35"   # bright coral-peach — warm, energetic
+PEACH_LIGHT = "#FF8C5A"
+PEACH_DARK  = "#CC4400"
+PEACH_GLOW  = "rgba(255,107,53,0.10)"
+BG_MAIN     = "#0c0c1a"   # deep indigo-black — warm, not stark
+BG_SURFACE  = "#13132a"
+BG_CARD     = "#1a1a30"
+BG_BORDER   = "#2d2d50"
+TEXT_MAIN   = "#F0EEF8"   # warm white with a hint of violet
+TEXT_MUTED  = "#8E8BAE"
+TEXT_DIM    = "#3D3C62"
+SUCCESS     = "#34D399"   # emerald — bright, hopeful
+GOLD        = "#FFD166"   # warm amber gold — bright, not dusty
+VERSE_COLOR = "#C8C3E8"   # soft purple-white warmth
+ELECTRIC    = "#A78BFA"   # vibrant violet accent
+TEAL        = "#22D3EE"   # electric teal
 
 # ── SEO ──────────────────────────────────────────────────────────────────────
 st.markdown("""
@@ -114,7 +117,7 @@ st.markdown("""
 # ── Master CSS ────────────────────────────────────────────────────────────────
 st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;1,400&display=swap');
 
 :root {{
   --peach: {PEACH};
@@ -131,13 +134,13 @@ st.markdown(f"""
   --success: {SUCCESS};
   --gold: {GOLD};
   --verse: {VERSE_COLOR};
-  --radius-sm: 2px;
-  --radius-md: 3px;
-  --radius-lg: 4px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
   --transition: 0.18s ease;
-  --font-display: 'Oswald', 'Arial Narrow', Arial, sans-serif;
-  --font-verse: 'EB Garamond', Georgia, 'Times New Roman', serif;
-  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Space Grotesk', 'Segoe UI', Arial, sans-serif;
+  --font-verse: 'Plus Jakarta Sans', Georgia, 'Times New Roman', serif;
+  --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }}
 
 *, *::before, *::after {{ box-sizing: border-box; }}
