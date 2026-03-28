@@ -24,6 +24,17 @@ echo "  Port   : $PORT"
 echo "  App    : $APP_DIR/$APP_FILE"
 echo ""
 
+# ── 0. Inject SOLEOPS_APP_URL into .env ─────────────────────
+echo "⚙️  Step 0/5: Ensuring SOLEOPS_APP_URL is set in .env..."
+ENV_FILE="$APP_DIR/.env"
+if [ -f "$ENV_FILE" ]; then
+    # Remove any existing SOLEOPS_APP_URL line and re-add with correct value
+    sed -i '/^SOLEOPS_APP_URL=/d' "$ENV_FILE"
+fi
+echo "SOLEOPS_APP_URL=https://$DOMAIN" >> "$ENV_FILE"
+echo "✅ SOLEOPS_APP_URL=https://$DOMAIN written to .env"
+echo ""
+
 # ── 1. Git pull latest code ──────────────────────────────────
 echo "📥 Step 1/5: Pulling latest code from main..."
 cd "$APP_DIR"

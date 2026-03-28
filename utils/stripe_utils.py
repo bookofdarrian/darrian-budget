@@ -25,7 +25,8 @@ except ImportError:
 STRIPE_SECRET_KEY     = os.environ.get("STRIPE_SECRET_KEY", "")
 STRIPE_PRICE_ID       = os.environ.get("STRIPE_PRICE_ID", "")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
-APP_URL               = os.environ.get("APP_URL", "http://localhost:8501")
+# SOLEOPS_APP_URL overrides APP_URL when running the SoleOps standalone app
+APP_URL               = os.environ.get("SOLEOPS_APP_URL") or os.environ.get("APP_URL", "http://localhost:8501")
 
 # ── Test/sandbox keys ─────────────────────────────────────────────────────────
 STRIPE_TEST_SECRET_KEY = os.environ.get("STRIPE_TEST_SECRET_KEY", "")
