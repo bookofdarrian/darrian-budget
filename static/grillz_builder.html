@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>404 Grillz — Custom Builder</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { background: #060606; font-family: 'Courier New', monospace; color: #e8e8e8; overflow-x: hidden; }
+  ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: #0a0a0a; } ::-webkit-scrollbar-thumb { background: #c9a84c44; border-radius: 2px; }
+  button { cursor: pointer; -webkit-appearance: none; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const METALS = {
+  gold:  { label: "Gold",         grad: "linear-gradient(145deg,#c9a84c 0%,#f5d860 20%,#a07428 45%,#e8c840 65%,#f5d860 80%,#8a6020 100%)", border: "#c9a84c", glow: "rgba(201,168,76,0.6)" },
+  white: { label: "White Gold",   grad: "linear-gradient(145deg,#d0d0d0 0%,#f5f5f5 25%,#a8a8a8 50%,#ebebeb 70%,#c0c0c0 100%)",             border: "#c8c8c8", glow: "rgba(220,220,220,0.5)" },
+  rose:  { label: "Rose Gold",    grad: "linear-gradient(145deg,#d4856a 0%,#f0b090 25%,#b06040 50%,#e8a080 70%,#c07060 100%)",             border: "#d4856a", glow: "rgba(212,133,106,0.6)" },
+  black: { label: "Black Rhodium",grad: "linear-gradient(145deg,#111 0%,#2a2a2a 25%,#0a0a0a 50%,#222 70%,#111 100%)",                     border: "#444",    glow: "rgba(120,120,120,0.3)" },
+};
+
+const STONES = {
+  none:     { label: "No Stones",       gem: null,  glow: "transparent" },
+  sapphire: { label: "Sapphire",        gem: "radial-gradient(circle at 35% 30%,#c0eeff,#0088cc 45%,#003d6b)",        glow: "#00aaff" },
+  emerald:  { label: "Emerald",         gem: "radial-gradient(circle at 35% 30%,#aaffb8,#00aa22 45%,#00440d)",        glow: "#00ee44" },
+  ruby:     { label: "Ruby",            gem: "radial-gradient(circle at 35% 30%,#ffbbbb,#cc0022 45%,#660011)",        glow: "#ff3344" },
+  amethyst: { label: "Amethyst",        gem: "radial-gradient(circle at 35% 30%,#e8c0ff,#9900cc 45%,#440066)",        glow: "#cc44ff" },
+  diamond:  { label: "VVS Diamond",     gem: "radial-gradient(circle at 30% 28%,#ffffff,#d0eeff 35%,#a0d0f0 65%,#e0f4ff)", glow: "#cceeFF" },
+  canary:   { label: "Canary Diamond",  gem: "radial-gradient(circle at 35% 30%,#fff5aa,#ffcc00 45%,#886600)",        glow: "#ffdd00" },
+};
+
+const STYLES = {
+  openface: { label: "Open Face",  desc: "Teeth show through" },
+  solid:    { label: "Solid Caps", desc: "Full coverage" },
+  fangs:    { label: "Fangs",      desc: "Extended canines" },
+  half:     { label: "Half Cap",   desc: "Bottom half metal" },
+};
+
+const ENGRAVE = {
+  none:     { label: "Clean" },
+  chains:   { label: "Chains" },
+  floral:   { label: "Floral" },
+  diamonds: { label: "Diamond Cut" },
+};
+
+function Tooth({ index, metal, row, style, stoneColor, stoneCount }) {
+  const isFang  = style === "fangs" && (index === 0 || index === 5);
+  const isOpen  = style === "openface" || style === "half";
+  const stone   = STONES[stoneColor];
+  const hasStone = stoneColor !== "none" && row === "top" && index < stoneCount;
+  const w = row === "top" ? 38 : 33;
+  const h = isFang ? 58 : (row === "top" ? 48 : 40);
+
+  return (
+    <div style={{
+      position:"relative", width:w, height:h,
+      borderRadius: isFang ? "8px 8px 3px 3px" : "9px 9px 7px 7px",
+      background: metal.grad,
+      border: `1.5px solid ${metal.border}`,
+      boxShadow: `0 0 10px ${metal.glow}, 0 2px 4px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.18)`,
+      display:"flex", alignItems:"center", justifyContent:"center",
+      flexShrink:0, overflow:"hidden",
+    }}>
+      {isOpen && !hasStone && (
+        <div style={{
+          position:"absolute", top: style==="half"?"48%":"14%",
+          left:"13%", right:"13%", bottom:"11%",
+          borderRadius:5, background:"linear-gradient(180deg,#f9f0de,#e8dcc4)",
+          boxShadow:"inset 0 2px 4px rgba(0,0,0,0.35)",
+        }}/>
+      )}
+      {hasStone && stone.gem && (
+        <div style={{
+          width:20, height:20, borderRadius:"50%",
+          background:stone.gem,
+          boxShadow:`0 0 10px ${stone.glow}, 0 0 20px ${stone.glow}66, inset 0 1px 3px rgba(255,255,255,0.7)`,
+          border:"1px solid rgba(255,255,255,0.35)", zIndex:2,
+        }}/>
+      )}
+    </div>
+  );
+}
+
+function GrillPreview({ showTop, showBottom, topMetal, bottomMetal, style, stoneColor, stoneCount }) {
+  const top = METALS[topMetal];
+  const bot = METALS[bottomMetal];
+  return (
+    <div style={{
+      background:"#080808", border:"1px solid #1c1c1c", borderRadius:16,
+      padding:"32px 20px 24px", display:"flex", flexDirection:"column", alignItems:"center", gap:6,
+      boxShadow:"inset 0 2px 20px rgba(0,0,0,0.6)",
+    }}>
+      {/* Decorative bar */}
+      <div style={{width:60,height:1,background:"linear-gradient(90deg,transparent,#c9a84c,transparent)",marginBottom:16}}/>
+
+      {showTop && (
+        <div style={{display:"flex", gap:4, alignItems:"flex-end"}}>
+          {[0,1,2,3,4,5].map(i=>(
+            <Tooth key={i} index={i} metal={top} row="top"
+              style={style} stoneColor={stoneColor} stoneCount={stoneCount}/>
+          ))}
+        </div>
+      )}
+      <div style={{
+        height:8, width:200, borderRadius:4,
+        background:"linear-gradient(180deg,#2a1a0a,#120a04)", opacity:0.7,
+      }}/>
+      {showBottom && (
+        <div style={{display:"flex", gap:4, alignItems:"flex-start"}}>
+          {[0,1,2,3,4,5].map(i=>(
+            <Tooth key={i} index={i} metal={bot} row="bottom"
+              style={style} stoneColor={stoneColor} stoneCount={stoneCount}/>
+          ))}
+        </div>
+      )}
+      {!showTop && !showBottom && (
+        <div style={{color:"#333",fontSize:11,padding:"20px 0"}}>Enable top or bottom set</div>
+      )}
+
+      <div style={{marginTop:16,fontSize:9,letterSpacing:3,color:"#444",textAlign:"center"}}>
+        {STYLES[style].label.toUpperCase()} ·{" "}
+        {[showTop && METALS[topMetal].label, showBottom && METALS[bottomMetal].label]
+          .filter(Boolean).join(" / ")}
+        {stoneColor !== "none" ? ` · ${STONES[stoneColor].label}` : ""}
+      </div>
+    </div>
+  );
+}
+
+function Btn({ selected, onClick, label, sub }) {
+  return (
+    <button onClick={onClick} style={{
+      padding:"9px 12px", borderRadius:7,
+      border:`1px solid ${selected ? "#c9a84c" : "#1e1e1e"}`,
+      background: selected ? "rgba(201,168,76,0.1)" : "#0c0c0c",
+      color: selected ? "#c9a84c" : "#777",
+      fontSize:11, textAlign:"left", lineHeight:1.4,
+      transition:"all 0.15s", fontFamily:"'Courier New',monospace",
+      width:"100%",
+    }}>
+      <div style={{fontWeight: selected?700:400}}>{label}</div>
+      {sub && <div style={{fontSize:9,opacity:0.55,marginTop:2}}>{sub}</div>}
+    </button>
+  );
+}
+
+function Section({ title, children }) {
+  return (
+    <div style={{
+      border:"1px solid #161616", borderRadius:10, padding:"14px 16px",
+      background:"#0a0a0a", marginBottom:8,
+    }}>
+      <div style={{fontSize:9,letterSpacing:3,color:"#c9a84c",marginBottom:12}}>{title}</div>
+      {children}
+    </div>
+  );
+}
+
+function estimateCost(topMetal, bottomMetal, stoneColor, stoneCount, style, showTop, showBottom) {
+  let base = 0;
+  const metalCost = { gold:250, white:350, rose:320, black:380 };
+  if (showTop)    base += metalCost[topMetal];
+  if (showBottom) base += metalCost[bottomMetal];
+  if (stoneColor === "diamond") base += stoneCount * 200;
+  else if (stoneColor === "canary") base += stoneCount * 180;
+  else if (stoneColor !== "none") base += stoneCount * 75;
+  if (style === "fangs") base += 100;
+  return base;
+}
+
+function App() {
+  const [topMetal, setTopMetal]       = React.useState("gold");
+  const [bottomMetal, setBottomMetal] = React.useState("black");
+  const [stoneColor, setStoneColor]   = React.useState("sapphire");
+  const [stoneCount, setStoneCount]   = React.useState(2);
+  const [style, setStyle]             = React.useState("openface");
+  const [showTop, setShowTop]         = React.useState(true);
+  const [showBottom, setShowBottom]   = React.useState(true);
+  const [quoteOpen, setQuoteOpen]     = React.useState(false);
+
+  const low  = estimateCost(topMetal, bottomMetal, stoneColor, stoneCount, style, showTop, showBottom);
+  const high = low + 300;
+
+  const buildSummary = () => [
+    showTop    ? `Top: ${METALS[topMetal].label}` : null,
+    showBottom ? `Bottom: ${METALS[bottomMetal].label}` : null,
+    `Style: ${STYLES[style].label}`,
+    stoneColor !== "none" ? `${stoneCount}x ${STONES[stoneColor].label}` : "No Stones",
+  ].filter(Boolean).join(" · ");
+
+  return (
+    <div style={{background:"#060606",minHeight:"100vh",maxWidth:480,margin:"0 auto",padding:"0 0 100px"}}>
+
+      {/* HEADER */}
+      <div style={{
+        background:"linear-gradient(180deg,#0e0e0e,#080808)",
+        borderBottom:"1px solid #161616",
+        padding:"20px 20px 16px", textAlign:"center",
+        position:"sticky", top:0, zIndex:50,
+        backdropFilter:"blur(10px)",
+      }}>
+        <div style={{fontSize:8,letterSpacing:7,color:"#c9a84c",marginBottom:4}}>CUSTOM</div>
+        <div style={{fontSize:28,fontWeight:900,letterSpacing:4,color:"#fff",
+          textShadow:"0 0 30px rgba(201,168,76,0.3)"}}>
+          404 GRILLZ
+        </div>
+        <div style={{fontSize:8,letterSpacing:4,color:"#333",marginTop:3}}>
+          ATLANTA · CUSTOM JEWELRY
+        </div>
+      </div>
+
+      <div style={{padding:"16px 16px 0"}}>
+
+        {/* PREVIEW */}
+        <GrillPreview
+          showTop={showTop} showBottom={showBottom}
+          topMetal={topMetal} bottomMetal={bottomMetal}
+          style={style} stoneColor={stoneColor} stoneCount={stoneCount}
+        />
+
+        {/* PRICE BANNER */}
+        <div style={{
+          display:"flex", justifyContent:"space-between", alignItems:"center",
+          background:"linear-gradient(135deg,#0d0900,#1a1100)", border:"1px solid #c9a84c22",
+          borderRadius:10, padding:"14px 18px", margin:"10px 0 8px",
+        }}>
+          <div>
+            <div style={{fontSize:8,letterSpacing:3,color:"#555",marginBottom:3}}>EST. BUILD COST</div>
+            <div style={{fontSize:26,color:"#c9a84c",fontWeight:900,letterSpacing:1}}>
+              ${low.toLocaleString()}–${high.toLocaleString()}
+            </div>
+            <div style={{fontSize:9,color:"#444",marginTop:2}}>10k–14k solid gold · custom order</div>
+          </div>
+          <div style={{textAlign:"right"}}>
+            <div style={{fontSize:8,color:"#333",marginBottom:6,letterSpacing:2}}>WHERE TO COP</div>
+            <div style={{fontSize:10,color:"#666",marginBottom:2}}>285 Flea Market</div>
+            <div style={{fontSize:10,color:"#666",marginBottom:2}}>Buckhead Jewelers</div>
+            <div style={{fontSize:10,color:"#666"}}>Castleberry Hill</div>
+          </div>
+        </div>
+
+        {/* TOP/BOTTOM TOGGLES */}
+        <div style={{display:"flex",gap:8,marginBottom:8}}>
+          {[["TOP", showTop, setShowTop], ["BOTTOM", showBottom, setShowBottom]].map(([label, on, setter]) => (
+            <button key={label} onClick={() => setter(v=>!v)} style={{
+              flex:1, padding:"10px 0", borderRadius:8,
+              border:`1px solid ${on ? "#c9a84c" : "#1a1a1a"}`,
+              background: on ? "rgba(201,168,76,0.08)" : "#090909",
+              color: on ? "#c9a84c" : "#444",
+              fontSize:10, letterSpacing:3, fontFamily:"'Courier New',monospace",
+              transition:"all 0.2s",
+            }}>
+              {label} {on ? "ON" : "OFF"}
+            </button>
+          ))}
+        </div>
+
+        {/* STYLE */}
+        <Section title="STYLE">
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+            {Object.entries(STYLES).map(([k,v]) => (
+              <Btn key={k} selected={style===k} onClick={()=>setStyle(k)} label={v.label} sub={v.desc}/>
+            ))}
+          </div>
+        </Section>
+
+        {/* TOP METAL */}
+        {showTop && (
+          <Section title="TOP METAL">
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+              {Object.entries(METALS).map(([k,v]) => (
+                <Btn key={k} selected={topMetal===k} onClick={()=>setTopMetal(k)} label={v.label}/>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* BOTTOM METAL */}
+        {showBottom && (
+          <Section title="BOTTOM METAL">
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+              {Object.entries(METALS).map(([k,v]) => (
+                <Btn key={k} selected={bottomMetal===k} onClick={()=>setBottomMetal(k)} label={v.label}/>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* STONES */}
+        <Section title="STONES">
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:10}}>
+            {Object.entries(STONES).map(([k,v]) => (
+              <Btn key={k} selected={stoneColor===k} onClick={()=>setStoneColor(k)} label={v.label}/>
+            ))}
+          </div>
+          {stoneColor !== "none" && (
+            <>
+              <div style={{fontSize:9,letterSpacing:2,color:"#444",marginBottom:8}}>STONE COUNT (TOP ONLY)</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
+                {[1,2,3,4].map(n => (
+                  <Btn key={n} selected={stoneCount===n} onClick={()=>setStoneCount(n)} label={`${n}x`}/>
+                ))}
+              </div>
+            </>
+          )}
+        </Section>
+
+        {/* REQUEST QUOTE BUTTON */}
+        <button
+          onClick={() => setQuoteOpen(v=>!v)}
+          style={{
+            width:"100%", padding:"16px", borderRadius:10,
+            background: quoteOpen
+              ? "rgba(201,168,76,0.12)"
+              : "linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))",
+            border:"1px solid #c9a84c",
+            color:"#c9a84c", fontSize:12, fontWeight:700,
+            letterSpacing:4, fontFamily:"'Courier New',monospace",
+            marginBottom:8, transition:"all 0.2s",
+          }}
+        >
+          {quoteOpen ? "▲ HIDE QUOTE INFO" : "✦ REQUEST THIS BUILD"}
+        </button>
+
+        {/* QUOTE FORM */}
+        {quoteOpen && (
+          <div style={{
+            background:"#0a0a0a", border:"1px solid #c9a84c33",
+            borderRadius:10, padding:"20px 18px", marginBottom:8,
+          }}>
+            <div style={{fontSize:9,letterSpacing:3,color:"#c9a84c",marginBottom:16}}>YOUR BUILD SUMMARY</div>
+
+            <div style={{
+              background:"#060606", borderRadius:8, padding:"12px 14px",
+              marginBottom:16, fontSize:11, color:"#999", lineHeight:2,
+            }}>
+              {buildSummary()}
+              <br/>
+              <span style={{color:"#c9a84c",fontWeight:700}}>
+                Est. ${low.toLocaleString()} – ${high.toLocaleString()}
+              </span>
+            </div>
+
+            <div style={{fontSize:9,letterSpacing:3,color:"#555",marginBottom:12}}>CONTACT TO ORDER</div>
+
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              <a href="sms:?body=Hey%2C%20I%20want%20to%20order%20custom%20grillz%3A%20"
+                style={{
+                  display:"block", padding:"14px", borderRadius:8,
+                  background:"#0d0d0d", border:"1px solid #1e1e1e",
+                  color:"#e8e8e8", textDecoration:"none", fontSize:11,
+                  textAlign:"center", letterSpacing:2,
+                }}>
+                📱 TEXT / CALL
+              </a>
+              <a href="https://instagram.com/404_sole_archive"
+                target="_blank" rel="noopener"
+                style={{
+                  display:"block", padding:"14px", borderRadius:8,
+                  background:"#0d0d0d", border:"1px solid #1e1e1e",
+                  color:"#e8e8e8", textDecoration:"none", fontSize:11,
+                  textAlign:"center", letterSpacing:2,
+                }}>
+                📸 @404_SOLE_ARCHIVE
+              </a>
+            </div>
+
+            <div style={{
+              marginTop:14, fontSize:9, color:"#333",
+              textAlign:"center", letterSpacing:2, lineHeight:1.8,
+            }}>
+              TURNAROUND: 2–4 WEEKS<br/>
+              DEPOSIT REQUIRED · CUSTOM ORDER
+            </div>
+          </div>
+        )}
+
+        {/* FOOTER */}
+        <div style={{
+          marginTop:16, textAlign:"center",
+          fontSize:8, letterSpacing:4, color:"#1e1e1e", lineHeight:2,
+        }}>
+          404 GRILLZ · ATLANTA<br/>
+          CUSTOM JEWELRY · EST. 2024
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
