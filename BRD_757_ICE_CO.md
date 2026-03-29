@@ -6,7 +6,7 @@
 
 ## 1. EXECUTIVE SUMMARY
 
-**757 ICE CO.** is a custom jewelry brand born in Hampton, Virginia — serving the 757 area code and beyond. Founded by Darrian Belcher (online operations, brand, distribution) and Omar (master jeweler, Hampton VA), the brand sells:
+**757 ICE CO.** is a custom jewelry brand born in Hampton, Virginia — serving the 757 area code and beyond. Founded by Darrian Belcher (online operations, brand, distribution) and Omar (jeweler-in-training, Hampton VA), the brand sells:
 
 - Custom grillz (10K–14K solid gold, moissanite, VVS options)
 - Chains (plain jane to fully iced — Cuban link, rope, tennis, herringbone)
@@ -347,7 +347,7 @@ Before a public storefront, run a **studio/appointment model:**
 | Partner  | Role                               | Equity  |
 |----------|------------------------------------|---------|
 | Darrian  | Brand, online, marketing, ops      | 50%     |
-| Omar     | Master jeweler, production, quality| 50%     |
+| Omar     | Jeweler (in training), production   | 50%     |
 
 - Consider a formal Operating Agreement from day one (protects both parties)
 - Pay structure: split profits after COGS and operating expenses

@@ -1,0 +1,87 @@
+# .clinerules — darrian-budget / Peach State Savings
+# Read by Cline CLI at every session start. Condensed project rules.
+
+## PROJECT IDENTITY
+- App: peachstatesavings.com (Streamlit, Python, SQLite/PostgreSQL, Anthropic Claude)
+- Owner: Darrian Belcher | darrian@peachstatesavings.com
+- Repo: https://github.com/bookofdarrian/darrian-budget
+- Prod: CT100 @ 100.95.125.112 (Nginx → peachstatesavings.com, port 8501, Docker)
+- CC: collegeconfused.org (port 8502, systemd — NOT a git repo, manual copy required)
+
+## PRIMARY GOALS (in priority order)
+1. SoleOps SaaS — sneaker reseller ops platform, $9.99–$29.99/mo, 10 beta users in 30 days
+2. College Confused — free nonprofit college prep platform, pages 85–90 remaining
+3. darrian-budget — personal finance app, 63+ pages, maintained/expanded nightly
+
+## SDLC PIPELINE — MANDATORY FOR ALL CHANGES
+```
+feature branch → dev → qa → staging → main (prod)
+```
+Branch naming: feature/<name>, bugfix/<name>, hotfix/<name>
+- Create branch FIRST: `git checkout -b feature/<name>`
+- Syntax check every file: `python3 -m py_compile pages/XX.py && echo OK`
+- Run tests before commit: `cd /Users/darrianbelcher/Downloads/darrian-budget && source venv/bin/activate && pytest tests/ -v`
+- Conventional commits: feat:, fix:, refactor:, chore:, test:
+- NEVER push directly to main
+
+## CODE RULES — NON-NEGOTIABLE
+1. Always use `db_exec(conn, ...)` — NEVER `conn.execute()` (crashes on PostgreSQL)
+2. Always use `db_exec(conn, ...)` — NEVER `conn.executescript()` 
+3. Imports from `utils.db`: `get_conn, USE_POSTGRES, execute as db_exec, init_db, get_setting, set_setting`
+4. Imports from `utils.auth`: `require_login, render_sidebar_brand, render_sidebar_user_widget, inject_css`
+5. NEVER hardcode API keys — always `get_setting("anthropic_api_key")`
+6. NEVER use `st.experimental_rerun()` — use `st.rerun()`
+7. AI model: `claude-opus-4-5`
+8. Always close DB connections: `conn.close()`
+9. Always check `if not api_key:` before AI calls
+
+## PAGE STRUCTURE (every new page, this exact order)
+```python
+import streamlit as st
+st.set_page_config(page_title="...", page_icon="🍑", layout="wide")
+from utils.db import get_conn, USE_POSTGRES, execute as db_exec, init_db, get_setting, set_setting
+from utils.auth import require_login, render_sidebar_brand, render_sidebar_user_widget, inject_css
+init_db()
+inject_css()
+require_login()
+```
+
+## SIDEBAR STANDARD (every page)
+```python
+render_sidebar_brand()
+st.sidebar.markdown("---")
+# ⚠️ NEVER put emojis in label= when icon= is also set — doubled icons bug
+st.sidebar.page_link("app.py",                           label="Overview",           icon="📊")
+st.sidebar.page_link("pages/22_todo.py",                 label="Todo",               icon="✅")
+st.sidebar.page_link("pages/24_creator_companion.py",    label="Creator",            icon="🎬")
+st.sidebar.page_link("pages/25_notes.py",                label="Notes",              icon="📝")
+st.sidebar.page_link("pages/26_media_library.py",        label="Media Library",      icon="🎵")
+st.sidebar.page_link("pages/17_personal_assistant.py",   label="Personal Assistant", icon="🤖")
+st.sidebar.page_link("pages/147_proactive_ai_engine.py", label="Proactive AI",       icon="🧠")
+render_sidebar_user_widget()
+```
+
+## DB PATTERN
+```python
+def _ensure_tables():
+    conn = get_conn()
+    ph = "%s" if USE_POSTGRES else "?"
+    db_exec(conn, "CREATE TABLE IF NOT EXISTS ...")
+    conn.close()
+_ensure_tables()
+```
+
+## PRE-COMMIT SCAN (must ALL return empty)
+```bash
+grep -rn "conn\.execute(" pages/ --include="*.py"
+grep -rn "conn\.executescript(" pages/ --include="*.py"
+grep -rn "experimental_rerun" pages/ --include="*.py"
+```
+
+## DEPLOYMENT
+- peachstatesavings.com: `ssh root@100.95.125.112 "cd /opt/darrian-budget && git pull origin main && docker restart darrian-budget"`
+- collegeconfused.org: `ssh root@100.95.125.112 "cp /opt/darrian-budget/pages/XX.py /opt/college-confused/pages/XX.py && systemctl restart college-confused"`
+
+## IDEOLOGY FILTER
+Every feature must pass: "Does this empower communities or extract from them?"
+No-go zones: Trump content, Drake/kids controversy, Epstein-adjacent, legal risk content.
