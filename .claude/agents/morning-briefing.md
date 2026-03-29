@@ -86,9 +86,21 @@ Before generating any briefing, internalize:
 - Pilot the langar concept (no means test, no hierarchy, everyone eats)
 - Document it as practice, not charity
 
-**College Confused**
-- Consistent weekly content
-- Build course outline: financial literacy + career navigation for first-gen students
+**College Confused (collegeconfused.org)**
+- Open access · 1 real student in · nonprofit path: 501(c)(3) filing → HS partnerships → grants
+- Next: File VA Articles of Incorporation ($75) + email 1 Hampton Roads HS counselor
+- Grant pipeline tracked in `.claude/agents/income-pipeline.md`
+
+**757 ICE CO. (@757iceco)**
+- Custom jewelry store · Darrian = online ops · Omar = builds in Hampton VA
+- MVP live at `static/757_ice_co.html` · Not yet launched
+- Next: Omar builds first 3 pieces → Darrian posts build content
+- Fastest path to real cash in the portfolio
+
+**Income Pipeline**
+- Full tracker: `.claude/agents/income-pipeline.md`
+- All 6 streams: Visa · PSS · SoleOps · 757 ICE CO. · CC Nonprofit · Creator
+- Projected: $0/mo side income today → $5K/mo Month 6 → $18.5K/mo Year 1 (excl. Visa)
 
 ---
 

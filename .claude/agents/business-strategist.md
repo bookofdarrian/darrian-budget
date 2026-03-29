@@ -48,11 +48,20 @@ If a business idea fails the filter, say so clearly and suggest a version that p
 - Path: content → community → physical pilot → org formation
 - **Ideology**: The most direct expression of Ubuntu — I am because we are
 
-### College Confused
-- Knowledge democratization for first-gen, HBCU, non-traditional students
-- Financial literacy, career navigation, system-thinking, game explanation
-- Path: content → course → coaching → community
-- **Ideology**: Knowledge should flow to people who need it, not be hoarded
+### College Confused (collegeconfused.org)
+- Open-source AI college prep platform — free, no login required, daily essay rate limit
+- Real usage: 1 student profile, 1 essay (6 AI revisions), 3 scholarships saved, 21 milestones
+- Path: 501(c)(3) filing ($350 total) → local HS partnerships → grants ($10K–$500K range)
+- Nonprofit filing checklist lives in `.claude/agents/income-pipeline.md`
+- **Ideology**: Knowledge infrastructure for first-gen students who can't afford college counselors
+
+### 757 ICE CO. (757iceco.com / @757iceco)
+- Custom jewelry online store built for Hampton Roads, VA
+- Darrian = online ops / brand / marketing · Omar (age 23) = production in Hampton, VA
+- Products: Grillz ($250–$1,200) · Chains · Bracelets · Watches · Earrings (men + women)
+- MVP live: `static/757_ice_co.html` · Brand established · Not yet launched
+- Fastest path to real cash in the portfolio (no software users needed — just Omar building pieces)
+- **Ideology**: Enabling a 757 community member to build generational wealth through craft
 
 ---
 
