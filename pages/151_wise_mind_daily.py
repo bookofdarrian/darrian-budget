@@ -1294,14 +1294,11 @@ with tabs[7]:
 
     # Load today's logs
     conn = get_conn()
-    ph = "%s" if USE_POSTGRES else "?"
     rows = []
     try:
-        cur = conn.execute(
-            f"SELECT med_name, taken, time_taken, notes FROM wm_med_log WHERE user_id={ph} AND log_date={ph}",
-            (st.session_state.get("user_id", 1), today_str)
-        ) if USE_POSTGRES else conn.execute(
-            "SELECT med_name, taken, time_taken, notes FROM wm_med_log WHERE user_id=? AND log_date=?",
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT med_name, taken, time_taken, notes FROM wm_med_log WHERE user_id={PH} AND log_date={PH}",
             (st.session_state.get("user_id", 1), today_str)
         )
         rows = [dict(zip([c[0] for c in cur.description], r)) for r in cur.fetchall()]
@@ -1355,8 +1352,9 @@ with tabs[7]:
     # ── ADHERENCE STREAK ─────────────────────────────────────────────────────
     conn = get_conn()
     try:
-        cur = conn.execute(
-            "SELECT log_date, COUNT(*) as cnt FROM wm_med_log WHERE user_id=? AND taken=1 GROUP BY log_date ORDER BY log_date DESC LIMIT 30",
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT log_date, COUNT(*) as cnt FROM wm_med_log WHERE user_id={PH} AND taken=1 GROUP BY log_date ORDER BY log_date DESC LIMIT 30",
             (st.session_state.get("user_id", 1),)
         )
         streak_rows = cur.fetchall()
