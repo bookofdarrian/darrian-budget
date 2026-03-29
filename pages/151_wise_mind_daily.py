@@ -79,6 +79,116 @@ DARRIAN_GROWTH_EDGES = [
     ("💔 Can Be Overly Hurt (Virgo energy)", "You feel deeply. That's a strength AND an edge. Let yourself feel it. Don't bottle. Don't explode."),
 ]
 
+# ── Medications & Care (from Tanner Willowbrooke discharge 3/27/2026) ──────────
+DARRIAN_MEDS = [
+    {
+        "name": "OLANZapine (Zyprexa)",
+        "dose": "10 mg tablet",
+        "schedule": "NIGHT",
+        "schedule_detail": "Take 1 tablet (10 mg) by mouth every night.",
+        "for": "Bipolar disorder / mood stabilization",
+        "start_date": "March 26, 2026",
+        "color": "#7c3aed",
+        "icon": "🟣",
+        "warnings": [
+            "May cause dizziness — stand up slowly",
+            "Avoid alcohol and marijuana",
+            "May raise blood sugar — check regularly",
+            "Don't drive until you know how it affects you",
+            "May cause weight gain — track food",
+        ],
+    },
+    {
+        "name": "OXcarbazepine (Trileptal)",
+        "dose": "150 mg tablet × 2",
+        "schedule": "AM + PM",
+        "schedule_detail": "Take 1 tablet (150 mg) in the MORNING and 1 tablet (150 mg) in the EVENING.",
+        "for": "Mood stabilization / seizure prevention",
+        "start_date": "March 27, 2026",
+        "color": "#0ea5e9",
+        "icon": "🔵",
+        "warnings": [
+            "DO NOT stop suddenly — increases seizure risk",
+            "Birth control pills may not work while on this",
+            "Watch for mood changes or thoughts of suicide",
+            "Don't drive until you know how it affects you",
+        ],
+    },
+    {
+        "name": "atomoxetine (Strattera)",
+        "dose": "40 mg capsule",
+        "schedule": "DAILY",
+        "schedule_detail": "Take 1 capsule (40 mg) once daily. Starting March 28, 2026.",
+        "for": "ADHD management",
+        "start_date": "March 28, 2026",
+        "color": "#f59e0b",
+        "icon": "🟡",
+        "warnings": [
+            "Swallow capsule WHOLE — DO NOT open (eye irritant)",
+            "Take at the same time each day",
+        ],
+    },
+    {
+        "name": "mirtazapine (Remeron)",
+        "dose": "15 mg tablet",
+        "schedule": "NIGHT",
+        "schedule_detail": "Take 1 tablet (15 mg) by mouth every night.",
+        "for": "Depression / sleep support",
+        "start_date": "March 26, 2026",
+        "color": "#10b981",
+        "icon": "🟢",
+        "warnings": [
+            "Take at the same time each night",
+            "May cause drowsiness — good for sleep, careful in AM",
+        ],
+    },
+]
+
+DARRIAN_STOPPED_MEDS = [
+    {"name": "QUEtiapine (Seroquel)", "dose": "200 mg", "reason": "Discontinued at discharge 3/27/2026 — DO NOT TAKE"},
+]
+
+DARRIAN_APPOINTMENTS = [
+    {
+        "title": "Beal Wellness",
+        "type": "Mental Health Follow-Up",
+        "date_str": "3/31/2026",
+        "date_obj": date(2026, 3, 31),
+        "time": "10:30 AM",
+        "address": "1093 Cleveland Ave, Atlanta, GA 30334",
+        "phone": "404-768-2218",
+        "fax": "404-768-2138",
+        "notes": "First follow-up post-discharge. Bring medication list. CRITICAL — do not miss.",
+        "urgent": True,
+    },
+]
+
+DARRIAN_PHARMACY = {
+    "name": "CVS/pharmacy #4178",
+    "address": "895 Ralph Abernathy Blvd SW, Atlanta, GA 30310",
+    "phone": "404-755-1511",
+    "pickup_list": ["atomoxetine (Strattera) 40 mg", "mirtazapine (Remeron) 15 mg",
+                    "OLANZapine (Zyprexa) 10 mg", "OXcarbazepine (Trileptal) 150 mg"],
+}
+
+DARRIAN_MYCHART = {
+    "url": "https://www.tannermychart.org/MyChart/",
+    "activation_code": "SB3FK-4FC3Q-NSTVF",
+    "expires": "4/22/2026",
+    "mrn": "3913971",
+}
+
+# Georgia Crisis Lines (from discharge resources)
+GEORGIA_CRISIS_LINES = [
+    ("988 Suicide & Crisis Lifeline", "Call or text 988", "24/7"),
+    ("Crisis Text Line", "Text HOME to 741741", "24/7"),
+    ("GCAL — Georgia Crisis & Access Line", "1-800-715-4225", "24/7 — mygcal.com"),
+    ("Tanner Willowbrooke Psychiatry", "770-812-3266", "Your treatment team"),
+    ("CARES Warm Line (recovery support)", "1-844-326-5400", "Call/Text 8:30AM–11PM daily"),
+    ("Peer2Peer Warm Line", "888-945-1414", "24/7 peer support"),
+    ("NAMI Georgia", "www.nami.org", "Free online resources"),
+]
+
 # Revolutionary Figures + Inspirational Figures (from Darrian's handwritten list)
 FIRE_QUOTES = [
     # Malcolm X
@@ -142,7 +252,14 @@ DBT_WISE_MIND   = ["Stone on the Lake", "Walking the Spiral Staircase", "Breathi
 COPING_POSITIVE = ["Walk / Run", "Gym", "Breathing exercises", "Meditation / Off-grid time", "Cycling",
                    "Stretching / Yoga", "Sleeping (restorative)", "Eating well", "Gaming (brief)",
                    "Talking with family", "Cold shower / ice", "Journaling / Writing", "Coding",
-                   "Making tea or coffee", "Reading", "Music", "Basketball"]
+                   "Making tea or coffee", "Reading", "Music", "Basketball",
+                   # From the coping wheel (Tanner Willowbrooke, March 2026)
+                   "Word search / Crossword puzzle", "Paint or draw", "Write a short story or song",
+                   "Cook or bake with family", "Dance", "Play a board game", "Volunteer your time",
+                   "Watch a favorite movie", "Rearrange or clean your room", "Deep breathing",
+                   "Face your problem (Opposite Action)", "Spend time with family", "Go for a hike",
+                   "Listen to calming music", "Use positive self-talk", "Eat a healthy meal",
+                   "Stretching / yoga", "Make something (art, jewelry, music)", "Ask for a hug"]
 COPING_NEGATIVE = ["Smoking weed", "Alcohol", "Not eating properly", "Not sleeping enough",
                    "Isolating (long-term)", "Yelling", "Talking too fast", "Blocking the trigger (avoidance)",
                    "Doom scrolling", "Impulsive spending"]
@@ -231,6 +348,20 @@ def _ensure_tables():
             what_i_gave     TEXT,
             what_i_received TEXT,
             community_vision TEXT,
+            notes           TEXT,
+            created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # Medication adherence log
+    db_exec(conn, f"""
+        CREATE TABLE IF NOT EXISTS wm_med_log (
+            id              {AUTO},
+            user_id         INTEGER NOT NULL DEFAULT 1,
+            log_date        DATE NOT NULL,
+            med_name        TEXT NOT NULL,
+            taken           INTEGER DEFAULT 0,
+            time_taken      TEXT,
             notes           TEXT,
             created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -388,6 +519,30 @@ if today_state:
 else:
     st.info("🌅 No check-in logged today. Start with **Today's State** below — takes 2 minutes.")
 
+# ── Appointment Alert Banner ───────────────────────────────────────────────────
+_today = date.today()
+for appt in DARRIAN_APPOINTMENTS:
+    days_until = (appt["date_obj"] - _today).days
+    if 0 <= days_until <= 7:
+        if days_until == 0:
+            badge = "🚨 TODAY"
+            color = "#ef4444"
+        elif days_until == 1:
+            badge = "⚠️ TOMORROW"
+            color = "#f59e0b"
+        else:
+            badge = f"📅 IN {days_until} DAYS"
+            color = "#3b82f6"
+        st.markdown(f"""
+<div style="background: #1a0a00; border: 2px solid {color}; border-radius: 10px; padding: 14px 18px; margin: 8px 0;">
+<span style="color:{color}; font-weight:bold; font-size:1rem;">{badge} — {appt['title']}</span>
+<span style="color:#94a3b8; font-size:0.9rem; margin-left:12px;">{appt['type']}</span><br>
+<span style="color:#e2e8f0; font-size:1rem; font-weight:bold;">🕙 {appt['time']} on {appt['date_str']}</span>
+<span style="color:#64748b; font-size:0.85rem; margin-left:12px;">📍 {appt['address']}  📞 {appt['phone']}</span><br>
+<span style="color:#fbbf24; font-size:0.85rem;">💡 {appt['notes']}</span>
+</div>
+""", unsafe_allow_html=True)
+
 st.divider()
 
 # ── TABS ───────────────────────────────────────────────────────────────────────
@@ -398,7 +553,8 @@ tabs = st.tabs([
     "💪 Strengths Mirror",
     "🌍 Ubuntu",
     "⛵ The Will of D",
-    "📊 Trends"
+    "📊 Trends",
+    "💊 Meds & Care",
 ])
 
 
@@ -1085,3 +1241,203 @@ with tabs[6]:
             col1.metric("Avg Intensity (Before)", f"{avg_before:.1f}/10")
             col2.metric("Avg Intensity (After)", f"{avg_after:.1f}/10")
             col3.metric("Avg Reduction", f"{avg_reduce:.1f} pts", delta=f"{'↓' if avg_reduce > 0 else '↑'} intensity")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 7 — 💊 MEDS & CARE
+# ─────────────────────────────────────────────────────────────────────────────
+with tabs[7]:
+    st.markdown("## 💊 Meds & Care")
+    st.caption("Your personal medication schedule, appointments, pharmacy, and crisis lines — all in one place.")
+
+    # ── STOPPED MED WARNING ──────────────────────────────────────────────────
+    st.error(
+        "🚫 **STOP — DO NOT TAKE:** " +
+        " · ".join(f"**{m['name']}** ({m['reason']})" for m in DARRIAN_STOPPED_MEDS),
+        icon="⛔"
+    )
+
+    st.divider()
+
+    # ── DAILY MEDICATION SCHEDULE ─────────────────────────────────────────────
+    st.markdown("### 📅 Daily Schedule")
+
+    col_am, col_pm, col_night = st.columns(3)
+
+    def _med_card(col, time_label, emoji):
+        # schedule values: "AM + PM", "NIGHT", "DAILY"
+        def _matches(sched, label):
+            s = sched.upper()
+            if label == "AM":
+                return "AM" in s or "DAILY" in s
+            if label == "PM":
+                return "PM" in s
+            if label == "NIGHT":
+                return "NIGHT" in s
+            return False
+        meds_for_time = [m for m in DARRIAN_MEDS if _matches(m["schedule"], time_label)]
+        col.markdown(f"**{emoji} {time_label}**")
+        if meds_for_time:
+            for m in meds_for_time:
+                col.markdown(f"- **{m['name']}** {m['dose']}  \n  _{m['schedule_detail']}_")
+        else:
+            col.markdown("_No meds at this time_")
+
+    _med_card(col_am,    "AM",    "🌅")
+    _med_card(col_pm,    "PM",    "🌇")
+    _med_card(col_night, "NIGHT", "🌙")
+
+    st.divider()
+
+    # ── MED ADHERENCE TRACKER ────────────────────────────────────────────────
+    st.markdown("### ✅ Log Today's Meds")
+    today_str = date.today().isoformat()
+
+    # Load today's logs
+    conn = get_conn()
+    ph = "%s" if USE_POSTGRES else "?"
+    rows = []
+    try:
+        cur = conn.execute(
+            f"SELECT med_name, taken, time_taken, notes FROM wm_med_log WHERE user_id={ph} AND log_date={ph}",
+            (st.session_state.get("user_id", 1), today_str)
+        ) if USE_POSTGRES else conn.execute(
+            "SELECT med_name, taken, time_taken, notes FROM wm_med_log WHERE user_id=? AND log_date=?",
+            (st.session_state.get("user_id", 1), today_str)
+        )
+        rows = [dict(zip([c[0] for c in cur.description], r)) for r in cur.fetchall()]
+    except Exception:
+        pass
+    conn.close()
+
+    taken_names = {r["med_name"] for r in rows if r["taken"]}
+
+    with st.form("med_log_form"):
+        st.markdown(f"**Date: {today_str}**")
+        med_checks = {}
+        med_notes  = {}
+        for m in DARRIAN_MEDS:
+            c1, c2 = st.columns([1, 2])
+            med_checks[m["name"]] = c1.checkbox(
+                f"{m['name']} {m['dose']}",
+                value=(m["name"] in taken_names)
+            )
+            med_notes[m["name"]] = c2.text_input(
+                "Notes (optional)",
+                key=f"med_note_{m['name']}",
+                label_visibility="collapsed",
+                placeholder=f"e.g. took with food — {m['name']}"
+            )
+        submitted = st.form_submit_button("💾 Save Med Log", use_container_width=True)
+
+    if submitted:
+        conn = get_conn()
+        uid = st.session_state.get("user_id", 1)
+        now_time = datetime.now().strftime("%H:%M")
+        for m in DARRIAN_MEDS:
+            # Upsert: delete existing then insert
+            try:
+                db_exec(conn, "DELETE FROM wm_med_log WHERE user_id=? AND log_date=? AND med_name=?",
+                        (uid, today_str, m["name"]))
+                db_exec(conn, """INSERT INTO wm_med_log (user_id, log_date, med_name, taken, time_taken, notes)
+                                  VALUES (?, ?, ?, ?, ?, ?)""",
+                        (uid, today_str, m["name"],
+                         1 if med_checks[m["name"]] else 0,
+                         now_time if med_checks[m["name"]] else None,
+                         med_notes[m["name"]] or None))
+            except Exception as e:
+                st.error(f"DB error: {e}")
+        conn.commit()
+        conn.close()
+        taken_count = sum(1 for v in med_checks.values() if v)
+        st.success(f"✅ Saved! {taken_count}/{len(DARRIAN_MEDS)} medications logged as taken today.")
+        st.rerun()
+
+    # ── ADHERENCE STREAK ─────────────────────────────────────────────────────
+    conn = get_conn()
+    try:
+        cur = conn.execute(
+            "SELECT log_date, COUNT(*) as cnt FROM wm_med_log WHERE user_id=? AND taken=1 GROUP BY log_date ORDER BY log_date DESC LIMIT 30",
+            (st.session_state.get("user_id", 1),)
+        )
+        streak_rows = cur.fetchall()
+    except Exception:
+        streak_rows = []
+    conn.close()
+
+    if streak_rows:
+        st.divider()
+        st.markdown("### 📈 Adherence (Last 30 Days)")
+        streak_dates = [r[0] for r in streak_rows]
+        streak_days  = len(streak_dates)
+        st.metric("Days with at least 1 med logged", f"{streak_days} days")
+
+    st.divider()
+
+    # ── UPCOMING APPOINTMENTS ────────────────────────────────────────────────
+    st.markdown("### 📍 Upcoming Appointments")
+    for appt in DARRIAN_APPOINTMENTS:
+        with st.container(border=True):
+            st.markdown(f"**{appt['title']}** — {appt['type']}  \n"
+                        f"📅 {appt['date_str']} at {appt['time']}  \n"
+                        f"📌 {appt['address']}  \n"
+                        f"📞 [{appt['phone']}](tel:{appt['phone'].replace('-','')})")
+            st.markdown(f"💡 _{appt['notes']}_")
+            st.markdown(
+                f"[🗺️ Get Directions](https://maps.apple.com/?q={appt['address'].replace(' ','+')})",
+                unsafe_allow_html=False
+            )
+
+    st.divider()
+
+    # ── PHARMACY ─────────────────────────────────────────────────────────────
+    st.markdown("### 💊 Pharmacy")
+    with st.container(border=True):
+        st.markdown(
+            f"**{DARRIAN_PHARMACY['name']}**  \n"
+            f"📌 {DARRIAN_PHARMACY['address']}  \n"
+            f"📞 [{DARRIAN_PHARMACY['phone']}](tel:{DARRIAN_PHARMACY['phone'].replace('-','')})"
+        )
+        st.markdown("**Prescriptions to pick up:**")
+        for rx in DARRIAN_PHARMACY["pickup_list"]:
+            st.markdown(f"- {rx}")
+
+    st.divider()
+
+    # ── MYCHART ──────────────────────────────────────────────────────────────
+    st.markdown("### 🏥 Tanner MyChart")
+    with st.container(border=True):
+        c1, c2 = st.columns(2)
+        c1.markdown(
+            f"**Portal:** [{DARRIAN_MYCHART['url']}]({DARRIAN_MYCHART['url']})  \n"
+            f"**MRN:** `{DARRIAN_MYCHART['mrn']}`"
+        )
+        c2.markdown(
+            f"**Activation Code:**  \n"
+            f"```\n{DARRIAN_MYCHART['activation_code']}\n```  \n"
+            f"_Expires: {DARRIAN_MYCHART['expires']}_"
+        )
+        st.info("💡 Use the activation code on the MyChart portal to set up your account and view discharge records.")
+
+    st.divider()
+
+    # ── CRISIS LINES ─────────────────────────────────────────────────────────
+    st.markdown("### 🆘 Crisis & Warm Lines")
+    st.caption("You are never alone. These lines are available 24/7 or during extended hours.")
+    for line in GEORGIA_CRISIS_LINES:
+        c1, c2, c3 = st.columns([2, 2, 3])
+        c1.markdown(f"**{line[0]}**")
+        c2.markdown(f"`{line[1]}`")
+        c3.markdown(f"_{line[2]}_")
+
+    st.divider()
+
+    # ── MED WARNINGS (EXPANDABLE) ────────────────────────────────────────────
+    with st.expander("⚠️ Medication Warnings & Notes"):
+        for m in DARRIAN_MEDS:
+            warnings = m.get("warnings", [])
+            if warnings:
+                st.warning(f"**{m['name']}** ({m['dose']})\n\n" + "\n".join(f"- {w}" for w in warnings))
+        st.error(
+            "🚫 **STOPPED MEDICATIONS — DO NOT TAKE:**\n\n" +
+            "\n".join(f"- **{m['name']}** {m['dose']}: {m['reason']}" for m in DARRIAN_STOPPED_MEDS)
+        )
