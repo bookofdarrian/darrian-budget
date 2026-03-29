@@ -126,6 +126,30 @@
 
 ---
 
+## 🌊 NEW FEATURES — From Voluntary Hospitalization Notes (March 2026)
+
+> Darrian spent 5 days in a voluntary mental health facility. These ideas came from that time.
+> Personal, specific, and deeply considered. Build in this order.
+
+### 🧠 Mental Health OS (NEW — Build Next After DBT Page)
+- [x] **Wise Mind Daily** — page 151 — DBT practice tracker, grounding toolkit, trigger log, strengths mirror, Ubuntu reflection, revolutionary figures quote library (Malcolm X, Assata, Bobby Seale, Huey P Newton, Luffy/Oda), coping skills tracker (positive + negative). [DONE] ✅ (pages/151_wise_mind_daily.py)
+- [ ] **Family Health Dashboard — Mom Pilot** — Tailored version of page 144 for Darrian's mom. Simpler UI, remove advanced features, focus on: daily mood check-in, medications, appointments, family alerts. Start with mom, then extend to sisters.
+- [ ] **Gym → Calendar Integration** — Add gym schedule (3 strength, 2 cardio per week) to Google Calendar via existing calendar integration. Auto-block time, track completion, streak counter.
+- [ ] **Morning + Night Routine Tracker** — Dedicated habit tracker for AM/PM routines. DBT-aligned: mindfulness, meds, physical movement, intention setting. Pomodoro timer built in for ADHD time blindness.
+- [ ] **Pomodoro Focus Timer** — Standalone focus mode within the Todo page or as a widget. 25/5 or custom intervals. One-Mindfully counter. "Focus session complete" celebration.
+
+### 💼 New Business Ideas (From Handwritten Notes, March 2026)
+> Darrian generated these during 5 days of focused thinking. All warrant market research.
+
+- [ ] **PSS for Banks** — AI-based software suite to license to banks/credit unions. PSS private tier for family + friends. Explore B2B SaaS angle. Market research needed: what do community banks actually pay for?
+- [ ] **Peach State Real Estate** — MLS/Redfin/Zillow web scraping + intelligent filtering for real estate agents. Realtors would pay for this. MVP: scrape → filter → email digest. Research: realtor pain points, price sensitivity.
+- [ ] **Local Website Builder** — Create websites for small businesses (ATL focus). Template-driven, AI-assisted copy, quick turnaround. Revenue model: one-time + monthly hosting.
+- [ ] **Agentic AI Consultant** — Work with companies to improve token efficiency and create custom AI tools specific to their tech stack and workflow. Darrian's TPM + builder background = credibility. Pricing: $150-300/hr consulting.
+- [ ] **Creative AI Pipeline** — AI-enhanced tools for: logos/patches, manga storyboards, clothing design (hats/shirts/hoodies/joggers), 3D printing files, embroidery designs, product designs, advertisements. "Not replacing but enhancing creative thinking."
+- [ ] **Autonomous AI SDLC Pipeline (SaaS)** — Sell the overnight AI dev system as a product to other developers/companies. White-label the SDLC automation.
+
+---
+
 ## 🚨 HIGHEST PRIORITY — Build These In Order
 
 > **Agents: Build these in order. Do NOT build anything else until these are complete.**

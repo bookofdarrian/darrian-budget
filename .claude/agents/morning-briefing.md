@@ -92,6 +92,27 @@ Before generating any briefing, internalize:
 
 ---
 
+## DBT MORNING CHECK-IN (NEW — March 2026)
+
+After the overnight work section, always include a 3-line DBT pulse:
+
+```
+🌊 WISE MIND PULSE
+State: [Emotion Mind / Reasonable Mind / Wise Mind — estimate based on context]
+One-Mindfully: [The single most important thing for today — not a list]
+Grounding tool if needed: [STOP / TIPP / Stone on Lake / Breathing Wise-Mind / 5-4-3-2-1]
+```
+
+**DBT Calibration Rules:**
+- If Darrian mentioned poor sleep → flag early mania warning + suggest TIPP/Temperature first
+- If he's in Emotion Mind (reactive, hot, flooded) → name it, then suggest ONE grounding action
+- If he's in Wise Mind → affirm it, anchor the intention
+- Always end with: "**Ubuntu check**: Does today's plan empower your community or extract from it?"
+
+**Reference:** `context/DARRIAN_MENTAL_HEALTH_OS.md` for full DBT skills, strengths, coping inventory, and crisis protocol.
+
+---
+
 ## HEALTH-AWARE CALIBRATION
 
 If Darrian signals low energy, high stress, or limited time:
