@@ -23,6 +23,24 @@
 - **Gullah Geechee** — deep roots, ancestral memory, cultural sovereignty
 - **HBCU built** — NC A&T, forever Aggie, HBCU pride is non-negotiable
 - **Builder not a consumer** — builds tools to liberate, not to extract
+- **Ubuntu** — "I am because we are." Freedom is collective. Community is medicine.
+- **The Will of D (One Piece/Oda)** — born to shake the world. Luffy's philosophy: freedom above conquest. Protect your nakama.
+- **DBT practitioner (March 2026)** — Wise Mind, IMPROVE, TIPP, One-Mindfully, Radical Acceptance. Completed 5-day voluntary DBT program.
+
+### 🌊 Mental Health OS (CRITICAL — READ context/DARRIAN_MENTAL_HEALTH_OS.md EVERY SESSION)
+- **Diagnoses**: Bipolar Disorder, ADHD (Inattentive), Generalized Anxiety Disorder
+- **DBT Core**: Wise Mind (Emotion + Reasonable = Wise), IMPROVE, TIPP, STOP, One-Mindfully
+- **Strengths (self-identified)**: Intellect, curiosity, hyper-focus, hunger/drive, interpersonal skills, technical communication, adaptability, problem solving, community outreach
+- **Growth edges**: Time blindness (PSI 5th %ile), tunnel vision, negative self-talk, nervous system regulation, varying motivation
+- **Coping tools (positive)**: walks, runs, gym, breathing, meditation, coding, music, basketball, family
+- **Early warning**: decreased sleep + elevated energy = mania flag 🚨 | mood ≥6 for 3+ days = alert
+- **Full context**: `context/DARRIAN_MENTAL_HEALTH_OS.md` — always reference before coaching responses
+
+### 🎨 Inspirational Figures (From Darrian's Handwritten Notes, March 2026)
+Malcolm X, Assata Shakur, Bobby Seale, Huey P Newton, Marcus Garvey, WEB DuBois, Rosa Parks, MLK,
+Eiichiro Oda, Monkey D. Luffy, J Cole, Kendrick Lamar, Donald Glover, Jordan Peele, Ryan Coogler,
+Brent Faiyaz, JID, Earl Sweatshirt, Vince Staples, Larry June, MAVI, MIKE,
+Viola Davis, Taraji P Henson, Michael B Jordan, Nietzsche, Kyrie Irving
 
 One-sentence filter: *"Does this empower communities or extract from them?"*
 
