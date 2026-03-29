@@ -345,6 +345,59 @@
   .modal-close:hover { color: #c9a84c; border-color: #c9a84c55; background: #252525; }
   .modal-close:focus-visible { outline: 2px solid #c9a84c; outline-offset: 2px; }
 
+  /* ── LOOKBOOK ───────────────────────────── */
+  .lookbook { border-bottom: 1px solid #141414; }
+  .lookbook-header { padding: 48px 60px 24px; }
+  .lookbook-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-rows: 380px 380px;
+    gap: 4px;
+  }
+  .lookbook-tile { position: relative; overflow: hidden; background: #0d0d0d; }
+  .lookbook-tile.feature { grid-row: span 2; }
+  .lookbook-tile img {
+    width: 100%; height: 100%; object-fit: cover; object-position: center top;
+    transition: transform 0.5s ease; display: block;
+  }
+  .lookbook-tile:hover img { transform: scale(1.04); }
+  .lookbook-tile-fallback {
+    width: 100%; height: 100%;
+    background: linear-gradient(145deg, #1a1200, #0d0d0d, #1a1000);
+    display: none; align-items: center; justify-content: center;
+    font-size: 56px; position: absolute; inset: 0;
+  }
+  .lookbook-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.15) 50%, transparent 100%);
+    pointer-events: none;
+  }
+  .lookbook-label {
+    position: absolute; bottom: 0; left: 0; right: 0; padding: 22px 20px;
+  }
+  .lookbook-label .lbl-cat  { font-size: 10px; letter-spacing: 4px; color: #c9a84c; font-family: 'Courier New', monospace; margin-bottom: 5px; }
+  .lookbook-label .lbl-name { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+  .lookbook-label .lbl-price{ font-size: 12px; color: #c9a84c; font-family: 'Courier New', monospace; margin-top: 5px; }
+  .lookbook-cta {
+    display: inline-block; margin-top: 10px; padding: 8px 16px;
+    background: rgba(201,168,76,0.15); border: 1px solid #c9a84c55;
+    color: #c9a84c; font-size: 10px; letter-spacing: 2px;
+    font-family: 'Courier New', monospace; border-radius: 4px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .lookbook-cta:hover { background: rgba(201,168,76,0.28); }
+  @media (max-width: 900px) {
+    .lookbook-grid { grid-template-columns: 1fr 1fr; grid-template-rows: 280px 280px; }
+    .lookbook-tile.feature { grid-row: span 1; }
+    .lookbook-header { padding: 32px 16px 18px; }
+  }
+  @media (max-width: 540px) {
+    .lookbook-grid { grid-template-columns: 1fr 1fr; grid-template-rows: 190px 190px; gap: 3px; }
+    .lookbook-label .lbl-name { font-size: 12px; }
+    .lookbook-label .lbl-price { display: none; }
+    .lookbook-cta { display: none; }
+  }
+
   /* ── SKIP NAV (ACCESSIBILITY) ────────────── */
   .skip-nav {
     position: absolute; top: -100px; left: 16px; z-index: 999;
@@ -463,6 +516,98 @@ const MARKET_INSIGHTS = [
   "Word-of-mouth in Hampton Roads is extremely powerful — one HU homecoming or NSU Yard Show appearance can generate 50+ inquiries.",
   "Payment plans (Afterpay, Sezzle, or personal layaway) increase average order value 40–60% and close hesitant buyers.",
 ];
+
+/* ═══════════════════════════════════════════════════════
+   LOOKBOOK DATA
+═══════════════════════════════════════════════════════ */
+
+const LOOKBOOK = [
+  {
+    feature: true,
+    img: "https://images.pexels.com/photos/3756378/pexels-photo-3756378.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=800&h=1200&fit=crop",
+    alt: "Beautiful woman wearing gold grillz and jewelry",
+    cat: "GRILLZ",
+    name: "Custom Gold Grillz",
+    price: "From $250",
+    emoji: "😁",
+  },
+  {
+    feature: false,
+    img: "https://images.pexels.com/photos/1697214/pexels-photo-1697214.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=600&h=700&fit=crop",
+    alt: "Luxury watch on wrist",
+    cat: "WATCHES",
+    name: "Gold Presidential",
+    price: "From $420",
+    emoji: "⌚",
+  },
+  {
+    feature: false,
+    img: "https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=600&h=700&fit=crop",
+    alt: "Woman with diamond earrings and chain",
+    cat: "EARRINGS",
+    name: "VVS Diamond Studs",
+    price: "From $95",
+    emoji: "💎",
+  },
+  {
+    feature: false,
+    img: "https://images.pexels.com/photos/1681010/pexels-photo-1681010.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=600&h=700&fit=crop",
+    alt: "Man wearing Cuban link chain",
+    cat: "CHAINS",
+    name: "Cuban Link Chain",
+    price: "From $140",
+    emoji: "⛓",
+  },
+  {
+    feature: false,
+    img: "https://images.pexels.com/photos/1454171/pexels-photo-1454171.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=600&h=700&fit=crop",
+    alt: "Woman with tennis bracelet and gold jewelry",
+    cat: "BRACELETS",
+    name: "Tennis Bracelet",
+    price: "From $90",
+    emoji: "✨",
+  },
+];
+
+function Lookbook({ onOrder }) {
+  const handleImgError = (e) => {
+    e.target.style.display = "none";
+    const fb = e.target.parentNode.querySelector(".lookbook-tile-fallback");
+    if (fb) fb.style.display = "flex";
+  };
+
+  return (
+    <section className="lookbook">
+      <div className="lookbook-header">
+        <div className="section-eyebrow">✦ LOOKBOOK</div>
+        <div className="section-title">THE 757 DRIP</div>
+        <div className="section-desc">QUALITY PIECES · HAMPTON ROADS FINEST · EVERY STYLE</div>
+      </div>
+      <div className="lookbook-grid">
+        {LOOKBOOK.map((item, i) => (
+          <div key={i} className={`lookbook-tile${item.feature ? " feature" : ""}`}
+            onClick={() => onOrder({
+              name: item.name, price: item.price, priceNote: "Custom Order",
+              desc: `${item.cat} — ${item.name}`, tag: item.cat, gender: "U",
+              emoji: item.emoji, badge: null, badgeLabel: null,
+            })}
+            style={{cursor:"pointer"}}
+          >
+            <img src={item.img} alt={item.alt} onError={handleImgError} loading="lazy" />
+            <div className="lookbook-tile-fallback">{item.emoji}</div>
+            <div className="lookbook-overlay" />
+            <div className="lookbook-label">
+              <div className="lbl-cat">{item.cat}</div>
+              <div className="lbl-name">{item.name}</div>
+              <div className="lbl-price">{item.price}</div>
+              <div className="lookbook-cta">ORDER NOW</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 /* ═══════════════════════════════════════════════════════
    COMPONENTS
@@ -871,6 +1016,8 @@ function App() {
             <span className="badge gold">757 OWNED & OPERATED</span>
           </div>
         </section>
+
+        <Lookbook onOrder={setOrderItem} />
 
         {/* ── GRILLZ ── */}
         <section id="sec-grillz" className="section">
