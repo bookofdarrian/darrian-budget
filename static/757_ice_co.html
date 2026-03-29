@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>757 ICE CO. — Hampton Roads Custom Jewelry</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { scroll-behavior: smooth; }
+  body { background: #050505; font-family: 'Courier New', monospace; color: #e0e0e0; overflow-x: hidden; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #080808; }
+  ::-webkit-scrollbar-thumb { background: #c9a84c44; border-radius: 2px; }
+  button { cursor: pointer; -webkit-appearance: none; border: none; background: none; font-family: inherit; }
+  a { text-decoration: none; color: inherit; }
+  img { max-width: 100%; }
+
+  /* ── LAYOUT ─────────────────────────────── */
+  .shell { display: flex; min-height: 100vh; }
+
+  /* DESKTOP SIDEBAR */
+  .sidebar {
+    width: 220px; min-height: 100vh;
+    background: #070707;
+    border-right: 1px solid #141414;
+    display: flex; flex-direction: column;
+    position: fixed; top: 0; left: 0; bottom: 0;
+    z-index: 100; overflow-y: auto;
+  }
+  .sidebar-brand { padding: 28px 20px 20px; border-bottom: 1px solid #111; }
+  .sidebar-brand .mark { font-size: 7px; letter-spacing: 6px; color: #c9a84c; margin-bottom: 4px; }
+  .sidebar-brand .name { font-size: 20px; font-weight: 900; letter-spacing: 4px; color: #fff;
+    text-shadow: 0 0 20px rgba(201,168,76,0.25); }
+  .sidebar-brand .sub  { font-size: 7px; letter-spacing: 3px; color: #2e2e2e; margin-top: 4px; }
+  .sidebar-nav { padding: 16px 12px; flex: 1; }
+  .sidebar-nav a {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 12px; border-radius: 8px;
+    font-size: 10px; letter-spacing: 3px; color: #444;
+    margin-bottom: 3px; transition: all 0.15s;
+  }
+  .sidebar-nav a:hover, .sidebar-nav a.active {
+    background: rgba(201,168,76,0.07);
+    color: #c9a84c;
+    border-left: 2px solid #c9a84c;
+  }
+  .sidebar-nav a .nav-icon { font-size: 14px; flex-shrink: 0; }
+  .sidebar-contact {
+    padding: 16px; border-top: 1px solid #111; font-size: 9px;
+    color: #2a2a2a; letter-spacing: 2px; line-height: 2;
+  }
+  .sidebar-contact a { color: #555; }
+  .sidebar-contact a:hover { color: #c9a84c; }
+
+  /* MAIN CONTENT */
+  .main { margin-left: 220px; flex: 1; padding-bottom: 80px; }
+
+  /* MOBILE TOP BAR */
+  .mobile-bar {
+    display: none;
+    position: sticky; top: 0; z-index: 90;
+    background: #060606; border-bottom: 1px solid #111;
+    padding: 14px 16px 10px;
+    align-items: center; justify-content: space-between;
+  }
+  .mobile-bar .brand-name { font-size: 18px; font-weight: 900; letter-spacing: 4px; color: #fff; }
+  .mobile-bar .brand-sub  { font-size: 7px; letter-spacing: 3px; color: #333; }
+
+  /* MOBILE BOTTOM NAV */
+  .mobile-nav {
+    display: none;
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    background: #070707; border-top: 1px solid #141414;
+    padding: 10px 4px 16px;
+    justify-content: space-around;
+  }
+  .mobile-nav a {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    font-size: 8px; letter-spacing: 2px; color: #333; padding: 4px 8px;
+    border-radius: 6px; transition: all 0.15s;
+  }
+  .mobile-nav a .nav-icon { font-size: 16px; }
+  .mobile-nav a.active, .mobile-nav a:hover { color: #c9a84c; }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; padding-bottom: 100px; }
+    .mobile-bar { display: flex; }
+    .mobile-nav { display: flex; }
+  }
+
+  /* ── HERO ───────────────────────────────── */
+  .hero {
+    background: linear-gradient(160deg, #0a0800 0%, #060606 40%, #090900 100%);
+    border-bottom: 1px solid #151500;
+    padding: 80px 60px 60px;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 40% at 70% 50%, rgba(201,168,76,0.04), transparent);
+    pointer-events: none;
+  }
+  .hero-eyebrow { font-size: 9px; letter-spacing: 8px; color: #c9a84c; margin-bottom: 14px; }
+  .hero-title   { font-size: 64px; font-weight: 900; letter-spacing: 6px; color: #fff; line-height: 1;
+    text-shadow: 0 0 60px rgba(201,168,76,0.15); }
+  .hero-sub     { font-size: 11px; letter-spacing: 4px; color: #333; margin-top: 10px; }
+  .hero-desc    { max-width: 500px; font-size: 13px; color: #555; line-height: 1.9; margin-top: 28px;
+    font-family: -apple-system, sans-serif; }
+  .hero-badges  { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 28px; }
+  .badge {
+    padding: 7px 14px; border-radius: 20px;
+    border: 1px solid #1e1e1e; background: #0c0c0c;
+    font-size: 9px; letter-spacing: 3px; color: #555;
+  }
+  .badge.gold { border-color: #c9a84c33; color: #c9a84c; }
+  @media (max-width: 768px) {
+    .hero { padding: 32px 20px 40px; }
+    .hero-title { font-size: 36px; letter-spacing: 3px; }
+  }
+
+  /* ── SECTION SHELLS ─────────────────────── */
+  .section { padding: 60px 60px 40px; border-bottom: 1px solid #0e0e0e; }
+  .section-head { margin-bottom: 40px; }
+  .section-eyebrow { font-size: 8px; letter-spacing: 6px; color: #c9a84c; margin-bottom: 8px; }
+  .section-title    { font-size: 28px; font-weight: 900; letter-spacing: 3px; color: #fff; }
+  .section-desc     { font-size: 12px; color: #3a3a3a; margin-top: 6px; letter-spacing: 1px; }
+  @media (max-width: 768px) {
+    .section { padding: 36px 16px 28px; }
+    .section-title { font-size: 20px; }
+  }
+
+  /* ── GENDER FILTER ──────────────────────── */
+  .filter-row { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; }
+  .filter-btn {
+    padding: 8px 18px; border-radius: 20px;
+    border: 1px solid #1a1a1a; background: #0b0b0b;
+    font-size: 9px; letter-spacing: 3px; color: #444;
+    transition: all 0.15s; font-family: 'Courier New', monospace;
+  }
+  .filter-btn.active { border-color: #c9a84c; color: #c9a84c; background: rgba(201,168,76,0.06); }
+  .filter-btn:hover  { border-color: #2e2e2e; color: #666; }
+
+  /* ── PRODUCT GRID ───────────────────────── */
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+  @media (max-width: 600px) {
+    .product-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  }
+
+  /* ── PRODUCT CARD ───────────────────────── */
+  .card {
+    background: #090909; border: 1px solid #141414; border-radius: 12px;
+    overflow: hidden; transition: all 0.2s; cursor: pointer;
+    position: relative;
+  }
+  .card:hover { border-color: #c9a84c33; box-shadow: 0 8px 32px rgba(0,0,0,0.6); transform: translateY(-2px); }
+  .card-img {
+    aspect-ratio: 1; background: #0d0d0d;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 56px; position: relative; overflow: hidden;
+  }
+  .card-img::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 60%, #090909);
+  }
+  .card-img .shimmer {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent 30%, rgba(201,168,76,0.03) 50%, transparent 70%);
+  }
+  .card-body { padding: 14px 14px 16px; }
+  .card-tag  { font-size: 7px; letter-spacing: 3px; color: #c9a84c; margin-bottom: 5px; }
+  .card-name { font-size: 13px; font-weight: 700; color: #ddd; margin-bottom: 4px; letter-spacing: 1px; }
+  .card-desc { font-size: 10px; color: #3a3a3a; line-height: 1.6; font-family: -apple-system, sans-serif; }
+  .card-footer { padding: 0 14px 14px; display: flex; justify-content: space-between; align-items: center; }
+  .card-price { font-size: 15px; font-weight: 900; color: #c9a84c; letter-spacing: 1px; }
+  .card-price-sub { font-size: 8px; color: #2e2e2e; letter-spacing: 2px; margin-top: 1px; }
+  .card-order {
+    padding: 8px 14px; border-radius: 6px;
+    background: rgba(201,168,76,0.08); border: 1px solid #c9a84c33;
+    color: #c9a84c; font-size: 9px; letter-spacing: 2px;
+    font-family: 'Courier New', monospace; transition: all 0.15s;
+  }
+  .card-order:hover { background: rgba(201,168,76,0.15); border-color: #c9a84c66; }
+  .card-badge {
+    position: absolute; top: 10px; right: 10px; z-index: 2;
+    padding: 4px 8px; border-radius: 4px; font-size: 7px; letter-spacing: 2px;
+  }
+  .badge-new   { background: #c9a84c; color: #000; }
+  .badge-fire  { background: #ff4444; color: #fff; }
+  .badge-plain { background: #222; color: #888; border: 1px solid #333; }
+  @media (max-width: 600px) {
+    .card-body { padding: 10px 10px 10px; }
+    .card-name { font-size: 11px; }
+    .card-desc { display: none; }
+    .card-footer { padding: 0 10px 10px; }
+    .card-price { font-size: 13px; }
+    .card-order { font-size: 8px; padding: 6px 10px; }
+  }
+
+  /* ── GRILLZ BUILDER EMBED ───────────────── */
+  .builder-wrap {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start;
+  }
+  @media (max-width: 900px) {
+    .builder-wrap { grid-template-columns: 1fr; }
+  }
+  .builder-info { }
+  .builder-panel {
+    background: #090909; border: 1px solid #141414; border-radius: 14px; overflow: hidden;
+  }
+
+  /* ── SECTION: GRILLZ CONTROLS ───────────── */
+  .ctrl-section { border: 1px solid #141414; border-radius: 10px; padding: 14px 16px; margin-bottom: 8px; background: #090909; }
+  .ctrl-label   { font-size: 8px; letter-spacing: 4px; color: #c9a84c; margin-bottom: 10px; }
+  .ctrl-grid-2  { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .ctrl-grid-4  { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }
+  .ctrl-btn {
+    padding: 9px 10px; border-radius: 7px;
+    border: 1px solid #1c1c1c; background: #0c0c0c;
+    color: #666; font-size: 10px; text-align: left;
+    transition: all 0.15s; font-family: 'Courier New', monospace;
+    line-height: 1.3;
+  }
+  .ctrl-btn.sel { border-color: #c9a84c; color: #c9a84c; background: rgba(201,168,76,0.08); font-weight: 700; }
+  .ctrl-btn .sub { font-size: 8px; opacity: 0.5; margin-top: 2px; display: block; }
+  .toggle-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .toggle-btn {
+    flex: 1; padding: 10px; border-radius: 8px;
+    border: 1px solid #1a1a1a; background: #090909;
+    color: #444; font-size: 9px; letter-spacing: 3px;
+    font-family: 'Courier New', monospace; transition: all 0.2s;
+  }
+  .toggle-btn.on { border-color: #c9a84c; color: #c9a84c; background: rgba(201,168,76,0.06); }
+
+  /* ── GRILLZ PREVIEW ─────────────────────── */
+  .preview-box {
+    background: #060606; border: 1px solid #111; border-radius: 14px;
+    padding: 32px 20px 24px; display: flex; flex-direction: column;
+    align-items: center; gap: 6px; margin-bottom: 12px;
+    box-shadow: inset 0 2px 20px rgba(0,0,0,0.6);
+  }
+  .preview-divider {
+    height: 8px; width: 200px; border-radius: 4px;
+    background: linear-gradient(180deg,#2a1a0a,#120a04); opacity: 0.7;
+  }
+  .preview-label { margin-top: 12px; font-size: 9px; letter-spacing: 3px; color: #333; text-align: center; }
+  .price-banner {
+    display: flex; justify-content: space-between; align-items: center;
+    background: linear-gradient(135deg, #0d0900, #1a1100);
+    border: 1px solid #c9a84c22; border-radius: 10px;
+    padding: 14px 18px; margin-bottom: 10px;
+  }
+  .price-low  { font-size: 22px; color: #c9a84c; font-weight: 900; }
+  .price-note { font-size: 8px; color: #333; margin-top: 3px; letter-spacing: 2px; }
+
+  /* ── CONTACT / ORDER ────────────────────── */
+  .order-section { padding: 60px; background: #060606; }
+  .order-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 40px; }
+  @media (max-width: 900px) { .order-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 768px) { .order-section { padding: 36px 16px; } }
+
+  .order-card {
+    background: #090909; border: 1px solid #141414; border-radius: 14px;
+    padding: 28px; transition: all 0.2s;
+  }
+  .order-card:hover { border-color: #c9a84c22; }
+  .order-card .oc-icon { font-size: 28px; margin-bottom: 14px; }
+  .order-card .oc-title { font-size: 14px; font-weight: 700; color: #ddd; letter-spacing: 2px; margin-bottom: 6px; }
+  .order-card .oc-desc  { font-size: 11px; color: #3a3a3a; line-height: 1.8; font-family: -apple-system, sans-serif; margin-bottom: 18px; }
+  .order-card .oc-btn {
+    display: block; width: 100%; padding: 13px;
+    border-radius: 8px; border: 1px solid #c9a84c44;
+    background: rgba(201,168,76,0.07); color: #c9a84c;
+    font-size: 10px; letter-spacing: 3px; text-align: center;
+    font-family: 'Courier New', monospace; transition: all 0.2s;
+  }
+  .order-card .oc-btn:hover { background: rgba(201,168,76,0.14); border-color: #c9a84c; }
+
+  /* ── MARKET RESEARCH STRIP ──────────────── */
+  .market-strip { padding: 60px; background: #050505; border-bottom: 1px solid #0e0e0e; }
+  .market-strip h2 { font-size: 20px; font-weight: 900; letter-spacing: 3px; color: #fff; margin-bottom: 30px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 40px; }
+  .stat-card { background: #090909; border: 1px solid #141414; border-radius: 10px; padding: 20px 18px; }
+  .stat-num  { font-size: 26px; font-weight: 900; color: #c9a84c; letter-spacing: 1px; }
+  .stat-label{ font-size: 8px; letter-spacing: 3px; color: #333; margin-top: 4px; }
+  .insight-list { list-style: none; }
+  .insight-list li {
+    padding: 13px 0; border-bottom: 1px solid #0e0e0e;
+    font-size: 12px; color: #555; line-height: 1.7;
+    font-family: -apple-system, sans-serif;
+    display: flex; gap: 12px;
+  }
+  .insight-list li::before { content: '◆'; color: #c9a84c33; flex-shrink: 0; margin-top: 1px; }
+  @media (max-width: 768px) { .market-strip { padding: 36px 16px; } }
+
+  /* ── FOOTER ─────────────────────────────── */
+  .footer {
+    padding: 40px 60px; text-align: center;
+    font-size: 8px; letter-spacing: 4px; color: #1c1c1c; line-height: 2.5;
+  }
+  @media (max-width: 768px) { .footer { padding: 30px 16px; } }
+
+  /* ── DIVIDER ────────────────────────────── */
+  .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, #c9a84c, transparent); margin: 0 auto 16px; }
+
+  /* ── MODAL OVERLAY ──────────────────────── */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.88);
+    z-index: 200; display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal {
+    background: #0a0a0a; border: 1px solid #c9a84c33; border-radius: 14px;
+    padding: 32px; max-width: 480px; width: 100%; max-height: 80vh; overflow-y: auto;
+    position: relative;
+  }
+  .modal-close {
+    position: absolute; top: 16px; right: 16px;
+    background: #141414; border: 1px solid #222; color: #666;
+    width: 28px; height: 28px; border-radius: 50%;
+    font-size: 12px; display: flex; align-items: center; justify-content: center;
+  }
+  .modal-close:hover { color: #c9a84c; border-color: #c9a84c44; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+
+/* ═══════════════════════════════════════════════════════
+   DATA LAYER
+═══════════════════════════════════════════════════════ */
+
+const METALS = {
+  gold:  { label:"14K Gold",       grad:"linear-gradient(145deg,#c9a84c 0%,#f5d860 20%,#a07428 45%,#e8c840 65%,#f5d860 80%,#8a6020 100%)", border:"#c9a84c", glow:"rgba(201,168,76,0.6)" },
+  white: { label:"White Gold",     grad:"linear-gradient(145deg,#d0d0d0 0%,#f5f5f5 25%,#a8a8a8 50%,#ebebeb 70%,#c0c0c0 100%)",             border:"#c8c8c8", glow:"rgba(220,220,220,0.5)" },
+  rose:  { label:"Rose Gold",      grad:"linear-gradient(145deg,#d4856a 0%,#f0b090 25%,#b06040 50%,#e8a080 70%,#c07060 100%)",             border:"#d4856a", glow:"rgba(212,133,106,0.6)" },
+  black: { label:"Black Rhodium",  grad:"linear-gradient(145deg,#111 0%,#2a2a2a 25%,#0a0a0a 50%,#222 70%,#111 100%)",                     border:"#444",    glow:"rgba(120,120,120,0.3)" },
+};
+
+const STONES = {
+  none:     { label:"No Stones",      gem:null,  glow:"transparent" },
+  sapphire: { label:"Sapphire",       gem:"radial-gradient(circle at 35% 30%,#c0eeff,#0088cc 45%,#003d6b)", glow:"#00aaff" },
+  emerald:  { label:"Emerald",        gem:"radial-gradient(circle at 35% 30%,#aaffb8,#00aa22 45%,#00440d)", glow:"#00ee44" },
+  ruby:     { label:"Ruby",           gem:"radial-gradient(circle at 35% 30%,#ffbbbb,#cc0022 45%,#660011)", glow:"#ff3344" },
+  amethyst: { label:"Amethyst",       gem:"radial-gradient(circle at 35% 30%,#e8c0ff,#9900cc 45%,#440066)", glow:"#cc44ff" },
+  diamond:  { label:"VVS Diamond",    gem:"radial-gradient(circle at 30% 28%,#ffffff,#d0eeff 35%,#a0d0f0 65%,#e0f4ff)", glow:"#cceeFF" },
+  canary:   { label:"Canary Diamond", gem:"radial-gradient(circle at 35% 30%,#fff5aa,#ffcc00 45%,#886600)", glow:"#ffdd00" },
+};
+
+const STYLES = {
+  openface: { label:"Open Face",  desc:"Teeth show through" },
+  solid:    { label:"Solid Caps", desc:"Full coverage" },
+  fangs:    { label:"Fangs",      desc:"Extended canines" },
+  half:     { label:"Half Cap",   desc:"Bottom half metal" },
+};
+
+const CHAINS = [
+  { id:"c1",  tag:"CHAINS",   gender:"M",  name:"Cuban Link — Plain Jane",      emoji:"⛓",  price:"$180",   priceNote:"14K Gold Filled",  desc:"Classic 8mm Cuban link chain. Clean, no stones. The foundation piece every man needs.",         badge:"plain", badgeLabel:"PLAIN JANE" },
+  { id:"c2",  tag:"CHAINS",   gender:"M",  name:"Cuban Link — VVS Iced",        emoji:"✨",  price:"$480",   priceNote:"10K–14K Custom",    desc:"Fully iced 8mm Cuban link. VVS stones set in solid gold. The statement chain.",               badge:"fire",  badgeLabel:"🔥 HOT" },
+  { id:"c3",  tag:"CHAINS",   gender:"M",  name:"Rope Chain — Plain Jane",      emoji:"⛓",  price:"$140",   priceNote:"14K Gold Filled",  desc:"5mm rope chain, 24\" length. Timeless style, lightweight, everyday wear.",                    badge:"plain", badgeLabel:"PLAIN JANE" },
+  { id:"c4",  tag:"CHAINS",   gender:"M",  name:"Rope Chain — Iced Out",        emoji:"💎",  price:"$350",   priceNote:"10K Custom",       desc:"Diamond-cut rope chain with full stone setting. Catches light from every angle.",             badge:null, badgeLabel:null },
+  { id:"c5",  tag:"CHAINS",   gender:"M",  name:"Tennis Chain — Moissanite",    emoji:"💎",  price:"$320",   priceNote:"Sterling + 10K",   desc:"3mm tennis chain with moissanite stones. Icy without the diamond price.",                    badge:"new",   badgeLabel:"NEW" },
+  { id:"c6",  tag:"CHAINS",   gender:"M",  name:"Box Chain — Heavy",            emoji:"⛓",  price:"$220",   priceNote:"14K Gold Filled",  desc:"Bold 6mm box chain. Heavy feel, clean look. 22\" standard length.",                          badge:null, badgeLabel:null },
+  { id:"c7",  tag:"CHAINS",   gender:"F",  name:"Herringbone — Plain Jane",     emoji:"✨",  price:"$120",   priceNote:"14K Gold Filled",  desc:"Sleek 4mm herringbone chain. Flat, flexible, ultra feminine. Everyday luxury.",              badge:"plain", badgeLabel:"PLAIN JANE" },
+  { id:"c8",  tag:"CHAINS",   gender:"F",  name:"Figaro Chain — Layering Set",  emoji:"✨",  price:"$160",   priceNote:"2-Piece Set",      desc:"16\" + 18\" figaro chains for that layered look. Mix metals available.",                    badge:"new",   badgeLabel:"NEW" },
+  { id:"c9",  tag:"CHAINS",   gender:"F",  name:"Tennis Necklace — Moissanite", emoji:"💎",  price:"$280",   priceNote:"Sterling + 10K",   desc:"Classic 2mm tennis necklace. Elegant for any occasion, iced for any night.",                badge:null, badgeLabel:null },
+  { id:"c10", tag:"CHAINS",   gender:"F",  name:"Cuban Link — Women's Slim",    emoji:"⛓",  price:"$160",   priceNote:"14K Gold Filled",  desc:"4mm women's Cuban link. Same energy, refined proportions.",                                  badge:null, badgeLabel:null },
+];
+
+const BRACELETS = [
+  { id:"b1",  tag:"BRACELETS", gender:"M",  name:"Cuban Link Bracelet — Plain", emoji:"⛓",  price:"$120",   priceNote:"14K Gold Filled",  desc:"8mm Cuban link bracelet, 8.5\" length. Match it with your chain.",                          badge:"plain", badgeLabel:"PLAIN JANE" },
+  { id:"b2",  tag:"BRACELETS", gender:"M",  name:"Cuban Link — VVS Iced",       emoji:"💎",  price:"$380",   priceNote:"10K Custom",       desc:"Fully iced Cuban bracelet. Heavy, blinding, Hampton-made.",                                  badge:"fire",  badgeLabel:"🔥 HOT" },
+  { id:"b3",  tag:"BRACELETS", gender:"M",  name:"Rope Bracelet — Plain Jane",  emoji:"⛓",  price:"$90",    priceNote:"14K Gold Filled",  desc:"5mm rope bracelet. Simple, clean, no stones. For the understated flex.",                    badge:"plain", badgeLabel:"PLAIN JANE" },
+  { id:"b4",  tag:"BRACELETS", gender:"M",  name:"Tennis Bracelet — Men's",     emoji:"✨",  price:"$220",   priceNote:"Sterling + 10K",   desc:"5mm men's tennis bracelet. Moissanite stones, sturdy box clasp.",                           badge:"new",   badgeLabel:"NEW" },
+  { id:"b5",  tag:"BRACELETS", gender:"F",  name:"Tennis Bracelet — Classic",   emoji:"💎",  price:"$180",   priceNote:"Sterling + 10K",   desc:"3mm tennis bracelet. The wrist piece every woman deserves. VVS moissanite.",               badge:"fire",  badgeLabel:"🔥 HOT" },
+  { id:"b6",  tag:"BRACELETS", gender:"F",  name:"Cuban Bracelet — Women's",    emoji:"⛓",  price:"$110",   priceNote:"14K Gold Filled",  desc:"4mm women's Cuban link bracelet. Delicate but bold. Mix it, stack it.",                    badge:null, badgeLabel:null },
+  { id:"b7",  tag:"BRACELETS", gender:"F",  name:"Bangle Set — Gold Stack",     emoji:"✨",  price:"$95",    priceNote:"3-Piece Set",      desc:"Thin gold bangle set. Stack all three or wear solo. Timeless Hampton-road-to-runway energy.",badge:"new",   badgeLabel:"NEW" },
+  { id:"b8",  tag:"BRACELETS", gender:"F",  name:"Charm Bracelet — Custom",     emoji:"🌊",  price:"$145",   priceNote:"Sterling + 14K",   desc:"Personalized charm bracelet. Add your name, initials, or 757 charm.",                      badge:"new",   badgeLabel:"NEW" },
+];
+
+const WATCHES = [
+  { id:"w1",  tag:"WATCHES",  gender:"M",  name:"Presidential — Gold Bezel",   emoji:"⌚",  price:"$1,200", priceNote:"Custom Build",     desc:"Rolex-style Presidential case, gold-tone bezel, jubilee bracelet. Custom dial available.", badge:"fire",  badgeLabel:"🔥 HOT" },
+  { id:"w2",  tag:"WATCHES",  gender:"M",  name:"AP Royal Oak — Iced Bezel",   emoji:"⌚",  price:"$980",   priceNote:"Custom Build",     desc:"Royal Oak inspired, hexagon bezel with moissanite setting. Statement wrist.",             badge:"fire",  badgeLabel:"🔥 HOT" },
+  { id:"w3",  tag:"WATCHES",  gender:"M",  name:"Clean Dial — Plain Jane",     emoji:"⌚",  price:"$420",   priceNote:"Japanese Mvmt",    desc:"Simple gold-tone case, sunburst dial, leather strap. Dress it up, keep it clean.",         badge:"plain", badgeLabel:"PLAIN JANE" },
+  { id:"w4",  tag:"WATCHES",  gender:"M",  name:"Skeleton Watch — Gold",       emoji:"⌚",  price:"$560",   priceNote:"Automatic",        desc:"Exposed movement skeleton dial in gold. The conversation-starter piece.",                  badge:"new",   badgeLabel:"NEW" },
+  { id:"w5",  tag:"WATCHES",  gender:"F",  name:"Diamond Dial — Women's",      emoji:"⌚",  price:"$680",   priceNote:"Custom Build",     desc:"Petite gold case, full moissanite bezel, mother-of-pearl dial. Pure elegance.",           badge:"fire",  badgeLabel:"🔥 HOT" },
+  { id:"w6",  tag:"WATCHES",  gender:"F",  name:"Rose Gold Bangle Watch",      emoji:"⌚",  price:"$340",   priceNote:"Quartz",           desc:"Rose gold bangle-style watch. Minimalist, feminine, wear it with anything.",               badge:"new",   badgeLabel:"NEW" },
+  { id:"w7",  tag:"WATCHES",  gender:"F",  name:"Tennis Bracelet Watch",       emoji:"⌚",  price:"$480",   priceNote:"Custom Build",     desc:"Moissanite tennis bracelet fused with watch. Two pieces, one statement.",                 badge:"new",   badgeLabel:"NEW" },
+];
+
+const EARRINGS = [
+  { id:"e1",  tag:"EARRINGS", gender:"M",  name:"VVS Stud — Single or Pair",   emoji:"💎",  price:"$95",    priceNote:"Per Pair",         desc:"Round 6mm VVS moissanite stud. The classic. Wear one or both — your call.",              badge:"fire",  badgeLabel:"🔥 HOT" },
+  { id:"e2",  tag:"EARRINGS", gender:"M",  name:"Cuban Link Drop — Dangle",    emoji:"✨",  price:"$130",   priceNote:"Per Pair",         desc:"Small Cuban link drops, 1.5\" length. Subtle movement, max drip.",                        badge:"new",   badgeLabel:"NEW" },
+  { id:"e3",  tag:"EARRINGS", gender:"M",  name:"Iced Hoop — Men's 12mm",      emoji:"⭕",  price:"$110",   priceNote:"Per Pair",         desc:"12mm iced hoop earrings. Light enough for daily wear. Classic 757 energy.",              badge:null, badgeLabel:null },
+  { id:"e4",  tag:"EARRINGS", gender:"M",  name:"Baguette Studs — Iced",       emoji:"💎",  price:"$160",   priceNote:"Per Pair",         desc:"Baguette-cut moissanite studs. Princess cut, champagne setting. Statement without noise.",badge:"new",   badgeLabel:"NEW" },
+  { id:"e5",  tag:"EARRINGS", gender:"F",  name:"Hoop Earrings — Iced Out",    emoji:"⭕",  price:"$120",   priceNote:"Per Pair",         desc:"25mm iced hoop. Full stone setting, lightweight post. Every occasion, every fit.",        badge:"fire",  badgeLabel:"🔥 HOT" },
+  { id:"e6",  tag:"EARRINGS", gender:"F",  name:"Tennis Drop Earrings",        emoji:"💎",  price:"$145",   priceNote:"Per Pair",         desc:"Moissanite tennis drops, 2.5\" dangle. Elegant for events, bold for every day.",          badge:"fire",  badgeLabel:"🔥 HOT" },
+  { id:"e7",  tag:"EARRINGS", gender:"F",  name:"Huggie Hoops — Plain Jane",   emoji:"⭕",  price:"$75",    priceNote:"Per Pair",         desc:"Small 10mm huggie hoops in solid gold fill. Stack-friendly, minimal, perfect.",           badge:"plain", badgeLabel:"PLAIN JANE" },
+  { id:"e8",  tag:"EARRINGS", gender:"F",  name:"Butterfly Studs — VVS",       emoji:"💎",  price:"$105",   priceNote:"Per Pair",         desc:"Butterfly-shaped pave moissanite studs. Feminine, iced, unforgettable.",                 badge:"new",   badgeLabel:"NEW" },
+  { id:"e9",  tag:"EARRINGS", gender:"F",  name:"Chandelier Drop — Gold",      emoji:"✨",  price:"$195",   priceNote:"Custom Build",     desc:"Layered chandelier drop earrings. Custom length. The showstopper for any gala or event.", badge:"new",   badgeLabel:"NEW" },
+];
+
+const GRILLZ_CATALOG = [
+  { id:"g1", name:"Open Face — Gold Top 6",   price:"$250",  metal:"Gold",          stones:"None",     desc:"Single plate top 6. Clean gold, open face. The OG." },
+  { id:"g2", name:"Solid Caps — Full Set",     price:"$550",  metal:"Gold",          stones:"None",     desc:"Full top & bottom solid gold caps. No teeth showing. All drip." },
+  { id:"g3", name:"VVS Diamond Open Face",     price:"$950",  metal:"White Gold",    stones:"VVS",      desc:"Open face with 4 VVS stones set top row. White gold setting." },
+  { id:"g4", name:"Fangs — Black Rhodium",     price:"$480",  metal:"Black Rhodium", stones:"None",     desc:"Extended fang canines in black rhodium. Rare. Ominous. 757." },
+  { id:"g5", name:"Rose Gold Bottom 6",        price:"$320",  metal:"Rose Gold",     stones:"None",     desc:"Bottom 6 solid rose gold caps. Subtle when you smile, heat when you don't." },
+  { id:"g6", name:"Canary Diamond Set",        price:"$1,200",metal:"Gold",          stones:"Canary",   desc:"Full top & bottom, 4 canary diamonds each row. Maximum impact." },
+];
+
+const MARKET_STATS = [
+  { num:"1.8M",  label:"HAMPTON ROADS POPULATION" },
+  { num:"$4.2B", label:"US JEWELRY MARKET GROWTH '26" },
+  { num:"68%",   label:"MILLENNIALS BUYING JEWELRY ONLINE" },
+  { num:"$0",    label:"LOCAL 757 CUSTOM GRILLZ SHOPS" },
+  { num:"2–4WK", label:"CUSTOM ORDER TURNAROUND" },
+  { num:"3×",    label:"MARKUP ON GOLD-FILL PIECES" },
+];
+
+const MARKET_INSIGHTS = [
+  "Hampton Roads has zero dedicated custom grillz shops — the market is completely untapped and buyers currently order from Atlanta or NYC.",
+  "Hampton University (HU) + Norfolk State (NSU) combined student population of 12,000+ creates a permanent jewelry-buying demographic within 20 miles.",
+  "Naval Station Norfolk is the world's largest naval base — military personnel have disposable income and gift-giving culture (promotions, homecomings).",
+  "757 area code is a strong cultural identity marker — locals rep it hard on social media, clothing, and tattoos. 'Made in 757' branding resonates deeply.",
+  "Plain jane pieces ($80–$250) drive volume; iced-out custom pieces ($400–$2K+) drive margin. A healthy mix of both is the winning strategy.",
+  "Instagram and TikTok are the primary sales channels for this demographic — consistent posting with reels showing builds and customer pickups converts.",
+  "Wholesale gold-fill Cuban links run $25–$45/pc landed from trusted suppliers (LA, NYC wholesale districts). Retail at $140–$220 = 4–6x margin.",
+  "Custom grillz have the highest margin in jewelry: dental molds cost $0 (DIY kit), 10K gold material $60–$120, retail $250–$1,200+.",
+  "Word-of-mouth in Hampton Roads is extremely powerful — one HU homecoming or NSU Yard Show appearance can generate 50+ inquiries.",
+  "Payment plans (Afterpay, Sezzle, or personal layaway) increase average order value 40–60% and close hesitant buyers.",
+];
+
+/* ═══════════════════════════════════════════════════════
+   COMPONENTS
+═══════════════════════════════════════════════════════ */
+
+function Tooth({ index, metal, row, style, stoneColor, stoneCount }) {
+  const isFang  = style === "fangs" && (index === 0 || index === 5);
+  const isOpen  = style === "openface" || style === "half";
+  const stone   = STONES[stoneColor];
+  const hasStone = stoneColor !== "none" && row === "top" && index < stoneCount;
+  const w = row === "top" ? 36 : 31;
+  const h = isFang ? 56 : (row === "top" ? 46 : 38);
+  return (
+    <div style={{
+      position:"relative", width:w, height:h,
+      borderRadius: isFang ? "8px 8px 3px 3px" : "9px 9px 7px 7px",
+      background: metal.grad, border:`1.5px solid ${metal.border}`,
+      boxShadow:`0 0 10px ${metal.glow},0 2px 4px rgba(0,0,0,0.8),inset 0 1px 0 rgba(255,255,255,0.18)`,
+      display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden",
+    }}>
+      {isOpen && !hasStone && (
+        <div style={{
+          position:"absolute", top:style==="half"?"48%":"14%",
+          left:"13%",right:"13%",bottom:"11%",borderRadius:5,
+          background:"linear-gradient(180deg,#f9f0de,#e8dcc4)",
+          boxShadow:"inset 0 2px 4px rgba(0,0,0,0.35)",
+        }}/>
+      )}
+      {hasStone && stone.gem && (
+        <div style={{
+          width:18,height:18,borderRadius:"50%",background:stone.gem,
+          boxShadow:`0 0 10px ${stone.glow},0 0 20px ${stone.glow}66,inset 0 1px 3px rgba(255,255,255,0.7)`,
+          border:"1px solid rgba(255,255,255,0.35)",zIndex:2,
+        }}/>
+      )}
+    </div>
+  );
+}
+
+function GrillPreview({ showTop, showBottom, topMetal, bottomMetal, style, stoneColor, stoneCount }) {
+  const top = METALS[topMetal];
+  const bot = METALS[bottomMetal];
+  return (
+    <div className="preview-box">
+      <div style={{width:60,height:1,background:"linear-gradient(90deg,transparent,#c9a84c,transparent)",marginBottom:12}}/>
+      {showTop && (
+        <div style={{display:"flex",gap:4,alignItems:"flex-end"}}>
+          {[0,1,2,3,4,5].map(i => <Tooth key={i} index={i} metal={top} row="top" style={style} stoneColor={stoneColor} stoneCount={stoneCount}/>)}
+        </div>
+      )}
+      <div className="preview-divider"/>
+      {showBottom && (
+        <div style={{display:"flex",gap:4,alignItems:"flex-start"}}>
+          {[0,1,2,3,4,5].map(i => <Tooth key={i} index={i} metal={bot} row="bottom" style={style} stoneColor={stoneColor} stoneCount={stoneCount}/>)}
+        </div>
+      )}
+      {!showTop && !showBottom && <div style={{color:"#222",fontSize:11,padding:"20px 0"}}>Select top or bottom</div>}
+      <div className="preview-label">
+        {STYLES[style].label.toUpperCase()}
+        {showTop ? ` · ${METALS[topMetal].label}` : ""}
+        {showBottom && bottomMetal !== topMetal ? ` / ${METALS[bottomMetal].label}` : ""}
+        {stoneColor !== "none" ? ` · ${STONES[stoneColor].label}` : ""}
+      </div>
+    </div>
+  );
+}
+
+function ProductCard({ item, onOrder }) {
+  const badgeStyle = item.badge === "new" ? "new" : item.badge === "fire" ? "fire" : item.badge === "plain" ? "plain" : null;
+  return (
+    <div className="card" onClick={() => onOrder(item)}>
+      <div className="card-img">
+        <div className="shimmer"/>
+        {item.badge && <span className={`card-badge badge-${badgeStyle}`}>{item.badgeLabel}</span>}
+        <span style={{position:"relative",zIndex:1}}>{item.emoji}</span>
+      </div>
+      <div className="card-body">
+        <div className="card-tag">{item.tag} · {item.gender === "M" ? "MEN" : "WOMEN"}</div>
+        <div className="card-name">{item.name}</div>
+        <div className="card-desc">{item.desc}</div>
+      </div>
+      <div className="card-footer">
+        <div>
+          <div className="card-price">{item.price}</div>
+          <div className="card-price-sub">{item.priceNote}</div>
+        </div>
+        <button className="card-order" onClick={e => { e.stopPropagation(); onOrder(item); }}>ORDER</button>
+      </div>
+    </div>
+  );
+}
+
+function FilterBar({ value, onChange }) {
+  return (
+    <div className="filter-row">
+      {[["ALL","All"],["M","Men's"],["F","Women's"]].map(([v,l]) => (
+        <button key={v} className={`filter-btn${value===v?" active":""}`} onClick={() => onChange(v)}>{l}</button>
+      ))}
+    </div>
+  );
+}
+
+function SectionHeader({ eyebrow, title, desc }) {
+  return (
+    <div className="section-head">
+      <div className="section-eyebrow">{eyebrow}</div>
+      <div className="section-title">{title}</div>
+      {desc && <div className="section-desc">{desc}</div>}
+    </div>
+  );
+}
+
+function OrderModal({ item, onClose }) {
+  if (!item) return null;
+  const summary = item.name + (item.metal ? ` · ${item.metal}` : "") + (item.stones && item.stones !== "None" ? ` · ${item.stones}` : "");
+  const smsBody = encodeURIComponent(`Hey, I want to order from 757 ICE CO.: ${summary} (${item.price})`);
+  return (
+    <div className="modal-bg" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}>✕</button>
+        <div style={{fontSize:8,letterSpacing:5,color:"#c9a84c",marginBottom:6}}>ORDER DETAILS</div>
+        <div style={{fontSize:18,fontWeight:900,color:"#fff",letterSpacing:2,marginBottom:16}}>{item.name}</div>
+        <div style={{
+          background:"#060606",borderRadius:8,padding:"12px 14px",
+          marginBottom:20,fontSize:12,color:"#666",lineHeight:2,
+          fontFamily:"-apple-system,sans-serif",
+        }}>
+          {item.desc || item.metal && `Metal: ${item.metal}`}<br/>
+          <span style={{color:"#c9a84c",fontWeight:700,letterSpacing:1}}>{item.price} · {item.priceNote || "Custom Order"}</span>
+        </div>
+        <div style={{fontSize:8,letterSpacing:4,color:"#333",marginBottom:12}}>CONTACT OMAR TO ORDER</div>
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          <a href={`sms:?body=${smsBody}`} style={{
+            display:"block",padding:"14px",borderRadius:8,
+            background:"#0d0d0d",border:"1px solid #1e1e1e",
+            color:"#e0e0e0",fontSize:11,textAlign:"center",letterSpacing:3,
+          }}>📱 TEXT TO ORDER</a>
+          <a href="https://instagram.com/757iceco" target="_blank" rel="noopener" style={{
+            display:"block",padding:"14px",borderRadius:8,
+            background:"#0d0d0d",border:"1px solid #1e1e1e",
+            color:"#e0e0e0",fontSize:11,textAlign:"center",letterSpacing:3,
+          }}>📸 DM @757ICECO</a>
+          <a href="https://tiktok.com/@757iceco" target="_blank" rel="noopener" style={{
+            display:"block",padding:"14px",borderRadius:8,
+            background:"#0d0d0d",border:"1px solid #1e1e1e",
+            color:"#e0e0e0",fontSize:11,textAlign:"center",letterSpacing:3,
+          }}>🎵 TIKTOK @757ICECO</a>
+        </div>
+        <div style={{marginTop:16,fontSize:9,color:"#222",textAlign:"center",letterSpacing:2,lineHeight:2}}>
+          HAMPTON, VA · CUSTOM ORDERS 2–4 WEEKS<br/>
+          DEPOSIT REQUIRED · ALL SALES FINAL ON CUSTOM
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   GRILLZ BUILDER SECTION
+═══════════════════════════════════════════════════════ */
+
+function estimateCost(topMetal, bottomMetal, stoneColor, stoneCount, style, showTop, showBottom) {
+  let base = 0;
+  const metalCost = { gold:250, white:350, rose:320, black:380 };
+  if (showTop)    base += metalCost[topMetal];
+  if (showBottom) base += metalCost[bottomMetal];
+  if (stoneColor === "diamond") base += stoneCount * 200;
+  else if (stoneColor === "canary") base += stoneCount * 180;
+  else if (stoneColor !== "none") base += stoneCount * 75;
+  if (style === "fangs") base += 100;
+  return base;
+}
+
+function GrillzBuilder({ onOrder }) {
+  const [topMetal, setTopMetal]       = React.useState("gold");
+  const [bottomMetal, setBottomMetal] = React.useState("black");
+  const [stoneColor, setStoneColor]   = React.useState("sapphire");
+  const [stoneCount, setStoneCount]   = React.useState(2);
+  const [style, setStyle]             = React.useState("openface");
+  const [showTop, setShowTop]         = React.useState(true);
+  const [showBottom, setShowBottom]   = React.useState(true);
+
+  const low  = estimateCost(topMetal, bottomMetal, stoneColor, stoneCount, style, showTop, showBottom);
+  const high = low + 300;
+
+  const buildItem = {
+    name: `Custom Grillz — ${STYLES[style].label}`,
+    price: `$${low.toLocaleString()}–$${high.toLocaleString()}`,
+    priceNote: "10K–14K Solid Gold",
+    desc: [
+      showTop    ? `Top: ${METALS[topMetal].label}` : null,
+      showBottom ? `Bottom: ${METALS[bottomMetal].label}` : null,
+      `Style: ${STYLES[style].label}`,
+      stoneColor !== "none" ? `${stoneCount}x ${STONES[stoneColor].label}` : "No Stones",
+    ].filter(Boolean).join(" · "),
+  };
+
+  return (
+    <div className="builder-wrap">
+      {/* LEFT — Info + Catalog */}
+      <div className="builder-info">
+        <p style={{fontSize:13,color:"#555",lineHeight:1.9,fontFamily:"-apple-system,sans-serif",marginBottom:24}}>
+          Every grill is custom-made by Omar in Hampton, VA. We take dental mold impressions,
+          hand-set each stone, and deliver a piece built specifically for your mouth.
+          No two sets are the same.
+        </p>
+
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:24}}>
+          {GRILLZ_CATALOG.map(g => (
+            <div key={g.id}
+              onClick={() => onOrder({...g, tag:"GRILLZ", gender:"U", emoji:"😁", badgeLabel:null, badge:null})}
+              style={{
+                background:"#090909",border:"1px solid #141414",borderRadius:10,
+                padding:"14px",cursor:"pointer",transition:"all 0.15s",
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor="#c9a84c33"}
+              onMouseLeave={e => e.currentTarget.style.borderColor="#141414"}
+            >
+              <div style={{fontSize:8,letterSpacing:3,color:"#c9a84c",marginBottom:4}}>GRILLZ</div>
+              <div style={{fontSize:12,fontWeight:700,color:"#ccc",marginBottom:3}}>{g.name}</div>
+              <div style={{fontSize:9,color:"#3a3a3a",marginBottom:10,fontFamily:"-apple-system,sans-serif"}}>{g.desc}</div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div style={{fontSize:14,color:"#c9a84c",fontWeight:900}}>{g.price}</div>
+                <div style={{fontSize:8,letterSpacing:2,color:"#c9a84c",border:"1px solid #c9a84c33",borderRadius:5,padding:"4px 8px"}}>ORDER</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* RIGHT — Interactive Builder */}
+      <div>
+        <div style={{fontSize:9,letterSpacing:4,color:"#c9a84c",marginBottom:12}}>CUSTOM BUILDER</div>
+
+        <GrillPreview
+          showTop={showTop} showBottom={showBottom}
+          topMetal={topMetal} bottomMetal={bottomMetal}
+          style={style} stoneColor={stoneColor} stoneCount={stoneCount}
+        />
+
+        <div className="price-banner">
+          <div>
+            <div style={{fontSize:8,letterSpacing:3,color:"#444",marginBottom:4}}>EST. BUILD COST</div>
+            <div className="price-low">${low.toLocaleString()}–${high.toLocaleString()}</div>
+            <div className="price-note">10K–14K SOLID GOLD · HAMPTON VA</div>
+          </div>
+          <button onClick={() => onOrder(buildItem)} style={{
+            padding:"12px 18px",borderRadius:8,
+            background:"rgba(201,168,76,0.1)",border:"1px solid #c9a84c44",
+            color:"#c9a84c",fontSize:9,letterSpacing:3,
+            fontFamily:"'Courier New',monospace",transition:"all 0.15s",
+          }}>
+            REQUEST<br/>THIS BUILD
+          </button>
+        </div>
+
+        <div className="toggle-row">
+          <button className={`toggle-btn${showTop?" on":""}`} onClick={()=>setShowTop(v=>!v)}>TOP {showTop?"ON":"OFF"}</button>
+          <button className={`toggle-btn${showBottom?" on":""}`} onClick={()=>setShowBottom(v=>!v)}>BOTTOM {showBottom?"ON":"OFF"}</button>
+        </div>
+
+        <div className="ctrl-section">
+          <div className="ctrl-label">STYLE</div>
+          <div className="ctrl-grid-2">
+            {Object.entries(STYLES).map(([k,v]) => (
+              <button key={k} className={`ctrl-btn${style===k?" sel":""}`} onClick={()=>setStyle(k)}>
+                {v.label}<span className="sub">{v.desc}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {showTop && (
+          <div className="ctrl-section">
+            <div className="ctrl-label">TOP METAL</div>
+            <div className="ctrl-grid-2">
+              {Object.entries(METALS).map(([k,v]) => (
+                <button key={k} className={`ctrl-btn${topMetal===k?" sel":""}`} onClick={()=>setTopMetal(k)}>{v.label}</button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {showBottom && (
+          <div className="ctrl-section">
+            <div className="ctrl-label">BOTTOM METAL</div>
+            <div className="ctrl-grid-2">
+              {Object.entries(METALS).map(([k,v]) => (
+                <button key={k} className={`ctrl-btn${bottomMetal===k?" sel":""}`} onClick={()=>setBottomMetal(k)}>{v.label}</button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="ctrl-section">
+          <div className="ctrl-label">STONES</div>
+          <div className="ctrl-grid-2" style={{marginBottom:stoneColor!=="none"?12:0}}>
+            {Object.entries(STONES).map(([k,v]) => (
+              <button key={k} className={`ctrl-btn${stoneColor===k?" sel":""}`} onClick={()=>setStoneColor(k)}>{v.label}</button>
+            ))}
+          </div>
+          {stoneColor !== "none" && (
+            <>
+              <div style={{fontSize:8,letterSpacing:3,color:"#333",margin:"10px 0 8px"}}>STONE COUNT (TOP ONLY)</div>
+              <div className="ctrl-grid-4">
+                {[1,2,3,4].map(n => (
+                  <button key={n} className={`ctrl-btn${stoneCount===n?" sel":""}`} onClick={()=>setStoneCount(n)}>{n}×</button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   MAIN APP
+═══════════════════════════════════════════════════════ */
+
+const NAV_ITEMS = [
+  { id:"home",     label:"HOME",        icon:"🏠" },
+  { id:"grillz",   label:"GRILLZ",      icon:"😁" },
+  { id:"chains",   label:"CHAINS",      icon:"⛓" },
+  { id:"bracelets",label:"BRACELETS",   icon:"💪" },
+  { id:"watches",  label:"WATCHES",     icon:"⌚" },
+  { id:"earrings", label:"EARRINGS",    icon:"💎" },
+  { id:"market",   label:"MARKET",      icon:"📊" },
+  { id:"order",    label:"ORDER",       icon:"✉️" },
+];
+
+function App() {
+  const [activeSection, setActiveSection] = React.useState("home");
+  const [orderItem, setOrderItem]         = React.useState(null);
+  const [chainFilter, setChainFilter]     = React.useState("ALL");
+  const [braceletFilter, setBraceletFilter] = React.useState("ALL");
+  const [watchFilter, setWatchFilter]     = React.useState("ALL");
+  const [earringFilter, setEarringFilter] = React.useState("ALL");
+
+  const scrollTo = (id) => {
+    setActiveSection(id);
+    const el = document.getElementById(`sec-${id}`);
+    if (el) el.scrollIntoView({ behavior:"smooth", block:"start" });
+  };
+
+  const filter = (arr, f) => f === "ALL" ? arr : arr.filter(x => x.gender === f);
+
+  return (
+    <div className="shell">
+
+      {/* ── DESKTOP SIDEBAR ── */}
+      <nav className="sidebar">
+        <div className="sidebar-brand">
+          <div className="mark">HAMPTON ROADS · VA</div>
+          <div className="name">757 ICE CO.</div>
+          <div className="sub">CUSTOM JEWELRY · EST. 2026</div>
+        </div>
+        <div className="sidebar-nav">
+          {NAV_ITEMS.map(n => (
+            <a key={n.id} href={`#sec-${n.id}`}
+              className={activeSection===n.id?"active":""}
+              onClick={e=>{ e.preventDefault(); scrollTo(n.id); }}
+            >
+              <span className="nav-icon">{n.icon}</span>
+              {n.label}
+            </a>
+          ))}
+        </div>
+        <div className="sidebar-contact">
+          HAMPTON, VIRGINIA<br/>
+          <a href="https://instagram.com/757iceco" target="_blank">@757ICECO</a><br/>
+          <a href="https://tiktok.com/@757iceco" target="_blank">TikTok: @757ICECO</a><br/>
+          OMAR · CUSTOM JEWELER
+        </div>
+      </nav>
+
+      {/* ── MAIN ── */}
+      <main className="main">
+
+        {/* MOBILE TOP BAR */}
+        <div className="mobile-bar">
+          <div>
+            <div className="brand-name">757 ICE CO.</div>
+            <div className="brand-sub">HAMPTON ROADS · CUSTOM JEWELRY</div>
+          </div>
+          <div style={{fontSize:9,letterSpacing:2,color:"#c9a84c"}}>📸 DM TO ORDER</div>
+        </div>
+
+        {/* ── HERO ── */}
+        <section id="sec-home" className="hero">
+          <div className="hero-eyebrow">HAMPTON ROADS · VIRGINIA · 757</div>
+          <div className="hero-title">757<br/>ICE CO.</div>
+          <div className="hero-sub">CUSTOM JEWELRY · GRILLZ · CHAINS · WATCHES · EARRINGS</div>
+          <div className="hero-desc">
+            Born in Hampton, Virginia. Built for the 757. We create custom jewelry — grillz, plain jane
+            chains, iced-out pieces, watches, and earrings for men and women. Every piece is handcrafted
+            by Omar, a Hampton jeweler who's been in the game his whole life. This is your city's jeweler.
+          </div>
+          <div className="hero-badges">
+            <span className="badge gold">HAMPTON, VA</span>
+            <span className="badge">CUSTOM GRILLZ</span>
+            <span className="badge">PLAIN JANE AVAILABLE</span>
+            <span className="badge">MEN & WOMEN</span>
+            <span className="badge gold">757 OWNED & OPERATED</span>
+          </div>
+        </section>
+
+        {/* ── GRILLZ ── */}
+        <section id="sec-grillz" className="section">
+          <SectionHeader
+            eyebrow="01 · GRILLZ"
+            title="CUSTOM GRILLZ"
+            desc="HANDMADE IN HAMPTON, VA · 10K–14K SOLID GOLD · 2–4 WEEK TURNAROUND"
+          />
+          <GrillzBuilder onOrder={setOrderItem} />
+        </section>
+
+        {/* ── CHAINS ── */}
+        <section id="sec-chains" className="section">
+          <SectionHeader
+            eyebrow="02 · CHAINS"
+            title="CHAINS"
+            desc="PLAIN JANE TO FULL ICE · CUBAN LINK · ROPE · TENNIS · HERRINGBONE"
+          />
+          <FilterBar value={chainFilter} onChange={setChainFilter} />
+          <div className="product-grid">
+            {filter(CHAINS, chainFilter).map(item => (
+              <ProductCard key={item.id} item={item} onOrder={setOrderItem} />
+            ))}
+          </div>
+        </section>
+
+        {/* ── BRACELETS ── */}
+        <section id="sec-bracelets" className="section">
+          <SectionHeader
+            eyebrow="03 · BRACELETS"
+            title="BRACELETS"
+            desc="STACK 'EM OR SOLO · TENNIS · CUBAN · ROPE · BANGLE"
+          />
+          <FilterBar value={braceletFilter} onChange={setBraceletFilter} />
+          <div className="product-grid">
+            {filter(BRACELETS, braceletFilter).map(item => (
+              <ProductCard key={item.id} item={item} onOrder={setOrderItem} />
+            ))}
+          </div>
+        </section>
+
+        {/* ── WATCHES ── */}
+        <section id="sec-watches" className="section">
+          <SectionHeader
+            eyebrow="04 · WATCHES"
+            title="WATCHES"
+            desc="PRESIDENTIAL TO PLAIN · CUSTOM BEZEL WORK AVAILABLE"
+          />
+          <FilterBar value={watchFilter} onChange={setWatchFilter} />
+          <div className="product-grid">
+            {filter(WATCHES, watchFilter).map(item => (
+              <ProductCard key={item.id} item={item} onOrder={setOrderItem} />
+            ))}
+          </div>
+        </section>
+
+        {/* ── EARRINGS ── */}
+        <section id="sec-earrings" className="section">
+          <SectionHeader
+            eyebrow="05 · EARRINGS"
+            title="EARRINGS"
+            desc="STUDS · HOOPS · DROPS · MEN & WOMEN"
+          />
+          <FilterBar value={earringFilter} onChange={setEarringFilter} />
+          <div className="product-grid">
+            {filter(EARRINGS, earringFilter).map(item => (
+              <ProductCard key={item.id} item={item} onOrder={setOrderItem} />
+            ))}
+          </div>
+        </section>
+
+        {/* ── MARKET RESEARCH ── */}
+        <section id="sec-market" className="market-strip">
+          <div className="section-eyebrow">06 · MARKET RESEARCH</div>
+          <h2>WHY 757 ICE CO. WINS</h2>
+          <div className="stat-grid">
+            {MARKET_STATS.map((s,i) => (
+              <div key={i} className="stat-card">
+                <div className="stat-num">{s.num}</div>
+                <div className="stat-label">{s.label}</div>
+              </div>
+            ))}
+          </div>
+          <ul className="insight-list">
+            {MARKET_INSIGHTS.map((insight, i) => (
+              <li key={i}>{insight}</li>
+            ))}
+          </ul>
+        </section>
+
+        {/* ── ORDER / CONTACT ── */}
+        <section id="sec-order" className="order-section">
+          <div className="section-eyebrow">07 · ORDER</div>
+          <div className="section-title" style={{fontSize:28,fontWeight:900,letterSpacing:3,color:"#fff"}}>
+            GET YOUR PIECE
+          </div>
+          <div style={{fontSize:12,color:"#3a3a3a",marginTop:6,letterSpacing:1}}>
+            ALL ORDERS GO THROUGH OMAR DIRECTLY — HAMPTON, VA
+          </div>
+
+          <div className="order-grid">
+            <div className="order-card">
+              <div className="oc-icon">📸</div>
+              <div className="oc-title">INSTAGRAM DM</div>
+              <div className="oc-desc">
+                Slide into the DMs @757iceco. Send your reference pics, describe what you want,
+                and Omar will give you a quote within 24 hours. Most orders start here.
+              </div>
+              <a href="https://instagram.com/757iceco" target="_blank" className="oc-btn">
+                @757ICECO ON INSTAGRAM
+              </a>
+            </div>
+
+            <div className="order-card">
+              <div className="oc-icon">📱</div>
+              <div className="oc-title">TEXT / CALL</div>
+              <div className="oc-desc">
+                Prefer to talk? Text or call Omar directly. He'll walk you through options,
+                discuss materials, and set up your fitting if you're local to Hampton Roads.
+              </div>
+              <a href="sms:?body=Hey, I want to order from 757 ICE CO." className="oc-btn">
+                TEXT TO ORDER
+              </a>
+            </div>
+
+            <div className="order-card">
+              <div className="oc-icon">🎵</div>
+              <div className="oc-title">TIKTOK</div>
+              <div className="oc-desc">
+                Follow our builds, process videos, and customer reveals on TikTok.
+                Comment your order or DM us — link in bio always has the latest inventory.
+              </div>
+              <a href="https://tiktok.com/@757iceco" target="_blank" className="oc-btn">
+                @757ICECO ON TIKTOK
+              </a>
+            </div>
+
+            <div className="order-card">
+              <div className="oc-icon">🌊</div>
+              <div className="oc-title">LOCAL PICKUP — HAMPTON, VA</div>
+              <div className="oc-desc">
+                In the 757? Come through for a fitting, pick up your piece in person,
+                and meet Omar. Grillz require in-person dental mold impressions for custom orders.
+              </div>
+              <a href="https://instagram.com/757iceco" target="_blank" className="oc-btn">
+                DM FOR LOCATION
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* ── FOOTER ── */}
+        <footer className="footer">
+          <div className="gold-line"/>
+          757 ICE CO. · HAMPTON, VIRGINIA · 757<br/>
+          CUSTOM JEWELRY · GRILLZ · CHAINS · BRACELETS · WATCHES · EARRINGS<br/>
+          BUILT BY OMAR · DISTRIBUTED BY DARRIAN · EST. 2026<br/>
+          @757ICECO · HAMPTON ROADS' JEWELER
+        </footer>
+
+      </main>
+
+      {/* ── MOBILE BOTTOM NAV ── */}
+      <nav className="mobile-nav">
+        {NAV_ITEMS.slice(1, 7).map(n => (
+          <a key={n.id} href={`#sec-${n.id}`}
+            className={activeSection===n.id?"active":""}
+            onClick={e=>{ e.preventDefault(); scrollTo(n.id); }}
+          >
+            <span className="nav-icon">{n.icon}</span>
+            <span>{n.label}</span>
+          </a>
+        ))}
+      </nav>
+
+      {/* ── ORDER MODAL ── */}
+      {orderItem && <OrderModal item={orderItem} onClose={() => setOrderItem(null)} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
