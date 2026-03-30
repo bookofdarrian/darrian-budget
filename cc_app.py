@@ -1013,8 +1013,10 @@ if not user:
     </section>
     """, unsafe_allow_html=True)
 
-    # Load founder photo — headshot first, then lifestyle fallback
+    # Load founder photo — professional headshot (Target HBCU Scholars / Forbes)
     _founder_uri = (
+        _load_b64("static/photos/carousel/headshot/darrian_headshot.jpg") or
+        _load_b64("static/photos/darrian_headshot.jpg") or
         _load_b64("static/photos/carousel/headshot/darrian_headshot.png") or
         _load_b64("static/photos/darrian_headshot.png") or
         ""
@@ -1025,16 +1027,16 @@ if not user:
         if _founder_uri:
             st.markdown(f"""
         <div style="display:flex;justify-content:center;align-items:center;padding:20px 0;">
-          <div style="width:220px;height:220px;border-radius:4px;overflow:hidden;border:2px solid #2A2A2A;filter:grayscale(0.15) contrast(1.05);box-shadow:0 8px 32px rgba(0,0,0,0.6);">
-            <img src="{_founder_uri}" alt="Darrian Belcher — Founder, College Confused"
-                 style="width:100%;height:100%;object-fit:cover;object-position:center 20%;" />
+          <div style="width:240px;height:280px;border-radius:6px;overflow:hidden;border:none;box-shadow:0 12px 40px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.06);">
+            <img src="{_founder_uri}" alt="Darrian Belcher — Founder, College Confused — Target HBCU Scholar featured in Forbes"
+                 style="width:100%;height:100%;object-fit:cover;object-position:center top;" />
           </div>
         </div>
             """, unsafe_allow_html=True)
         else:
             st.markdown("""
         <div style="display:flex;justify-content:center;align-items:center;padding:20px 0;">
-          <div style="width:220px;height:220px;border-radius:4px;background:#181818;border:2px solid #2A2A2A;display:flex;align-items:center;justify-content:center;font-size:5rem;">👤</div>
+          <div style="width:240px;height:280px;border-radius:6px;background:#181818;border:1px solid #2A2A2A;display:flex;align-items:center;justify-content:center;font-size:5rem;">👤</div>
         </div>
             """, unsafe_allow_html=True)
     with _fc2:
