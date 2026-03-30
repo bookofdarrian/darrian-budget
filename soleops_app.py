@@ -775,6 +775,7 @@ if not user:
     """, unsafe_allow_html=True)
 
     # ── CAROUSEL CSS + SHOE PRODUCT CAROUSEL ─────────────────────────────────
+    _heat_listings = _load_ebay_listings(1)  # Load real inventory for carousel
     st.html(CAROUSEL_BASE_CSS + carousel_theme_css("cyan"))
     st.markdown(f"""
 <div class="carousel-section">
@@ -785,8 +786,13 @@ if not user:
       Real sneakers. Real resellers. Real numbers. SoleOps is built by
       someone who actually flips — not a tech bro who read a blog post.
     </p>
+    <a href="https://www.ebay.com/sch/i.html?_nkw=sneakers&LH_BIN=1&_sop=15" target="_blank"
+       rel="noopener noreferrer"
+       style="display:inline-block;margin-top:14px;padding:11px 26px;background:linear-gradient(90deg,#00D4FF,#7B2FBE);border-radius:8px;color:#fff;font-weight:700;font-size:0.9rem;text-decoration:none;letter-spacing:0.04em;box-shadow:0 4px 18px rgba(0,212,255,0.35);">
+      🛒 Shop My eBay Listings ↗
+    </a>
   </div>
-  {render_shoe_product_carousel("cyan")}
+  {render_shoe_product_carousel("cyan", db_listings=_heat_listings)}
   <div style="margin-top:20px;"></div>
   {render_story_band_html(
     "I built SoleOps between inventory runs. Every feature exists because I personally needed it — "

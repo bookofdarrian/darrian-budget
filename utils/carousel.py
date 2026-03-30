@@ -49,8 +49,8 @@ def _get_local_carousel_photos(category: str) -> list[tuple[str, str, str]]:
     """
     Scan static/photos/carousel/{category}/ for .jpg/.jpeg/.png/.webp files.
     Returns list of (data_uri, label, sublabel).
-    Also seeds headshot/lifestyle with the two root-level photos when the
-    category folder is empty so those carousels always have something real.
+    NOTE: For "shoe" category, returns empty list if no real shoe photos exist
+    (never falls back to headshots — shoe carousel uses emoji+eBay links instead).
     """
     results: list[tuple[str, str, str]] = []
 
@@ -59,14 +59,21 @@ def _get_local_carousel_photos(category: str) -> list[tuple[str, str, str]]:
     if cat_dir.exists():
         for f in sorted(cat_dir.iterdir()):
             if f.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"):
+                # Skip portrait/headshot photos in shoe category (they are NOT shoes)
+                if category == "shoe":
+                    stem_lower = f.stem.lower()
+                    if any(x in stem_lower for x in ["headshot", "darrian", "portrait",
+                                                      "profile", "selfie", "person"]):
+                        continue
                 rel = str(f.relative_to(_REPO_ROOT))
                 uri = _load_photo_b64(rel)
                 if uri:
                     label = f.stem.replace("_", " ").replace("-", " ").title()
                     results.append((uri, label, ""))
 
-    # 2. Seed fallback for ALL categories — always show real photos, never an empty carousel
-    if not results:
+    # 2. Seed fallback for NON-shoe categories only
+    # Shoe carousel never shows headshots — it uses emoji+eBay cards instead.
+    if not results and category != "shoe":
         seeds = [
             ("static/photos/carousel/lifestyle/darrian_vibe.jpg",
              "Darrian Belcher", "Builder · Culture · ATL"),
@@ -126,15 +133,25 @@ _CATEGORY_BG_STUB: dict[str, tuple[str, str]] = {
 # When real photos are uploaded to /static/photos/ replace src with <img> tags.
 # The system is already wired to use real images if placed in static/photos/
 
+# Each entry: (emoji, label, sublabel, ebay_search_url)
+# All shoe cards are clickable links to real eBay Buy-It-Now listings.
 SHOE_PHOTOS = [
-    ("👟", "Air Jordan 1 Retro High OG", "Chicago · $280 avg resale", "#FF4136"),
-    ("👟", "Nike SB Dunk Low Travis Scott", "Special Field · $520 avg resale", "#B06AFF"),
-    ("👟", "New Balance 9060", "Sea Salt/White · $180 avg resale", "#22D47E"),
-    ("👟", "Adidas Yeezy 350 V2", "Zebra · $260 avg resale", "#FFB347"),
-    ("👟", "Air Force 1 Low '07", "Triple White · $120 avg resale", "#00D4FF"),
-    ("👟", "Jordan 4 Retro", "Fire Red 2020 · $400 avg resale", "#FF4136"),
-    ("👟", "Nike Dunk High", "University Blue · $190 avg resale", "#4169E1"),
-    ("👟", "Salehe Bembury x Crocs", "Pollex Clog · $95 avg resale", "#FF69B4"),
+    ("👟", "Air Jordan 1 Retro High OG", "Chicago · $280 avg resale",
+     "https://www.ebay.com/sch/i.html?_nkw=Air+Jordan+1+Chicago+Retro+High&LH_BIN=1&_sop=15"),
+    ("👟", "Nike SB Dunk Low Travis Scott", "Special Field · $520 avg resale",
+     "https://www.ebay.com/sch/i.html?_nkw=Nike+SB+Dunk+Low+Travis+Scott&LH_BIN=1&_sop=15"),
+    ("👟", "New Balance 9060", "Sea Salt/White · $180 avg resale",
+     "https://www.ebay.com/sch/i.html?_nkw=New+Balance+9060+Sea+Salt&LH_BIN=1&_sop=15"),
+    ("👟", "Adidas Yeezy 350 V2", "Zebra · $260 avg resale",
+     "https://www.ebay.com/sch/i.html?_nkw=Yeezy+Boost+350+V2+Zebra&LH_BIN=1&_sop=15"),
+    ("👟", "Air Force 1 Low '07", "Triple White · $120 avg resale",
+     "https://www.ebay.com/sch/i.html?_nkw=Nike+Air+Force+1+Low+Triple+White&LH_BIN=1&_sop=15"),
+    ("👟", "Jordan 4 Retro", "Fire Red 2020 · $400 avg resale",
+     "https://www.ebay.com/sch/i.html?_nkw=Jordan+4+Retro+Fire+Red+2020&LH_BIN=1&_sop=15"),
+    ("👟", "Nike Dunk High", "University Blue · $190 avg resale",
+     "https://www.ebay.com/sch/i.html?_nkw=Nike+Dunk+High+University+Blue&LH_BIN=1&_sop=15"),
+    ("👟", "Salehe Bembury x Crocs", "Pollex Clog · $95 avg resale",
+     "https://www.ebay.com/sch/i.html?_nkw=Salehe+Bembury+Crocs+Pollex+Clog&LH_BIN=1&_sop=15"),
 ]
 
 STREET_FASHION_PHOTOS = [
@@ -419,24 +436,27 @@ def carousel_theme_css(theme: str = "cyan") -> str:
 def _build_card(emoji: str, label: str, sub: str,
                 bg_from: str, bg_to: str,
                 accent: str,
-                photo_src: str | None = None) -> str:
-    """Build one carousel card. Uses real photo when photo_src given, else emoji gradient."""
+                photo_src: str | None = None,
+                href: str | None = None) -> str:
+    """Build one carousel card. Uses real photo when photo_src given, else emoji gradient.
+    When href provided, renders as a clickable <a> link (opens in new tab)."""
     if photo_src:
-        # Real photo from Immich — no emoji overlay, just the image + caption
         bg_style = f"background: url('{photo_src}') center/cover no-repeat;"
         emoji_html = ""
     else:
         bg_style = f"background: linear-gradient(160deg, {bg_from} 0%, {bg_to} 100%);"
         emoji_html = f'<span class="car-emoji">{emoji}</span>'
 
-    return f"""<div class="car-card" style="{bg_style}" role="figure" aria-label="{label}">
-  {emoji_html}
+    inner = f"""  {emoji_html}
   <div class="car-card-overlay" style="background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%);"></div>
   <div style="position:relative;z-index:2;text-align:center;">
     <div class="car-card-label">{label}</div>
     <div class="car-card-sub">{sub}</div>
-  </div>
-</div>"""
+  </div>"""
+
+    if href:
+        return f'<a class="car-card" href="{href}" target="_blank" rel="noopener noreferrer" style="{bg_style}" role="figure" aria-label="{label}">\n{inner}\n</a>'
+    return f'<div class="car-card" style="{bg_style}" role="figure" aria-label="{label}">\n{inner}\n</div>'
 
 
 def _build_track(cards_html: str, theme: str, slow: bool = False,
@@ -549,27 +569,61 @@ def _build_immich_cards_for_category(
 
 # ─── PUBLIC RENDER FUNCTIONS ─────────────────────────────────────────────────
 
-def render_shoe_product_carousel(theme: str = "cyan") -> str:
+def render_shoe_product_carousel(theme: str = "cyan",
+                                  db_listings: list | None = None) -> str:
     """Infinite-scroll sneaker product carousel for SoleOps.
-    Uses real Immich photos when available; falls back to emoji placeholders."""
-    # Try Immich first
+
+    Priority order:
+      1. Immich real shoe photos (if Immich is configured)
+      2. Real DB inventory from soleops_inventory (passed in as db_listings)
+      3. Placeholder shoe emoji cards — ALL linked to real eBay BIN searches
+
+    Cards are always clickable links to eBay (never headshots).
+    """
+    _CARD_STYLES = [
+        ("#1a0505", "#3D0000"),
+        ("#0D0B1E", "#2B1A4F"),
+        ("#051a0a", "#0A3B1E"),
+        ("#1A1200", "#3D2B00"),
+        ("#050D1A", "#0A2040"),
+        ("#1A0510", "#3D0028"),
+        ("#000D1A", "#001A3D"),
+        ("#0D1A00", "#1A3D00"),
+    ]
+
+    # 1. Try Immich real photos
     cards = _build_immich_cards_for_category("shoe", "soleops", limit=12, accent="#00D4FF")
+
+    # 2. Build cards from real DB inventory (soleops_inventory table)
+    if not cards and db_listings:
+        for i, item in enumerate(db_listings):
+            name_parts = [item.get("brand", ""), item.get("model", "")]
+            display = " ".join(x for x in name_parts if x) or "Sneaker"
+            colorway = item.get("colorway", "")
+            size = item.get("size", "?")
+            price = item.get("price")
+            sub_parts = [f"Sz {size}"]
+            if price:
+                sub_parts.append(f"${price:.0f}")
+            if colorway:
+                sub_parts.append(colorway)
+            sub = " · ".join(sub_parts)
+            ebay_url = item.get("ebay_url",
+                "https://www.ebay.com/sch/i.html?_nkw=sneakers&LH_BIN=1&_sop=15")
+            bg_f, bg_t = _CARD_STYLES[i % len(_CARD_STYLES)]
+            cards += _build_card("👟", display, sub, bg_f, bg_t, "#00D4FF",
+                                  href=ebay_url)
+
+    # 3. Fall back to placeholder shoe cards — ALL linked to real eBay BIN searches
     if not cards:
-        # Static fallback
-        card_styles = [
-            ("#1a0505", "#3D0000"),
-            ("#0D0B1E", "#2B1A4F"),
-            ("#051a0a", "#0A3B1E"),
-            ("#1A1200", "#3D2B00"),
-            ("#050D1A", "#0A2040"),
-            ("#1A0510", "#3D0028"),
-            ("#000D1A", "#001A3D"),
-            ("#0D1A00", "#1A3D00"),
-        ]
         for i, shoe_data in enumerate(SHOE_PHOTOS):
             emoji, label, sub = shoe_data[0], shoe_data[1], shoe_data[2]
-            bg_f, bg_t = card_styles[i % len(card_styles)]
-            cards += _build_card(emoji, label, sub, bg_f, bg_t, "#00D4FF")
+            ebay_url = shoe_data[3] if len(shoe_data) > 3 else \
+                "https://www.ebay.com/sch/i.html?_nkw=sneakers&LH_BIN=1&_sop=15"
+            bg_f, bg_t = _CARD_STYLES[i % len(_CARD_STYLES)]
+            cards += _build_card(emoji, label, sub, bg_f, bg_t, "#00D4FF",
+                                  href=ebay_url)
+
     return _build_track(cards, theme)
 
 
