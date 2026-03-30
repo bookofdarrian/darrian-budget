@@ -756,20 +756,20 @@ if not user:
     st.markdown("""
     <div class="so-stats" role="region" aria-label="Key statistics">
       <div class="so-stat">
-        <div class="so-stat-num">Real-Time</div>
-        <div class="so-stat-label">eBay + Mercari Prices</div>
+        <div class="so-stat-num">100%</div>
+        <div class="so-stat-label">Positive Feedback</div>
       </div>
       <div class="so-stat">
-        <div class="so-stat-num">AI</div>
-        <div class="so-stat-label">Listing Generator</div>
+        <div class="so-stat-num">1.4K</div>
+        <div class="so-stat-label">Items Sold on eBay</div>
+      </div>
+      <div class="so-stat">
+        <div class="so-stat-num">918</div>
+        <div class="so-stat-label">Verified Reviews</div>
       </div>
       <div class="so-stat">
         <div class="so-stat-num">$0</div>
-        <div class="so-stat-label">To Start</div>
-      </div>
-      <div class="so-stat">
-        <div class="so-stat-num">8+</div>
-        <div class="so-stat-label">Reseller Tools</div>
+        <div class="so-stat-label">To Start Free</div>
       </div>
     </div>
     """, unsafe_allow_html=True)
