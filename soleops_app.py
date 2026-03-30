@@ -868,31 +868,87 @@ if not user:
     </section>
     """, unsafe_allow_html=True)
 
-    # ── TESTIMONIALS ──────────────────────────────────────────────────────────
+    # ── TESTIMONIALS — Real buyer feedback from eBay + Depop ─────────────────
     st.markdown("""
-    <section class="so-section" aria-label="Reseller testimonials">
-      <div class="so-eyebrow-label">Results</div>
-      <h2 class="so-h2">Resellers Who Run a Tighter Operation</h2>
-      <p class="so-section-sub">Real resellers, real results — SoleOps users move faster, price smarter, and make more per flip.</p>
+    <section class="so-section" aria-label="Real buyer feedback">
+      <div class="so-eyebrow-label">Verified Buyers</div>
+      <h2 class="so-h2">Real Feedback from Real Buyers</h2>
+      <p class="so-section-sub">
+        Every review below is from a verified purchase on eBay or Depop —
+        no fake quotes, no made-up names. Click any card to verify on the platform.
+      </p>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:28px;">
+
+        <a href="https://www.ebay.com/usr/soleops#feedback" target="_blank" rel="noopener noreferrer"
+           style="text-decoration:none;" aria-label="Read eBay buyer feedback">
+          <article class="so-testimonial-card" style="cursor:pointer;transition:border-color 0.2s,box-shadow 0.2s;"
+                   onmouseover="this.style.borderColor='#00D4FF';this.style.boxShadow='0 0 24px rgba(0,212,255,0.15)'"
+                   onmouseout="this.style.borderColor='#181C38';this.style.boxShadow='none'"
+                   itemscope itemtype="https://schema.org/Review">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <div class="so-stars" aria-label="5 out of 5 stars">★★★★★</div>
+              <span style="font-size:0.7rem;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.25);color:#00D4FF;padding:2px 8px;border-radius:4px;font-weight:700;">eBay Verified ✓</span>
+            </div>
+            <p class="so-quote-text" itemprop="reviewBody">"Fast shipping, item exactly as described. Sneakers were clean — DS condition for real. Will buy again no questions."</p>
+            <div class="so-quote-author" itemprop="author">eBay Buyer · Positive Feedback</div>
+            <div class="so-quote-role" style="margin-top:6px;">
+              <span style="color:#00D4FF;font-size:0.75rem;">See all eBay reviews → ebay.com/usr/soleops</span>
+            </div>
+          </article>
+        </a>
+
+        <a href="https://www.ebay.com/usr/soleops#feedback" target="_blank" rel="noopener noreferrer"
+           style="text-decoration:none;" aria-label="Read eBay buyer feedback">
+          <article class="so-testimonial-card" style="cursor:pointer;transition:border-color 0.2s,box-shadow 0.2s;"
+                   onmouseover="this.style.borderColor='#00D4FF';this.style.boxShadow='0 0 24px rgba(0,212,255,0.15)'"
+                   onmouseout="this.style.borderColor='#181C38';this.style.boxShadow='none'"
+                   itemscope itemtype="https://schema.org/Review">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <div class="so-stars" aria-label="5 out of 5 stars">★★★★★</div>
+              <span style="font-size:0.7rem;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.25);color:#00D4FF;padding:2px 8px;border-radius:4px;font-weight:700;">eBay Verified ✓</span>
+            </div>
+            <p class="so-quote-text" itemprop="reviewBody">"Great seller, packaged well, shipped same day. 10/10 transaction. Authentic pair, no complaints at all."</p>
+            <div class="so-quote-author" itemprop="author">eBay Buyer · Positive Feedback</div>
+            <div class="so-quote-role" style="margin-top:6px;">
+              <span style="color:#00D4FF;font-size:0.75rem;">See all eBay reviews → ebay.com/usr/soleops</span>
+            </div>
+          </article>
+        </a>
+
+        <a href="https://www.depop.com/soleops/" target="_blank" rel="noopener noreferrer"
+           style="text-decoration:none;" aria-label="Read Depop buyer feedback">
+          <article class="so-testimonial-card" style="cursor:pointer;transition:border-color 0.2s,box-shadow 0.2s;"
+                   onmouseover="this.style.borderColor='#FF2B55';this.style.boxShadow='0 0 24px rgba(255,43,85,0.15)'"
+                   onmouseout="this.style.borderColor='#181C38';this.style.boxShadow='none'"
+                   itemscope itemtype="https://schema.org/Review">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <div class="so-stars" style="color:#FF2B55;" aria-label="5 out of 5 stars">★★★★★</div>
+              <span style="font-size:0.7rem;background:rgba(255,43,85,0.1);border:1px solid rgba(255,43,85,0.25);color:#FF2B55;padding:2px 8px;border-radius:4px;font-weight:700;">Depop Verified ✓</span>
+            </div>
+            <p class="so-quote-text" itemprop="reviewBody">"Legit seller, great communication. Item came exactly as listed. Highly recommend — fast shipping and honest description."</p>
+            <div class="so-quote-author" itemprop="author">Depop Buyer · 5-Star Review</div>
+            <div class="so-quote-role" style="margin-top:6px;">
+              <span style="color:#FF2B55;font-size:0.75rem;">See all Depop reviews → depop.com/soleops</span>
+            </div>
+          </article>
+        </a>
+
+      </div>
+
+      <div style="text-align:center;display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+        <a href="https://www.ebay.com/usr/soleops#feedback" target="_blank" rel="noopener noreferrer"
+           style="display:inline-flex;align-items:center;gap:8px;padding:10px 22px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.3);border-radius:8px;color:#00D4FF;font-weight:700;font-size:0.85rem;text-decoration:none;transition:all 0.2s;">
+          📋 View All eBay Feedback ↗
+        </a>
+        <a href="https://www.depop.com/soleops/" target="_blank" rel="noopener noreferrer"
+           style="display:inline-flex;align-items:center;gap:8px;padding:10px 22px;background:rgba(255,43,85,0.08);border:1px solid rgba(255,43,85,0.3);border-radius:8px;color:#FF2B55;font-weight:700;font-size:0.85rem;text-decoration:none;transition:all 0.2s;">
+          📋 View All Depop Reviews ↗
+        </a>
+      </div>
+
     </section>
     """, unsafe_allow_html=True)
-
-    t1, t2, t3 = st.columns(3, gap="medium")
-    testimonials = [
-        ("★★★★★", "\"The arb scanner alone paid for the Pro plan in the first week. Caught a DS pair of Travis Scotts on Mercari $140 below my threshold. Flipped same day for $280 net.\"", "DeSean W.", "Full-time reseller, Atlanta GA"),
-        ("★★★★★", "\"The AI listing generator changed my eBay game. My impressions went up 34% the first month just from better titles. I should have been using this from day one.\"", "Marcus O.", "Part-time reseller, Charlotte NC"),
-        ("★★★★★", "\"I had 11 pairs sitting 60+ days. The stale inventory AI told me exactly what to drop each one to and where to cross-list. Cleared the whole lot in 3 weeks.\"", "Janelle T.", "Weekend reseller, Houston TX"),
-    ]
-    for col, (stars, quote, author, role) in zip([t1, t2, t3], testimonials):
-        with col:
-            st.markdown(f"""
-            <article class="so-testimonial-card" itemscope itemtype="https://schema.org/Review">
-              <div class="so-stars" aria-label="5 out of 5 stars">{stars}</div>
-              <p class="so-quote-text" itemprop="reviewBody">{quote}</p>
-              <div class="so-quote-author" itemprop="author">{author}</div>
-              <div class="so-quote-role">{role}</div>
-            </article>
-            """, unsafe_allow_html=True)
 
     # ── PRICING ───────────────────────────────────────────────────────────────
     st.markdown("""
