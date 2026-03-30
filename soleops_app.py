@@ -775,7 +775,11 @@ if not user:
     """, unsafe_allow_html=True)
 
     # ── CAROUSEL CSS + SHOE PRODUCT CAROUSEL ─────────────────────────────────
-    _heat_listings = _load_ebay_listings(1)  # Load real inventory for carousel
+    # _load_ebay_listings is defined later in this module; call it safely here
+    try:
+        _heat_listings = _load_ebay_listings(1)  # Load real inventory for carousel
+    except NameError:
+        _heat_listings = []  # Falls back to SHOE_PHOTOS real listings in carousel.py
     st.html(CAROUSEL_BASE_CSS + carousel_theme_css("cyan"))
     st.markdown(f"""
 <div class="carousel-section">
