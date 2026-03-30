@@ -873,7 +873,7 @@ if not user:
     """, unsafe_allow_html=True)
 
     # ── TESTIMONIALS — Real buyer feedback from eBay + Depop ─────────────────
-    st.markdown("""
+    st.html("""
     <section class="so-section" aria-label="Real buyer feedback">
       <div class="so-eyebrow-label">Verified Buyers</div>
       <h2 class="so-h2">Real Feedback from Real Buyers</h2>
@@ -952,7 +952,7 @@ if not user:
       </div>
 
     </section>
-    """, unsafe_allow_html=True)
+    """)
 
     # ── PRICING ───────────────────────────────────────────────────────────────
     st.markdown("""
