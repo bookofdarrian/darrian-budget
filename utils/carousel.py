@@ -68,19 +68,19 @@ def _get_local_carousel_photos(category: str) -> list[tuple[str, str, str]]:
     # 2. Seed fallback for ALL categories — always show real photos, never an empty carousel
     if not results:
         seeds = [
-            ("static/photos/carousel/headshot/darrian_headshot.png",
-             "Darrian Belcher", "Founder · Builder · ATL"),
+            ("static/photos/carousel/lifestyle/darrian_vibe.jpg",
+             "Darrian Belcher", "Builder · Culture · ATL"),
             ("static/photos/carousel/headshot/darrian_professional.jpg",
              "Darrian Belcher", "Associate Technical Project Analyst @ Visa"),
             ("static/photos/carousel/lifestyle/darrian_lifestyle.jpg",
              "Darrian Belcher", "Builder · Atlanta GA"),
-            ("static/photos/carousel/lifestyle/darrian_vibe.jpg",
-             "Darrian Belcher", "Vibing · Atlanta GA"),
-            # root-level fallbacks
-            ("static/photos/darrian_headshot.png",
+            ("static/photos/carousel/headshot/darrian_headshot.png",
              "Darrian Belcher", "Founder · Builder · ATL"),
+            # root-level fallbacks
             ("static/photos/darrian_professional.jpg",
              "Darrian Belcher", "Associate Technical Project Analyst @ Visa"),
+            ("static/photos/darrian_headshot.png",
+             "Darrian Belcher", "Founder · Builder · ATL"),
         ]
         for path, label, sub in seeds:
             uri = _load_photo_b64(path)

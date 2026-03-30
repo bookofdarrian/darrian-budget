@@ -47,15 +47,15 @@ user = get_current_user()
 if not user:
 
     # ── Hide sidebar for landing page ─────────────────────────────────────────
-    st.markdown("""
-    <style>
+    st.html("""
+<style>
     [data-testid="stSidebar"] { display: none !important; }
     [data-testid="collapsedControl"] { display: none !important; }
     </style>
-    """, unsafe_allow_html=True)
+    """)
 
     # ── SEO: Meta tags + JSON-LD injected to <head> via JS ───────────────────
-    st.markdown("""
+    st.html("""
     <script>
     (function() {
       var metas = [
@@ -196,10 +196,10 @@ if not user:
       ]
     }
     </script>
-    """, unsafe_allow_html=True)
+    """)
 
     # ── Master CSS ─────────────────────────────────────────────────────────────
-    st.markdown("""
+    st.html("""
     <style>
     /* ── CSS Custom Properties ── */
     :root {
@@ -709,7 +709,7 @@ if not user:
       .so-h2 { font-size: 1.5rem; }
     }
     </style>
-    """, unsafe_allow_html=True)
+    """)
 
     # ── TOP NAV ───────────────────────────────────────────────────────────────
     st.markdown("""
@@ -775,7 +775,7 @@ if not user:
     """, unsafe_allow_html=True)
 
     # ── CAROUSEL CSS + SHOE PRODUCT CAROUSEL ─────────────────────────────────
-    st.markdown(CAROUSEL_BASE_CSS + carousel_theme_css("cyan"), unsafe_allow_html=True)
+    st.html(CAROUSEL_BASE_CSS + carousel_theme_css("cyan"))
     st.markdown(f"""
 <div class="carousel-section">
   <div class="carousel-section-header">
@@ -1163,7 +1163,7 @@ def _render_ebay_banner(listings: list[dict]) -> None:
 
     count_label = f"{len(listings)} pair{'s' if len(listings) != 1 else ''} live on eBay"
 
-    st.markdown(f"""
+    st.html(f"""
     <style>
     .so-ebay-banner-wrap {{
       position: relative;
@@ -1317,7 +1317,7 @@ def _render_ebay_banner(listings: list[dict]) -> None:
         </div>
       </div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
 render_sidebar_brand()
 st.sidebar.markdown("---")
