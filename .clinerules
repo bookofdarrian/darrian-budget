@@ -15,10 +15,13 @@
 
 ## SDLC PIPELINE — MANDATORY FOR ALL CHANGES
 ```
-feature branch → dev → qa → staging → main (prod)
+feature branch → dev → qa → staging → main
 ```
 Branch naming: feature/<name>, bugfix/<name>, hotfix/<name>
 - Create branch FIRST: `git checkout -b feature/<name>`
+- **BEFORE WRITING CODE: Complete `BRD_AI_ETHICS_TEMPLATE.md` for the feature** (copy template, fill in research + ethical risk assessment)
+- Minimum 2 peer-reviewed primary sources (Google Scholar / NBER) + monetary impact data cited
+- Community Sovereignty Test MUST pass: "Does this empower or extract from communities?"
 - Syntax check every file: `python3 -m py_compile pages/XX.py && echo OK`
 - Run tests before commit: `cd /Users/darrianbelcher/Downloads/darrian-budget && source venv/bin/activate && pytest tests/ -v`
 - Conventional commits: feat:, fix:, refactor:, chore:, test:
