@@ -780,7 +780,7 @@ if not user:
         _heat_listings = _load_ebay_listings(1)  # Load real inventory for carousel
     except NameError:
         _heat_listings = []  # Falls back to SHOE_PHOTOS real listings in carousel.py
-    st.html(CAROUSEL_BASE_CSS + carousel_theme_css("cyan"))
+    st.markdown(CAROUSEL_BASE_CSS + carousel_theme_css("cyan"), unsafe_allow_html=True)
     st.markdown(f"""
 <div class="carousel-section">
   <div class="carousel-section-header">
