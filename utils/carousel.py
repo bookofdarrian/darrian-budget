@@ -135,23 +135,16 @@ _CATEGORY_BG_STUB: dict[str, tuple[str, str]] = {
 
 # Each entry: (emoji, label, sublabel, ebay_search_url)
 # All shoe cards are clickable links to real eBay Buy-It-Now listings.
+# Real current eBay listings from @soleops store (updated 2026-03-30)
 SHOE_PHOTOS = [
-    ("👟", "Air Jordan 1 Retro High OG", "Chicago · $280 avg resale",
-     "https://www.ebay.com/sch/i.html?_nkw=Air+Jordan+1+Chicago+Retro+High&LH_BIN=1&_sop=15"),
-    ("👟", "Nike SB Dunk Low Travis Scott", "Special Field · $520 avg resale",
-     "https://www.ebay.com/sch/i.html?_nkw=Nike+SB+Dunk+Low+Travis+Scott&LH_BIN=1&_sop=15"),
-    ("👟", "New Balance 9060", "Sea Salt/White · $180 avg resale",
-     "https://www.ebay.com/sch/i.html?_nkw=New+Balance+9060+Sea+Salt&LH_BIN=1&_sop=15"),
-    ("👟", "Adidas Yeezy 350 V2", "Zebra · $260 avg resale",
-     "https://www.ebay.com/sch/i.html?_nkw=Yeezy+Boost+350+V2+Zebra&LH_BIN=1&_sop=15"),
-    ("👟", "Air Force 1 Low '07", "Triple White · $120 avg resale",
-     "https://www.ebay.com/sch/i.html?_nkw=Nike+Air+Force+1+Low+Triple+White&LH_BIN=1&_sop=15"),
-    ("👟", "Jordan 4 Retro", "Fire Red 2020 · $400 avg resale",
-     "https://www.ebay.com/sch/i.html?_nkw=Jordan+4+Retro+Fire+Red+2020&LH_BIN=1&_sop=15"),
-    ("👟", "Nike Dunk High", "University Blue · $190 avg resale",
-     "https://www.ebay.com/sch/i.html?_nkw=Nike+Dunk+High+University+Blue&LH_BIN=1&_sop=15"),
-    ("👟", "Salehe Bembury x Crocs", "Pollex Clog · $95 avg resale",
-     "https://www.ebay.com/sch/i.html?_nkw=Salehe+Bembury+Crocs+Pollex+Clog&LH_BIN=1&_sop=15"),
+    ("👟", "Nike AF1 '07 LX 'Shapeless'", "Women's · $15 · Ships Fast",
+     "https://www.ebay.com/sch/i.html?_nkw=Nike+Air+Force+1+07+LX+Shapeless+Formless+Limitless&LH_BIN=1&_sop=15"),
+    ("👟", "Air Jordan 12 Retro Game Royal", "Youth 6.5Y (Women's 8) · $90",
+     "https://www.ebay.com/sch/i.html?_nkw=Air+Jordan+12+Retro+Game+Royal+153265&LH_BIN=1&_sop=15"),
+    ("👟", "Air Jordan 3 Retro Sport Blue", "Youth 5Y (Women's 6.5) · $60",
+     "https://www.ebay.com/sch/i.html?_nkw=Air+Jordan+3+Retro+Sport+Blue+398614-007&LH_BIN=1&_sop=15"),
+    ("👟", "Nike Air Max 97 Metallic Gold", "Women's 7.5 / Youth 6Y · $50",
+     "https://www.ebay.com/sch/i.html?_nkw=Nike+Air+Max+97+Metallic+Gold+884421-700&LH_BIN=1&_sop=15"),
 ]
 
 STREET_FASHION_PHOTOS = [
