@@ -116,6 +116,21 @@
 
 ---
 
+## 🎯 TONIGHT — AGENTS START HERE (Priority Queue — March 30, 2026)
+
+> Darrian's direct orders. Pick from this section before anything else. Build one per night in order.
+
+- [ ] **CC: College List Builder** — page 87 — Search/filter colleges by major, location, cost, acceptance rate, HBCU flag; save to personal list with notes; side-by-side school comparison. Full CRUD, DB-backed, Claude AI suggests schools based on profile.
+- [ ] **CC: FAFSA Guide + EFC Calculator** — page 88 — Step-by-step FAFSA walkthrough, plain-English EFC/SAI calculator, dependency status guide, deadline tracker. No prior knowledge required.
+- [ ] **CC: Application Tracker** — page 89 — Track all schools applied to, deadlines, requirements, decisions, scholarship status; Common App checklist per school.
+- [ ] **CC: Recommendation Letter Tracker** — page 90 — Log recommenders, send reminders, track submission status, auto thank-you note generator.
+- [ ] **SoleOps: User Registration + Stripe Paywall** — Update auth — Email/password registration for new SoleOps users. Stripe checkout → subscription active → unlock features. Welcome email via Gmail SMTP. This is the revenue unlock.
+- [ ] **SoleOps: Weekly Reseller Report Email** — Claude-generated weekly summary emailed to each user: stale pairs, market trends, best opportunity this week. Cron job on CT100.
+- [ ] **PSS: Pro Tier Paywall** — Gate advanced pages (Tax Estimator, ESPP Tracker, Net Worth Projection, AI Personal Assistant) behind a $9.99/mo Stripe subscription. Same pattern as SoleOps paywall (page 70).
+- [ ] **SoleOps: Customer CRM** — page 82 (125) — Repeat buyer tracking, VIP buyers, ban list, buyer notes. Essential for 404 Sole Archive resale ops.
+
+---
+
 ## 🎨 ACCESSIBILITY + THEME CUSTOMIZATION — ALL THREE SITES
 
 > **CC Issue:** Lavender text on purple background = low contrast = accessibility failure. Fix this first.
