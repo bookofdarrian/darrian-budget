@@ -528,16 +528,16 @@ h3 {{ color: {TEXT_MUTED}; font-weight: 500; }}
 def inject_css():
     """Inject global CSS + favicon meta tags once per session."""
     if not st.session_state.get("_css_injected"):
-        st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
+        st.html(GLOBAL_CSS)
         # Inject apple-touch-icon and favicon for iPhone "Add to Home Screen"
-        st.markdown("""
+        st.html("""
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍑</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍑</text></svg>">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Peach State">
 <meta name="theme-color" content="#FF6B35">
-""", unsafe_allow_html=True)
+""")
         st.session_state["_css_injected"] = True
 
 
@@ -545,7 +545,7 @@ def inject_soleops_css():
     """Inject SoleOps design system v2 — WCAG 2.1 AA, Inter font, contemporary SaaS + sneaker culture."""
     inject_css()
     if not st.session_state.get("_soleops_css_injected"):
-        st.markdown("""
+        st.html("""
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -863,7 +863,7 @@ td { border-color: var(--so-bg-border) !important; }
   h1, h2, h3 { color: black !important; -webkit-text-fill-color: black !important; }
 }
 </style>
-""", unsafe_allow_html=True)
+""")
         st.session_state["_soleops_css_injected"] = True
 
 
@@ -873,7 +873,7 @@ def inject_cc_css():
     Palette: midnight purple bg + bright lavender headings + coral + teal."""
     inject_css()
     if not st.session_state.get("_cc_css_injected"):
-        st.markdown("""
+        st.html("""
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ── CC Palette ── */
@@ -935,7 +935,7 @@ hr{border-color:var(--cc-border)!important;}
 .cc-timeline-step.done{border-color:var(--cc-teal)!important;}
 .cc-timeline-step.upcoming{border-color:var(--cc-coral)!important;}
 </style>
-""", unsafe_allow_html=True)
+""")
         st.session_state["_cc_css_injected"] = True
 
 
