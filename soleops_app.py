@@ -22,7 +22,7 @@ from utils.carousel import (
     render_roots_cities_band,
     render_headshot_lifestyle_carousel,
 )
-from utils.db import init_db, get_conn
+from utils.db import init_db, get_conn, USE_POSTGRES, execute as db_exec
 from utils.auth import (
     inject_soleops_css,
     render_sidebar_brand,
@@ -44,6 +44,25 @@ user = get_current_user()
 # ═══════════════════════════════════════════════════════════════════════════════
 # PUBLIC LANDING PAGE — shown to unauthenticated visitors + Googlebot
 # ═══════════════════════════════════════════════════════════════════════════════
+# ── Ensure waitlist table exists (created once on app start) ─────────────────
+def _ensure_waitlist():
+    try:
+        conn = get_conn()
+        db_exec(conn, """
+            CREATE TABLE IF NOT EXISTS soleops_waitlist (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT UNIQUE NOT NULL,
+                name TEXT,
+                source TEXT DEFAULT 'landing_page',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.close()
+    except Exception:
+        pass
+
+_ensure_waitlist()
+
 if not user:
 
     # ── Hide sidebar for landing page ─────────────────────────────────────────
@@ -742,7 +761,7 @@ if not user:
     hero_l, hero_c, hero_r = st.columns([1, 2, 1])
     with hero_c:
         if st.button("👟 Start Free — No Credit Card", type="primary", use_container_width=True):
-            st.switch_page("app.py")
+            st.switch_page("pages/103_soleops_user_registration.py")
         st.markdown("""
         <div class="so-trust">
           <span class="so-trust-item"><span class="so-trust-check">✓</span> Free tier forever</span>
@@ -1048,6 +1067,53 @@ if not user:
     </section>
     """, unsafe_allow_html=True)
 
+    # ── NEWSLETTER / WAITLIST EMAIL CAPTURE ──────────────────────────────────
+    st.markdown("""
+    <div style="margin: 56px 0 32px;">
+      <div class="so-eyebrow-label">Stay in the Loop</div>
+      <h2 class="so-h2" style="margin-bottom:8px;">Get Updates from SoleOps</h2>
+      <p class="so-section-sub" style="margin-bottom:24px;">
+        New features, reseller tips, and market alerts — straight to your inbox.
+        No spam. Unsubscribe anytime.
+      </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    nl_l, nl_c, nl_r = st.columns([1, 2, 1])
+    with nl_c:
+        if "nl_success" not in st.session_state:
+            st.session_state["nl_success"] = False
+
+        if st.session_state["nl_success"]:
+            st.success("✅ You're on the list! We'll be in touch.")
+        else:
+            nl_email = st.text_input(
+                "Your email address",
+                key="nl_email_input",
+                placeholder="reseller@email.com",
+                label_visibility="collapsed",
+            )
+            if st.button("📬 Join the Waitlist →", type="primary",
+                         use_container_width=True, key="nl_submit"):
+                clean = (nl_email or "").strip().lower()
+                if not clean or "@" not in clean:
+                    st.error("Please enter a valid email address.")
+                else:
+                    try:
+                        conn = get_conn()
+                        db_exec(conn, """
+                            INSERT OR IGNORE INTO soleops_waitlist (email, source)
+                            VALUES (?, ?)
+                        """, (clean, "landing_page"))
+                        conn.close()
+                        st.session_state["nl_success"] = True
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Something went wrong — try again. ({e})")
+            st.caption("No spam. Unsubscribe anytime. Your email stays private.")
+
+    st.markdown("<div style='margin:24px 0;'></div>", unsafe_allow_html=True)
+
     # ── FINAL CTA ─────────────────────────────────────────────────────────────
     st.markdown("""
     <section class="so-cta-section" aria-label="Call to action">
@@ -1063,11 +1129,11 @@ if not user:
     with cta_c:
         st.markdown("<div style='margin-top:-24px;'></div>", unsafe_allow_html=True)
         if st.button("👟 Start Free Now", type="primary", use_container_width=True, key="cta_bottom"):
-            st.switch_page("app.py")
+            st.switch_page("pages/103_soleops_user_registration.py")
         st.markdown("<div style='text-align:center; color:#7A80A0; font-size:0.78rem; margin-top:8px;'>No credit card · Free tier forever · Cancel paid plans anytime</div>", unsafe_allow_html=True)
         st.markdown("<div style='margin-top:8px;'></div>", unsafe_allow_html=True)
         if st.button("Already have an account? Sign In →", use_container_width=True, key="signin_bottom"):
-            st.switch_page("app.py")
+            st.switch_page("pages/103_soleops_user_registration.py")
 
     # ── FOOTER ────────────────────────────────────────────────────────────────
     st.markdown("""
