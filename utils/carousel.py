@@ -293,6 +293,10 @@ CAROUSEL_BASE_CSS = """
   filter: drop-shadow(0 4px 24px rgba(0,0,0,0.4));
   transition: transform 0.2s ease;
   pointer-events: none;
+  /* Force plain text/monochrome emoji — no OS graphical rendering */
+  font-variant-emoji: text;
+  -webkit-font-variant-emoji: text;
+  font-family: "Noto Emoji", "Segoe UI Symbol", sans-serif;
 }
 .car-card:hover .car-emoji {
   transform: translate(-50%, -65%) scale(1.08);
@@ -438,7 +442,9 @@ def _build_card(emoji: str, label: str, sub: str,
         emoji_html = ""
     else:
         bg_style = f"background: linear-gradient(160deg, {bg_from} 0%, {bg_to} 100%);"
-        emoji_html = f'<span class="car-emoji">{emoji}</span>'
+        # &#xFE0E; = Unicode text variation selector — forces plain text emoji,
+        # not the OS graphical/color image rendering (e.g. macOS 3D shoe graphic)
+        emoji_html = f'<span class="car-emoji">{emoji}&#xFE0E;</span>'
 
     inner = f"""  {emoji_html}
   <div class="car-card-overlay" style="background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%);"></div>
