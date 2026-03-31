@@ -23,6 +23,7 @@ jobs:
         run: |
           pip install pytest pytest-asyncio
           pip install -r requirements.txt
+          pip install -r requirements-dev.txt
       - name: Syntax check
         run: find pages/ utils/ -name "*.py" | xargs python3 -m py_compile && echo "✅ Syntax OK"
       - name: Unit tests
@@ -44,7 +45,8 @@ jobs:
       - name: Install/update Python deps
         run: |
           cd ${{ env.APP_DIR }}
-          pip install -r requirements.txt --quiet
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt --quiet
 
       - name: Restart container
         run: sudo docker restart ${{ env.CONTAINER }}

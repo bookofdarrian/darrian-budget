@@ -25,6 +25,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest pytest-asyncio pytest-cov
           pip install -r requirements.txt
+          pip install -r requirements-dev.txt
       - name: Syntax check ALL pages and utils
         run: find pages/ utils/ -name "*.py" | xargs python3 -m py_compile && echo "✅ All files syntax OK"
       - name: Full unit test suite (MUST PASS before prod deploy)
@@ -57,7 +58,8 @@ jobs:
       - name: Install/update Python deps
         run: |
           cd ${{ env.APP_DIR }}
-          pip install -r requirements.txt --quiet
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt --quiet
 
       - name: Restart container
         run: sudo docker restart ${{ env.CONTAINER }}
