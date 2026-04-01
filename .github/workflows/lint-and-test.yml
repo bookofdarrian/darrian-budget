@@ -35,6 +35,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest pytest-cov pytest-asyncio
           pip install -r requirements.txt
+          pip install -r requirements-dev.txt
 
       - name: Syntax check all pages
         run: |
