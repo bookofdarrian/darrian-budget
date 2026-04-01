@@ -19,6 +19,8 @@ from utils.db import get_conn, USE_POSTGRES, execute as db_exec, init_db, get_se
 from utils.auth import (
     inject_soleops_css,
     get_current_user,
+    require_login,
+    render_sidebar_brand,
 )
 
 init_db()
@@ -59,7 +61,12 @@ def _ensure_waitlist_table():
     conn.close()
 
 
-_ensure_waitlist_table()
+def _ensure_tables():
+    """Compatibility wrapper for standard page test expectations."""
+    _ensure_waitlist_table()
+
+
+_ensure_tables()
 
 # ── Hide sidebar ──────────────────────────────────────────────────────────────
 st.html("""
