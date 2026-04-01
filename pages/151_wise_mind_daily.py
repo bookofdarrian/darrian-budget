@@ -75,7 +75,7 @@ DARRIAN_GROWTH_EDGES = [
     ("💭 Negative Self-Talk", "The inner critic is loud. It's lying. When it fires, label it: 'There goes the distortion again.'"),
     ("😔 Lack of Confidence (situational)", "Confidence follows action, not the other way. Ship it. Confidence comes after."),
     ("🧮 Nervous System Regulation", "Your nervous system needs training like your body needs the gym. DBT + cold + breath are your weights."),
-    ("🤝 Varying Motivation", "Mood-dependent motivation is Bipolar/ADHD reality. Build systems that don't require motivation."),
+    ("🤝 Varying Motivation", "Mood-dependent motivation is Mood-Related/ADHD reality. Build systems that don't require motivation."),
     ("💔 Can Be Overly Hurt (Virgo energy)", "You feel deeply. That's a strength AND an edge. Let yourself feel it. Don't bottle. Don't explode."),
 ]
 
@@ -86,7 +86,7 @@ DARRIAN_MEDS = [
         "dose": "10 mg tablet",
         "schedule": "NIGHT",
         "schedule_detail": "Take 1 tablet (10 mg) by mouth every night.",
-        "for": "Bipolar disorder / mood stabilization",
+        "for": "Mood-Related disorder / mood stabilization",
         "start_date": "March 26, 2026",
         "color": "#7c3aed",
         "icon": "🟣",
@@ -452,7 +452,7 @@ def _get_wise_mind_coaching(mind_state, emotion, body, one_thing, notes):
             model="claude-opus-4-5",
             max_tokens=800,
             system="""You are Darrian Belcher's DBT-informed mental wellness coach. Darrian is a 22-year-old Black man,
-ADHD-inattentive, Bipolar, Generalized Anxiety. He recently completed 5 days in a voluntary mental health facility
+ADHD-inattentive, Mood-Related, Generalized Anxiety. He recently completed 5 days in a voluntary mental health facility
 where he engaged deeply with DBT skills. He is inspired by Malcolm X, Assata Shakur, Bobby Seale, Huey P Newton,
 Ubuntu philosophy, and One Piece (Monkey D. Luffy's freedom philosophy). He is a builder — TPM at Visa, homelab owner,
 entrepreneur. He is strong, self-aware, and ready to grow.
