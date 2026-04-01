@@ -192,10 +192,30 @@ python3 /opt/overnight-dev/orchestrator.py
 
 #### Step 6: Schedule the cron
 ```bash
-echo "0 23 * * * root source /etc/environment && /usr/bin/python3 /opt/overnight-dev/orchestrator.py >> /var/log/overnight-dev.log 2>&1" >> /etc/crontab
+echo "0 23 * * * root source /etc/environment && bash /opt/darrian-budget/scripts/run_autonomous_nightly.sh" >> /etc/crontab
 ```
 
 ---
+
+
+
+### Nightly reliability hardening (new)
+```bash
+# Standardize runtime and run preflight before orchestrator
+bash /opt/darrian-budget/scripts/autonomous_preflight.sh
+
+# Generate quick telemetry snapshot
+python3 /opt/darrian-budget/scripts/nightly_telemetry_report.py
+
+# Weekly restore drill (run Sundays at 3:30 AM)
+echo "30 3 * * 0 root bash /opt/darrian-budget/scripts/weekly_restore_drill.sh >> /var/log/restore-drill.log 2>&1" >> /etc/crontab
+```
+
+Failure labels used in notifications/logging:
+- `[ENV]` environment/setup/runtime issues
+- `[TEST]` test failures
+- `[GIT]` branch/merge/push failures
+- `[DEPLOY]` deploy/health/restart failures
 
 ## PART 4 — Working in Tandem With Agents
 
@@ -369,3 +389,25 @@ Based on the YouTube insights, here's how to use the Notes app as a learning too
 - **Visa Work** — project notes, meeting summaries, code decisions
 - **Budget Planning** — financial analysis, goal tracking, RSU vesting notes
 - **Ideas** — quick captures (use voice input on the Todo page, then expand in Notes)
+
+---
+
+## PART 9 — Remote Work Connectivity Profile
+
+Use the dedicated runbook for monitor, bookmarks, and multi-network fallback setup:
+
+- `REMOTE_WORK_CONNECTIVITY_RUNBOOK.md`
+
+Bootstrap command (safe dry run for Wi-Fi ordering):
+
+```bash
+cd ~/Downloads/darrian-budget
+bash scripts/remote_work_bootstrap_macos.sh
+```
+
+To apply preferred SSID ordering:
+
+```bash
+cd ~/Downloads/darrian-budget
+APPLY_WIFI_ORDER=1 PREFERRED_WIFI_SSIDS="Gigstreem,Verizon,Verizon Line,Dual-SIM Hotspot" bash scripts/remote_work_bootstrap_macos.sh
+```

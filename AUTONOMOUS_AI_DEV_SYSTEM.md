@@ -390,6 +390,7 @@ cd darrian-budget
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+pip install -r requirements-dev.txt
 
 # Configure git
 git config user.email "darrian@peachstatesavings.com"
@@ -403,7 +404,7 @@ gh auth login
 
 ```bash
 # Run at 11 PM every night
-echo "0 23 * * * root /usr/bin/python3 /opt/overnight-dev/orchestrator.py >> /var/log/overnight-dev.log 2>&1" >> /etc/crontab
+echo "0 23 * * * root source /etc/environment && bash /opt/darrian-budget/scripts/run_autonomous_nightly.sh" >> /etc/crontab
 ```
 
 ### Step 4: Create BACKLOG.md in Your Repo
@@ -445,6 +446,27 @@ python3 /opt/overnight-dev/orchestrator.py
 ```
 
 ---
+
+
+
+### Autonomous preflight (recommended)
+Run this before nightly orchestration to fail fast on setup drift:
+
+```bash
+bash /opt/darrian-budget/scripts/autonomous_preflight.sh
+```
+
+Nightly wrapper (recommended cron target):
+
+```bash
+bash /opt/darrian-budget/scripts/run_autonomous_nightly.sh
+```
+
+Failure labels now standardized for diagnostics:
+- `[ENV]` environment/setup/runtime
+- `[TEST]` pytest failures
+- `[GIT]` checkout/merge/push/PR failures
+- `[DEPLOY]` container/health/deploy failures
 
 ## What You Do Each Morning (2 Minutes)
 
