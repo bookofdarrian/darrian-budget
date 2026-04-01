@@ -334,7 +334,7 @@ sign to gently encourage rest and possibly reach out to his doctor.
     with st.expander("What you should know (click to expand)"):
         st.markdown("""
 **Diagnoses (confirmed by evaluation):**
-- **Bipolar Disorder** — mood cycles between highs and lows; had a manic episode at 17
+- **Mood Regulation Disorder** — mood cycles between highs and lows; had a manic episode at 17
 - **ADHD (Inattentive type)** — difficulty with focus and attention, not hyperactivity
 - **Generalized Anxiety Disorder** — persistent worry; physically feels anxiety strongly
 

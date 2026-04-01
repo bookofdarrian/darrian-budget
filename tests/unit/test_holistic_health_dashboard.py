@@ -398,11 +398,11 @@ def test_mood_color_function():
 def test_darrian_context_contains_diagnoses():
     """DARRIAN_CONTEXT system prompt includes all three diagnoses."""
     DARRIAN_CONTEXT = """
-    ADHD (Attention-Deficit/Hyperactivity Disorder), Bipolar Disorder, Generalized Anxiety Disorder (GAD)
+    ADHD (Attention-Deficit/Hyperactivity Disorder), Mood-Related Regulation, Generalized Anxiety Disorder (GAD)
     CBT, DBT elements, mindfulness, spiritual wellness
     """
     assert "ADHD" in DARRIAN_CONTEXT
-    assert "Bipolar" in DARRIAN_CONTEXT
+    assert "Mood-Related" in DARRIAN_CONTEXT
     assert "Anxiety" in DARRIAN_CONTEXT
 
 
