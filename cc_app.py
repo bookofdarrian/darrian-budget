@@ -45,6 +45,9 @@ def _load_b64(rel_path: str) -> str:
 init_db()
 inject_cc_css()
 
+_GOOGLE_VERIFICATION_CC = _os.getenv("GOOGLE_SITE_VERIFICATION_CC", "").strip()
+_BING_VERIFICATION_CC = _os.getenv("BING_SITE_VERIFICATION_CC", "").strip()
+
 user = get_current_user()
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -59,6 +62,34 @@ if not user:
     [data-testid="collapsedControl"] { display: none !important; }
     </style>
     """, unsafe_allow_html=True)
+
+    if _GOOGLE_VERIFICATION_CC or _BING_VERIFICATION_CC:
+        _verification_tags = []
+        if _GOOGLE_VERIFICATION_CC:
+            _verification_tags.append(
+                f'<meta name="google-site-verification" content="{_GOOGLE_VERIFICATION_CC}">'
+            )
+        if _BING_VERIFICATION_CC:
+            _verification_tags.append(
+                f'<meta name="msvalidate.01" content="{_BING_VERIFICATION_CC}">'
+            )
+
+        st.markdown(
+            f"""
+<script>
+(function() {{
+  var wrapper = document.createElement('div');
+  wrapper.innerHTML = `{''.join(_verification_tags)}`;
+  Array.from(wrapper.children).forEach(function(tag) {{
+    if (!document.head.querySelector('meta[name="' + tag.getAttribute('name') + '"]')) {{
+      document.head.appendChild(tag);
+    }}
+  }});
+}})();
+</script>
+""",
+            unsafe_allow_html=True,
+        )
 
     # ── SEO: Meta tags + JSON-LD injected to <head> via JS ───────────────────
     st.markdown("""
@@ -844,7 +875,7 @@ if not user:
     hero_l, hero_c, hero_r = st.columns([1, 2, 1])
     with hero_c:
         if st.button("🎓 Get Started Free — No Credit Card", type="primary", use_container_width=True, key="hero_cta"):
-            st.switch_page("app.py")
+            st.switch_page("pages/80_cc_home.py")
         st.markdown("""
         <div class="cc-trust">
           <span class="cc-trust-item"><span class="cc-trust-check">✓</span> Always free</span>
@@ -1015,6 +1046,8 @@ if not user:
 
     # Load founder photo — professional headshot (Target HBCU Scholars / Forbes)
     _founder_uri = (
+        _load_b64("static/photos/carousel/headshot/darrian_professional.jpg") or
+        _load_b64("static/photos/darrian_professional.jpg") or
         _load_b64("static/photos/carousel/headshot/darrian_headshot.jpg") or
         _load_b64("static/photos/darrian_headshot.jpg") or
         _load_b64("static/photos/carousel/headshot/darrian_headshot.png") or
@@ -1029,7 +1062,7 @@ if not user:
         <div style="display:flex;justify-content:center;align-items:center;padding:20px 0;">
           <div style="width:240px;height:280px;border-radius:6px;overflow:hidden;border:none;box-shadow:0 12px 40px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.06);">
             <img src="{_founder_uri}" alt="Darrian Belcher — Founder, College Confused — Target HBCU Scholar featured in Forbes"
-                 style="width:100%;height:100%;object-fit:cover;object-position:center top;" />
+                 style="width:100%;height:100%;object-fit:cover;object-position:center 22%;" />
           </div>
         </div>
             """, unsafe_allow_html=True)
@@ -1140,11 +1173,11 @@ if not user:
     with cta_c:
         st.markdown("<div style='margin-top:-24px;'></div>", unsafe_allow_html=True)
         if st.button("🎓 Create My Free Account", type="primary", use_container_width=True, key="cta_bottom"):
-            st.switch_page("app.py")
+            st.switch_page("pages/80_cc_home.py")
         st.markdown("<div style='text-align:center; color:#8A84B0; font-size:0.78rem; margin-top:8px;'>No credit card · 100% free forever · All 7 tools included</div>", unsafe_allow_html=True)
         st.markdown("<div style='margin-top:8px;'></div>", unsafe_allow_html=True)
         if st.button("Already have an account? Sign In →", use_container_width=True, key="signin_bottom"):
-            st.switch_page("app.py")
+            st.switch_page("pages/80_cc_home.py")
 
     # ── FOOTER ────────────────────────────────────────────────────────────────
     st.markdown("""
@@ -1184,7 +1217,7 @@ username = user.get("username", "Student")
 
 render_sidebar_brand()
 st.sidebar.markdown("---")
-st.sidebar.page_link("app.py",                       label="🏠 Home",            icon="🏠")
+st.sidebar.page_link("cc_app.py",                       label="🏠 Home",            icon="🏠")
 st.sidebar.page_link("pages/80_cc_home.py",             label="🎓 Dashboard",       icon="🎓")
 st.sidebar.page_link("pages/81_cc_timeline.py",         label="📅 My Timeline",     icon="📅")
 st.sidebar.page_link("pages/82_cc_scholarships.py",     label="💰 Scholarships",    icon="💰")
