@@ -7,7 +7,7 @@ No Streamlit imports — pure functions only.
 """
 import json
 import time
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Optional, Tuple, Dict, List, Any
 
 import anthropic
@@ -569,7 +569,7 @@ def create_student_inquiry(
     
     # ── Insert inquiry ────────────────────────────────────────────────────────
     ph = "%s" if USE_POSTGRES else "?"
-    qualified_at = datetime.utcnow().isoformat() if is_qualified else None
+    qualified_at = datetime.now(UTC).isoformat() if is_qualified else None
     
     cursor = db_exec(conn, f"""
         INSERT INTO cc_student_inquiries (
@@ -705,7 +705,7 @@ def send_email_to_student(
         
         if response.status_code in [200, 201, 202]:
             # ── Log successful send ───────────────────────────────────────────
-            send_time = datetime.utcnow().isoformat()
+            send_time = datetime.now(UTC).isoformat()
             db_exec(conn, f"""
                 INSERT INTO cc_response_emails (
                     inquiry_id, mentor_id, email_subject, email_body_html, email_status, email_sent_at

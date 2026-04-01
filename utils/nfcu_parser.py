@@ -12,7 +12,20 @@ into a single text line before regex matching.
 import re
 import io
 from collections import defaultdict
-import pdfplumber
+
+try:
+    import pdfplumber
+except ModuleNotFoundError:  # pragma: no cover - exercised when dependency missing
+    pdfplumber = None
+
+
+def _require_pdfplumber() -> None:
+    """Raise a clear actionable error when optional PDF dependency is missing."""
+    if pdfplumber is None:
+        raise RuntimeError(
+            "Missing dependency: 'pdfplumber'. Install project requirements "
+            "(e.g. `pip install -r requirements.txt`) and restart the app."
+        )
 
 
 # ── Layout-aware text extraction ──────────────────────────────────────────────
@@ -29,6 +42,7 @@ def _extract_layout_lines(pdf_file) -> list[str]:
 
     Returns a flat list of strings, one per visual row across all pages.
     """
+    _require_pdfplumber()
     if isinstance(pdf_file, (bytes, bytearray)):
         pdf_file = io.BytesIO(pdf_file)
     if hasattr(pdf_file, 'seek'):
@@ -66,6 +80,7 @@ def _extract_raw_text(pdf_file) -> str:
     Used ONLY for statement-type detection — keyword presence checks.
     Font-split artifacts don't matter since we just look for substrings.
     """
+    _require_pdfplumber()
     if isinstance(pdf_file, (bytes, bytearray)):
         pdf_file = io.BytesIO(pdf_file)
     if hasattr(pdf_file, 'seek'):
@@ -80,11 +95,18 @@ def _extract_raw_text(pdf_file) -> str:
 #   MM-DD  <description>  <amount>[−]  <balance>
 #
 # Debit:  01-27 POS Debit- Debit Card 3453 01-25-25 Alex Panjwani GA  19.59-  758.70
-# Credit: 02-06 Deposit - ACH Paid From Visa Technology Direct Dep     996.97  1,159.84
+# Credit: 02-06 Deposit - ACH Paid From Payroll Direct Dep             996.97  1,159.84
 # Debit (space before dash):  01-28 McDonald's GA  14.95 -  216.15
 
 _DEP_TXN_RE = re.compile(
     r'^(\d{2}-\d{2})\s+(.+?)\s+([\d,]+\.\d{2})\s*(-?)\s*([\d,]+\.\d{2})$'
+)
+
+# Fallback for rows where PDF extraction drops the running balance column.
+# Example seen in some statement exports:
+#   03-10 Transfer To Credit Card 300.00-
+_DEP_TXN_NO_BAL_RE = re.compile(
+    r'^(\d{2}-\d{2})\s+(.+?)\s+([\d,]+\.\d{2})\s*(-?)$'
 )
 
 _DEP_SKIP = [
@@ -110,8 +132,16 @@ def _normalize_dep_line(line: str) -> str:
     line = re.sub(r'Deb\s*i\s*t\s*-', 'Debit-', line)
     line = re.sub(r'C\s+ard\b', 'Card', line)
     line = re.sub(r'\b([A-Z])\s+([A-Z])\b', r'\1\2', line)
+    # Normalize unicode dash variants to ASCII hyphen-minus.
+    line = line.replace('−', '-').replace('–', '-')
+    # Fix spaced-out monetary fragments: "2,1 55.03" -> "2,155.03"
+    line = re.sub(r'(\d),(\d)\s+(\d{2,3}\.\d{2})\b', r'\1,\2\3', line)
+    # Fix split whole-number fragments: "10 1.92" -> "101.92"
+    line = re.sub(r'\b(\d{1,3})\s+(\d{1,3}\.\d{2})\b', r'\1\2', line)
     # Normalise trailing "amount -" → "amount-" so regex group 4 captures dash
     line = re.sub(r'([\d,]+\.\d{2})\s+-\s+([\d,]+\.\d{2})$', r'\1- \2', line)
+    # Also normalize rows that end with debit marker and no trailing balance.
+    line = re.sub(r'([\d,]+\.\d{2})\s+-\s*$', r'\1-', line)
     return line
 
 
@@ -146,10 +176,14 @@ def _parse_deposit_statement(lines: list[str], year: str, end_month: int = 0) ->
 
         line = _normalize_dep_line(line)
         m = _DEP_TXN_RE.match(line)
-        if not m or not current_account:
+        m_no_bal = _DEP_TXN_NO_BAL_RE.match(line) if not m else None
+        if (not m and not m_no_bal) or not current_account:
             continue
 
-        date_str, raw_desc, amt_str, dash, _bal = m.groups()
+        if m:
+            date_str, raw_desc, amt_str, dash, _bal = m.groups()
+        else:
+            date_str, raw_desc, amt_str, dash = m_no_bal.groups()
 
         if any(k in raw_desc.lower() for k in _DEP_SKIP):
             continue

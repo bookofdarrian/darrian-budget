@@ -33,7 +33,7 @@ def _build_streamlit_stub():
         "radio", "slider", "metric", "dataframe", "progress", "empty",
         "form_submit_button", "write", "image", "balloons", "snow",
         "toast", "code", "json", "table", "plotly_chart", "altair_chart",
-        "header", "page_link",
+        "header", "page_link", "html", "switch_page",
     ):
         setattr(st, name, MagicMock(return_value=None))
 
