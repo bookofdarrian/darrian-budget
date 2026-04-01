@@ -46,6 +46,11 @@ jobs:
           git checkout staging
           git pull origin staging
 
+      - name: Prune stale colliding Streamlit pages
+        run: |
+          cd ${{ env.APP_DIR }}
+          python3 scripts/prune_stale_streamlit_pages.py --repo-dir . --apply
+
       - name: Install/update Python deps
         run: |
           cd ${{ env.APP_DIR }}
@@ -63,4 +68,5 @@ jobs:
 
       - name: Summary
         if: always()
-        run: echo "STAGING deployed — commit ${{ github.sha }} | Next: merge staging → main for production"
+        run: |
+          echo "STAGING deployed - commit ${{ github.sha }} | Next: merge staging -> main for production"

@@ -42,6 +42,11 @@ jobs:
           git checkout dev
           git pull origin dev
 
+      - name: Prune stale colliding Streamlit pages
+        run: |
+          cd ${{ env.APP_DIR }}
+          python3 scripts/prune_stale_streamlit_pages.py --repo-dir . --apply
+
       - name: Install/update Python deps
         run: |
           cd ${{ env.APP_DIR }}
@@ -59,4 +64,5 @@ jobs:
 
       - name: Summary
         if: always()
-        run: echo "DEV deployed — commit ${{ github.sha }} | Next: promote dev → qa"
+        run: |
+          echo "DEV deployed - commit ${{ github.sha }} | Next: promote dev -> qa"

@@ -55,6 +55,11 @@ jobs:
           git checkout main
           git pull origin main
 
+      - name: Prune stale colliding Streamlit pages
+        run: |
+          cd ${{ env.APP_DIR }}
+          python3 scripts/prune_stale_streamlit_pages.py --repo-dir . --apply
+
       - name: Install/update Python deps
         run: |
           cd ${{ env.APP_DIR }}
