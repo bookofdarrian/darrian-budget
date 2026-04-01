@@ -23,6 +23,7 @@ jobs:
         run: |
           pip install pytest pytest-asyncio pytest-cov
           pip install -r requirements.txt
+          pip install -r requirements-dev.txt
       - name: Syntax check
         run: find pages/ utils/ -name "*.py" | xargs python3 -m py_compile && echo "✅ Syntax OK"
       - name: Unit tests (must pass)
@@ -45,10 +46,16 @@ jobs:
           git checkout qa
           git pull origin qa
 
+      - name: Prune stale colliding Streamlit pages
+        run: |
+          cd ${{ env.APP_DIR }}
+          python3 scripts/prune_stale_streamlit_pages.py --repo-dir . --apply
+
       - name: Install/update Python deps
         run: |
           cd ${{ env.APP_DIR }}
-          pip install -r requirements.txt --quiet
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt --quiet
 
       - name: Restart container
         run: sudo docker restart ${{ env.CONTAINER }}
@@ -61,4 +68,5 @@ jobs:
 
       - name: Summary
         if: always()
-        run: echo "QA deployed — commit ${{ github.sha }} | Next: promote qa → staging"
+        run: |
+          echo "QA deployed - commit ${{ github.sha }} | Next: promote qa -> staging"
