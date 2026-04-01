@@ -49,8 +49,8 @@ if [ -n "$1" ]; then
 else
     # Full sync: copy all pages and utils
     echo "  Syncing all pages/ and utils/ ..."
-    ssh "$SERVER" "rsync -av --exclude='__pycache__' $CC_SOURCE/pages/ $CC_SERVE/pages/ 2>&1 | tail -5"
-    ssh "$SERVER" "rsync -av --exclude='__pycache__' $CC_SOURCE/utils/ $CC_SERVE/utils/ 2>&1 | tail -3"
+    ssh "$SERVER" "rsync -av --delete --exclude='__pycache__' $CC_SOURCE/pages/ $CC_SERVE/pages/ 2>&1 | tail -5"
+    ssh "$SERVER" "rsync -av --delete --exclude='__pycache__' $CC_SOURCE/utils/ $CC_SERVE/utils/ 2>&1 | tail -3"
     echo "✅ Full sync complete."
 fi
 echo ""
