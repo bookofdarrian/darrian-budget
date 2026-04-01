@@ -252,7 +252,7 @@ tell application "System Events"
             click menu item "Import From"
             delay 0.4
             tell menu 1 of menu item "Import From"
-                click menu item "Bookmarks HTML File\\u2026"
+                click menu item "Bookmarks HTML File…"
             end tell
         end tell
 
@@ -282,6 +282,8 @@ end tell
         else:
             err = result.stderr.strip()
             print(f"   ⚠️  AppleScript returned error: {err}")
+            if "not allowed" in err.lower() or "not authorised" in err.lower() or "-1743" in err:
+                print("   ⚠️  Enable Terminal/Automation permissions in System Settings → Privacy & Security")
     except subprocess.TimeoutExpired:
         print("   ⚠️  Safari AppleScript timed out")
     except Exception as e:

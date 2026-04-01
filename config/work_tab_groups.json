@@ -1,0 +1,42 @@
+{
+  "_comment": "Morning routine workspaces — run: python3 scripts/open_work_tab_groups_macos.py chrome",
+  "chrome": {
+    "1 - Morning Clock-In": [
+      "https://peachstatesavings.com/todo",
+      "https://github.com/bookofdarrian/darrian-budget/pulls",
+      "https://github.com/bookofdarrian/darrian-budget/actions",
+      "https://matrixabsence.com/AccountsNG/"
+    ],
+    "2 - Money Check": [
+      "https://peachstatesavings.com/",
+      "https://peachstatesavings.com/cash_flow_forecast",
+      "https://peachstatesavings.com/rsu_vest_calendar",
+      "https://peachstatesavings.com/expenses"
+    ],
+    "3 - Build": [
+      "https://github.com/bookofdarrian/darrian-budget",
+      "https://github.com/bookofdarrian/darrian-budget/actions",
+      "http://100.95.125.112:8501/",
+      "http://100.95.125.112:3000"
+    ],
+    "4 - Content Batch": [
+      "https://peachstatesavings.com/social_media_manager",
+      "https://peachstatesavings.com/creator_companion",
+      "https://peachstatesavings.com/notes",
+      "https://studio.youtube.com"
+    ],
+    "5 - SoleOps": [
+      "https://peachstatesavings.com/soleops_daily_briefing_digest",
+      "https://peachstatesavings.com/soleops_inventory_manager",
+      "https://peachstatesavings.com/soleops_drop_calendar",
+      "https://peachstatesavings.com/resale_price_advisor"
+    ]
+  },
+  "safari": {
+    "Morning Start": [
+      "https://peachstatesavings.com/todo",
+      "https://peachstatesavings.com/",
+      "https://peachstatesavings.com/notes"
+    ]
+  }
+}
