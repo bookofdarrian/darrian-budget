@@ -1,7 +1,7 @@
 """
 Page 89 — Learning System
 Tina Huang's 5-Step Learning Framework + Neuroscience Tips
-ADHD/Bipolar-Adapted for Darrian Belcher
+ADHD/Mood-Support-Adapted for Darrian Belcher
 """
 
 import streamlit as st
@@ -248,7 +248,7 @@ def _ai_learn_coach(topic, goal, stage, adhd_mode):
         adhd_note = ""
         if adhd_mode:
             adhd_note = """
-IMPORTANT CONTEXT: Darrian has ADHD and Bipolar Disorder. 
+IMPORTANT CONTEXT: Darrian has ADHD and Mood Regulation Disorder. 
 - Keep responses SHORT and PUNCHY — max 5 bullet points per section
 - Use bold headers to create visual breaks
 - Give ONE concrete action to do right now, not a list of 10
@@ -329,7 +329,7 @@ def _ai_interleave_schedule(goals):
         import anthropic
         client = anthropic.Anthropic(api_key=api_key)
         goals_text = "\n".join([f"- {g['title']} (priority: {g['priority']}, energy needed: {g['energy_level']})" for g in goals])
-        prompt = f"""Create a weekly interleaved study schedule for Darrian (ADHD + Bipolar, software engineer with full-time job at Visa).
+        prompt = f"""Create a weekly interleaved study schedule for Darrian (ADHD + Mood-Support, software engineer with full-time job at Visa).
 
 Active learning goals:
 {goals_text}
@@ -362,7 +362,7 @@ _ensure_tables()
 
 st.title("🧠 Learning System")
 st.markdown("""
-> **Tina Huang's 5-Step Framework** adapted for ADHD + Bipolar brains.  
+> **Tina Huang's 5-Step Framework** adapted for ADHD + Mood-Support brains.  
 > *Goal → Research → Priming → Comprehension → Implementation*  
 > Cut learning time by 60–70% using the right AI tools at each stage.
 """)
@@ -377,7 +377,7 @@ today_energy = st.selectbox(
     key="today_energy"
 )
 if "Burnout" in today_energy:
-    st.warning("🛑 **Rest day activated.** ADHD and Bipolar brains need recovery. Don't push it — review tomorrow's goals in BACKLOG, then close this tab.")
+    st.warning("🛑 **Rest day activated.** ADHD and Mood-Related brains need recovery. Don't push it — review tomorrow's goals in BACKLOG, then close this tab.")
 elif "Low" in today_energy:
     st.info("😴 **Low energy mode.** Stick to: reviewing notes, light priming quizzes, or listening to an audio podcast at 1x speed. No new concepts today.")
 
@@ -528,7 +528,7 @@ with tab2:
             key="toolkit_stage"
         )
 
-        adhd_mode = st.toggle("🧠 ADHD/Bipolar Mode (shorter, punchier guidance)", value=True)
+        adhd_mode = st.toggle("🧠 ADHD/Mood-Support Mode (shorter, punchier guidance)", value=True)
 
         # Static stage guides
         STAGE_GUIDES = {
@@ -633,7 +633,7 @@ with tab2:
         st.markdown(f"**What to do:** {guide['description']}")
 
         if adhd_mode:
-            st.info(f"🧠 **ADHD/Bipolar Tip:** {guide['adhd_tip']}")
+            st.info(f"🧠 **ADHD/Mood-Support Tip:** {guide['adhd_tip']}")
 
         st.markdown(f"🔬 **Neuroscience:** {guide['neuroscience']}")
 
@@ -705,7 +705,7 @@ with tab3:
 
     **ADHD Rule:** Never schedule a study session you know you'll skip. A 20-minute session at high energy beats a 2-hour planned session that never happens.
 
-    **Bipolar Note:** On high days, cap sessions at 90 minutes total — hyperfocus can burn you out. On low days, even 15 minutes of light priming counts.
+    **Mood-Related Note:** On high days, cap sessions at 90 minutes total — hyperfocus can burn you out. On low days, even 15 minutes of light priming counts.
     """)
 
     # Recent sessions
@@ -823,15 +823,15 @@ with tab5:
 
     ---
 
-    ## ADHD/Bipolar Learning Rules (Darrian-Specific)
+    ## ADHD/Mood-Support Learning Rules (Darrian-Specific)
     1. **Energy first, time second.** Never schedule based on available time. Schedule based on energy.
     2. **Interleave.** 3 topics × 1 hour beats 1 topic × 3 hours. Keeps novelty high.
     3. **Priming is your best friend.** Low-stakes, fast, and creates natural curiosity.
     4. **25-minute caps on hard topics.** Pomodoro for deep work. ADHD hyperfocus = burnout.
     5. **Convert formats.** If a textbook is killing you, turn it into audio. Format matters more for ADHD.
     6. **Log every session.** Data on when you learn best = priceless for ADHD brains.
-    7. **On bipolar high days:** Cap at 90 min total. Hyperfocus now = crash later.
-    8. **On bipolar low days:** Even 15 minutes of priming counts. Show up anyway.
+    7. **On mood-related high days:** Cap at 90 min total. Hyperfocus now = crash later.
+    8. **On mood-related low days:** Even 15 minutes of priming counts. Show up anyway.
     9. **Implementation starts small.** MVP > perfect. Completion dopamine is real.
     10. **Rest is part of learning.** Sleep consolidates memories. Don't skip it.
 
