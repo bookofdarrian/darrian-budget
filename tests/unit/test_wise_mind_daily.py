@@ -21,6 +21,14 @@ def _stub_streamlit_and_utils():
     """Stub streamlit + utils so the page module can be imported in test env."""
     from unittest.mock import MagicMock
 
+    original_modules = {
+        "streamlit": sys.modules.get("streamlit"),
+        "utils": sys.modules.get("utils"),
+        "utils.db": sys.modules.get("utils.db"),
+        "utils.auth": sys.modules.get("utils.auth"),
+        "anthropic": sys.modules.get("anthropic"),
+    }
+
     # ── SessionState: supports both dict["key"] and obj.attr access ──────────
     class _SessionState(dict):
         """Dict that also allows attribute-style access (Streamlit session_state behaviour)."""
@@ -81,7 +89,11 @@ def _stub_streamlit_and_utils():
     db_mod.init_db = lambda: None
     db_mod.get_setting = lambda key: "test-key"
     db_mod.set_setting = lambda key, val: None
-    sys.modules["utils"] = types.ModuleType("utils")
+    db_mod.log_token_usage = lambda *args, **kwargs: None
+    if "utils" not in sys.modules:
+        utils_pkg = types.ModuleType("utils")
+        utils_pkg.__path__ = [os.path.join(PROJECT_ROOT, "utils")]
+        sys.modules["utils"] = utils_pkg
     sys.modules["utils.db"] = db_mod
 
     # ── utils.auth stub ───────────────────────────────────────────────────────
@@ -97,14 +109,27 @@ def _stub_streamlit_and_utils():
     anthropic_mod.Anthropic = MagicMock
     sys.modules["anthropic"] = anthropic_mod
 
+    return original_modules
+
+
+def _restore_stubbed_modules(original_modules: dict):
+    for name, module_obj in original_modules.items():
+        if module_obj is None:
+            sys.modules.pop(name, None)
+        else:
+            sys.modules[name] = module_obj
+
 
 def _load_wise_mind_module():
     """Load 151_wise_mind_daily.py via importlib (numeric prefix prevents normal import)."""
-    _stub_streamlit_and_utils()
-    spec = importlib.util.spec_from_file_location("wise_mind_daily_151", PAGE_PATH)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
+    originals = _stub_streamlit_and_utils()
+    try:
+        spec = importlib.util.spec_from_file_location("wise_mind_daily_151", PAGE_PATH)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+    finally:
+        _restore_stubbed_modules(originals)
 
 
 # ── Test 1: Import check ───────────────────────────────────────────────────────

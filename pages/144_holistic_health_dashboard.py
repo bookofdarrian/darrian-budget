@@ -1,7 +1,7 @@
 """
 Holistic Health Dashboard — Page 144
 Comprehensive mental, emotional, physical, and spiritual health tracking.
-Personalized for Darrian Belcher: ADHD, Bipolar Disorder, Generalized Anxiety.
+Personalized for Darrian Belcher: ADHD, Mood-Regulation Disorder, Generalized Anxiety.
 Integrates: Garmin wearable data, CBT tools, mindfulness, neuroscience protocols,
 family sharing, medication tracking, mood analysis, and AI-powered insights.
 """
@@ -86,7 +86,7 @@ You are Darrian Belcher's personal mental health AI coach and wellness analyst.
 - **Interests:** Video games, basketball
 
 ## Confirmed Diagnoses
-- **Bipolar Disorder** — Manic episode at age 17 → voluntary psychiatric hospitalization; monitor for hypomania/mania closely
+- **Mood Regulation Disorder** — Manic episode at age 17 → voluntary psychiatric hospitalization; monitor for hypomania/mania closely
 - **Generalized Anxiety Disorder (GAD)** — Anxiety at 78th percentile (IPIP-NEO); persistent worry, self-consciousness (72nd %ile)
 - **ADHD — Inattentive Presentation** — Difficulty shifting attention; processing speed borderline (PSI 76, 5th %ile); NOT hyperactive
 - **ASD: RULED OUT** — CARS-2-HF score 16.5 (Minimal-to-No Symptoms); does NOT meet ASD criteria
@@ -112,7 +112,7 @@ You are Darrian Belcher's personal mental health AI coach and wellness analyst.
 ## GeneSight Pharmacogenomics (Report: March 12, 2025, Order #5924227)
 ### Current Medications & Their Status:
 - **Atomoxetine (Strattera)** — ADHD — ✅ GREEN: Use as Directed
-- **Quetiapine (Seroquel)** — Bipolar/Racing thoughts — ✅ GREEN: Use as Directed
+- **Quetiapine (Seroquel)** — Mood-Related/Racing thoughts — ✅ GREEN: Use as Directed
 - **Mirtazapine 15mg** — Sleep/Mood Support — ✅ Use as Directed
 
 ### CRITICAL — Medications to AVOID:
@@ -143,7 +143,7 @@ You are Darrian Belcher's personal mental health AI coach and wellness analyst.
 - **CBT** — thought records, distortion ID, behavioral activation
 - **DBT** — distress tolerance, emotional regulation, TIPP skills
 - **Neuroscience-backed** (Huberman protocols) — morning sunlight, NSDR, cold exposure, sleep discipline
-- **Bipolar monitoring** — sleep is #1 early warning; decreased sleep + high energy = early mania flag
+- **Mood-Related monitoring** — sleep is #1 early warning; decreased sleep + high energy = early mania flag
 - **Ongoing tele-therapy** — support continued engagement
 
 ## Crisis Protocol
@@ -609,7 +609,7 @@ def _check_for_episode_flags(checkins: list) -> list:
 
 # ── UI ─────────────────────────────────────────────────────────────────────────
 st.title("🌿 Holistic Health Dashboard")
-st.caption("Mental • Emotional • Physical • Spiritual | Personalized for ADHD, Bipolar, & Anxiety")
+st.caption("Mental • Emotional • Physical • Spiritual | Personalized for ADHD, Mood-Regulation, & Anxiety")
 
 # ── Today's Summary Bar ────────────────────────────────────────────────────────
 today_ci = _load_today_checkin()
@@ -852,13 +852,13 @@ with tabs[1]:
                 st.error(f"**{f_title}**\n\n{f_msg}")
 
         st.markdown("---")
-        st.markdown("#### 🧠 ADHD / Bipolar / Anxiety Context")
+        st.markdown("#### 🧠 ADHD / Mood-Related / Anxiety Context")
         with st.expander("About your diagnoses & this dashboard"):
             st.markdown("""
 **ADHD:** Executive dysfunction, time blindness, hyperfocus, emotional dysregulation.
 Track focus scores and use body-double/external accountability strategies.
 
-**Bipolar Disorder:** Mood cycles between depressive lows and manic highs.
+**Mood Regulation Disorder:** Mood cycles between depressive lows and manic highs.
 The 7-point mood scale flags anything ≥6 for elevated awareness.
 Track sleep closely — sleep disruption is often the first manic sign.
 
@@ -1533,7 +1533,7 @@ with tabs[7]:
 
     with col2:
         st.markdown("#### 🤖 Get AI Health Insight")
-        st.caption("Claude analyzes your recent data with full ADHD/Bipolar/Anxiety context")
+        st.caption("Claude analyzes your recent data with full ADHD/Mood-Support/Anxiety context")
 
         if checkins_30:
             if st.button("🔍 Generate AI Insight Report", type="primary", use_container_width=True):
