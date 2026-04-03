@@ -39,10 +39,10 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-# ── Config from environment ───────────────────────────────────────────────────
-DATABASE_URL        = os.environ["DATABASE_URL"]           # postgres://...
-TELEGRAM_TOKEN      = os.environ["TELEGRAM_BOT_TOKEN"]     # from @BotFather
-TELEGRAM_CHAT_ID    = os.environ["TELEGRAM_CHAT_ID"]       # your personal chat ID
+# ── Config from environment (with DB fallback for Telegram) ───────────────────
+DATABASE_URL        = os.environ.get("DATABASE_URL", "")   # postgres://...
+TELEGRAM_TOKEN      = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID    = os.environ.get("TELEGRAM_CHAT_ID", "")
 
 # eBay credentials — read from env first, fall back to app_settings table
 # (so you can set them once in the budget app UI and the bot picks them up)
@@ -63,12 +63,19 @@ def _get_db_setting(conn, key: str, default: str = "") -> str:
 
 def _load_config_from_db(conn):
     """
-    Pull eBay credentials + alert thresholds from the app_settings table.
+    Pull eBay credentials + alert thresholds + Telegram creds from the app_settings table.
     Environment variables take priority over DB values.
     """
     global EBAY_CLIENT_ID, EBAY_CLIENT_SECRET
     global MIN_PROFIT_THRESHOLD, EBAY_FEE_RATE, EBAY_FEE_FIXED
     global MERCARI_FEE_RATE, MERCARI_FEE_FIXED
+    global TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
+
+    # Telegram — fall back to DB if env vars not set
+    if not TELEGRAM_TOKEN:
+        TELEGRAM_TOKEN = _get_db_setting(conn, "telegram_bot_token", "")
+    if not TELEGRAM_CHAT_ID:
+        TELEGRAM_CHAT_ID = _get_db_setting(conn, "telegram_chat_id", "")
 
     if not EBAY_CLIENT_ID:
         EBAY_CLIENT_ID = _get_db_setting(conn, "ebay_client_id", "")

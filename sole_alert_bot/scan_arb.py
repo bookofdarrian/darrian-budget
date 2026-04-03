@@ -33,10 +33,10 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-# ── Config ────────────────────────────────────────────────────────────────────
-DATABASE_URL     = os.environ["DATABASE_URL"]
-TELEGRAM_TOKEN   = os.environ["TELEGRAM_BOT_TOKEN"]
-TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
+# ── Config (with DB fallback for Telegram) ────────────────────────────────────
+DATABASE_URL     = os.environ.get("DATABASE_URL", "")
+TELEGRAM_TOKEN   = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 EBAY_CLIENT_ID   = os.environ.get("EBAY_CLIENT_ID", "")
 EBAY_CLIENT_SECRET = os.environ.get("EBAY_CLIENT_SECRET", "")
 
@@ -80,6 +80,14 @@ def _get_db_setting(conn, key: str, default: str = "") -> str:
 
 def _load_config_from_db(conn):
     global EBAY_CLIENT_ID, EBAY_CLIENT_SECRET, EBAY_FEE_RATE, MIN_ARB_PROFIT
+    global TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
+
+    # Telegram — fall back to DB if env vars not set
+    if not TELEGRAM_TOKEN:
+        TELEGRAM_TOKEN = _get_db_setting(conn, "telegram_bot_token", "")
+    if not TELEGRAM_CHAT_ID:
+        TELEGRAM_CHAT_ID = _get_db_setting(conn, "telegram_chat_id", "")
+
     if not EBAY_CLIENT_ID:
         EBAY_CLIENT_ID = _get_db_setting(conn, "ebay_client_id", "")
     if not EBAY_CLIENT_SECRET:
