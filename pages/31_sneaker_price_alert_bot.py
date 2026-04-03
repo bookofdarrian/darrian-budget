@@ -816,4 +816,6 @@ def add_to_watchlist(user_id: int, sku: str, name: str, target_buy: float,
         conn.commit()
         conn.close()
         return True
-    except Exception
+    except Exception:
+        conn.close()
+        return False
