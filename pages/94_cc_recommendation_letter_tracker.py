@@ -14,9 +14,7 @@ def _ph(count=1):
 
 def _ensure_tables():
     conn = get_conn()
-    cur = conn.cursor()
-    
-    cur.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS cc_recommenders (
             id {'SERIAL PRIMARY KEY' if USE_POSTGRES else 'INTEGER PRIMARY KEY AUTOINCREMENT'},
             user_id INTEGER NOT NULL,
@@ -34,8 +32,7 @@ def _ensure_tables():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    
-    cur.execute(f"""
+    db_exec(conn, f"""
         CREATE TABLE IF NOT EXISTS cc_rec_letter_requests (
             id {'SERIAL PRIMARY KEY' if USE_POSTGRES else 'INTEGER PRIMARY KEY AUTOINCREMENT'},
             recommender_id INTEGER NOT NULL,
@@ -52,7 +49,6 @@ def _ensure_tables():
             FOREIGN KEY (recommender_id) REFERENCES cc_recommenders(id)
         )
     """)
-    
     conn.commit()
     conn.close()
 
@@ -60,8 +56,7 @@ _ensure_tables()
 
 def get_recommenders(user_id):
     conn = get_conn()
-    cur = conn.cursor()
-    cur.execute(f"SELECT * FROM cc_recommenders WHERE user_id = {_ph()} ORDER BY deadline ASC", (user_id,))
+    cur = db_exec(conn, f"SELECT * FROM cc_recommenders WHERE user_id = {_ph()} ORDER BY deadline ASC", (user_id,))
     rows = cur.fetchall()
     cols = [desc[0] for desc in cur.description]
     conn.close()
@@ -69,8 +64,7 @@ def get_recommenders(user_id):
 
 def add_recommender(user_id, name, email, title, relationship, school, subject_taught, request_date, deadline, notes):
     conn = get_conn()
-    cur = conn.cursor()
-    cur.execute(f"""
+    db_exec(conn, f"""
         INSERT INTO cc_recommenders (user_id, name, email, title, relationship, school, subject_taught, request_date, deadline, notes)
         VALUES ({_ph(10)})
     """, (user_id, name, email, title, relationship, school, subject_taught, request_date, deadline, notes))
@@ -79,8 +73,7 @@ def add_recommender(user_id, name, email, title, relationship, school, subject_t
 
 def update_recommender(rec_id, name, email, title, relationship, school, subject_taught, request_date, deadline, status, portal_submitted, notes):
     conn = get_conn()
-    cur = conn.cursor()
-    cur.execute(f"""
+    db_exec(conn, f"""
         UPDATE cc_recommenders SET name={_ph()}, email={_ph()}, title={_ph()}, relationship={_ph()}, 
         school={_ph()}, subject_taught={_ph()}, request_date={_ph()}, deadline={_ph()}, 
         status={_ph()}, portal_submitted={_ph()}, notes={_ph()}
@@ -91,19 +84,17 @@ def update_recommender(rec_id, name, email, title, relationship, school, subject
 
 def delete_recommender(rec_id):
     conn = get_conn()
-    cur = conn.cursor()
-    cur.execute(f"DELETE FROM cc_rec_letter_requests WHERE recommender_id = {_ph()}", (rec_id,))
-    cur.execute(f"DELETE FROM cc_recommenders WHERE id = {_ph()}", (rec_id,))
+    db_exec(conn, f"DELETE FROM cc_rec_letter_requests WHERE recommender_id = {_ph()}", (rec_id,))
+    db_exec(conn, f"DELETE FROM cc_recommenders WHERE id = {_ph()}", (rec_id,))
     conn.commit()
     conn.close()
 
 def get_letter_requests(recommender_id=None, user_id=None):
     conn = get_conn()
-    cur = conn.cursor()
     if recommender_id:
-        cur.execute(f"SELECT * FROM cc_rec_letter_requests WHERE recommender_id = {_ph()} ORDER BY deadline ASC", (recommender_id,))
+        cur = db_exec(conn, f"SELECT * FROM cc_rec_letter_requests WHERE recommender_id = {_ph()} ORDER BY deadline ASC", (recommender_id,))
     elif user_id:
-        cur.execute(f"""
+        cur = db_exec(conn, f"""
             SELECT lr.*, r.name as recommender_name, r.email as recommender_email
             FROM cc_rec_letter_requests lr
             JOIN cc_recommenders r ON lr.recommender_id = r.id
@@ -111,7 +102,7 @@ def get_letter_requests(recommender_id=None, user_id=None):
             ORDER BY lr.deadline ASC
         """, (user_id,))
     else:
-        cur.execute("SELECT * FROM cc_rec_letter_requests ORDER BY deadline ASC")
+        cur = db_exec(conn, "SELECT * FROM cc_rec_letter_requests ORDER BY deadline ASC")
     rows = cur.fetchall()
     cols = [desc[0] for desc in cur.description]
     conn.close()
@@ -119,8 +110,7 @@ def get_letter_requests(recommender_id=None, user_id=None):
 
 def add_letter_request(recommender_id, college_name, college_id, deadline, waived_ferpa, notes):
     conn = get_conn()
-    cur = conn.cursor()
-    cur.execute(f"""
+    db_exec(conn, f"""
         INSERT INTO cc_rec_letter_requests (recommender_id, college_name, college_id, deadline, waived_ferpa, notes)
         VALUES ({_ph(6)})
     """, (recommender_id, college_name, college_id, deadline, waived_ferpa, notes))
@@ -129,8 +119,7 @@ def add_letter_request(recommender_id, college_name, college_id, deadline, waive
 
 def update_letter_request(request_id, college_name, status, request_sent_date, reminder_sent_date, submitted_date, deadline, waived_ferpa, notes):
     conn = get_conn()
-    cur = conn.cursor()
-    cur.execute(f"""
+    db_exec(conn, f"""
         UPDATE cc_rec_letter_requests SET college_name={_ph()}, status={_ph()}, request_sent_date={_ph()}, 
         reminder_sent_date={_ph()}, submitted_date={_ph()}, deadline={_ph()}, waived_ferpa={_ph()}, notes={_ph()}
         WHERE id={_ph()}
@@ -140,8 +129,7 @@ def update_letter_request(request_id, college_name, status, request_sent_date, r
 
 def delete_letter_request(request_id):
     conn = get_conn()
-    cur = conn.cursor()
-    cur.execute(f"DELETE FROM cc_rec_letter_requests WHERE id = {_ph()}", (request_id,))
+    db_exec(conn, f"DELETE FROM cc_rec_letter_requests WHERE id = {_ph()}", (request_id,))
     conn.commit()
     conn.close()
 

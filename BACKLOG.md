@@ -116,11 +116,17 @@
 
 ---
 
-## 🎯 TONIGHT — AGENTS START HERE (Priority Queue — March 30, 2026)
+## 🎯 TONIGHT — AGENTS START HERE (Priority Queue — April 3, 2026)
 
 > Darrian's direct orders. Pick from this section before anything else. Build one per night in order.
+> **Updated 2026-04-03:** CC sidebar standardized, db_exec migration complete, pipeline tested.
 
-- [ ] **CC: College List Builder** — page 87 — Search/filter colleges by major, location, cost, acceptance rate, HBCU flag; save to personal list with notes; side-by-side school comparison. Full CRUD, DB-backed, Claude AI suggests schools based on profile.
+- [x] **CC: College List Builder** — page 153 — Search/filter colleges by major, location, cost, acceptance rate, HBCU flag; save to personal list with notes; side-by-side school comparison. Full CRUD, DB-backed. [DONE] ✅ (pages/153_cc_college_list_builder.py — 2026-04-03)
+- [x] **CC: Sidebar Standardization** — All 18 CC pages now have identical 16-link sidebar nav. Doubled emoji bug fixed. [DONE] ✅ (2026-04-03)
+- [x] **CC: db_exec() Migration** — pages/94 + pages/95 migrated from raw cur.execute() to db_exec(). [DONE] ✅ (2026-04-03)
+- [x] **CC: Live Footer Links** — cc_app.py footer converted from dead <span> to live <a> links. [DONE] ✅ (2026-04-03)
+- [ ] **CC: WCAG AA Contrast Fix** — Replace `--text-muted: #8A84B0` with `#B0ACCC`, enforce 4.5:1 ratio in inject_cc_css() and cc_app.py. HIGH PRIORITY.
+- [ ] **Accessibility Theme Settings** — page 142 — User theme picker: Dark/Light/High Contrast for all 3 sites. Per-user DB settings. WCAG AA enforcement.
 - [ ] **CC: FAFSA Guide + EFC Calculator** — page 88 — Step-by-step FAFSA walkthrough, plain-English EFC/SAI calculator, dependency status guide, deadline tracker. No prior knowledge required.
 - [ ] **CC: Application Tracker** — page 89 — Track all schools applied to, deadlines, requirements, decisions, scholarship status; Common App checklist per school.
 - [ ] **CC: Recommendation Letter Tracker** — page 90 — Log recommenders, send reminders, track submission status, auto thank-you note generator.
