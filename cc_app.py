@@ -1189,10 +1189,12 @@ if not user:
         </div>
         <div>
           <div class="cc-footer-col-title">Tools</div>
-          <span class="cc-footer-link">Application Timeline</span>
-          <span class="cc-footer-link">Scholarship Finder</span>
-          <span class="cc-footer-link">AI Essay Station</span>
-          <span class="cc-footer-link">FAFSA Guide</span>
+          <a class="cc-footer-link" href="/cc_timeline" onclick="window.parent.postMessage({type:'streamlit:setComponentValue'},'*')">Application Timeline</a>
+          <a class="cc-footer-link" href="/cc_scholarships" onclick="window.parent.postMessage({type:'streamlit:setComponentValue'},'*')">Scholarship Finder</a>
+          <a class="cc-footer-link" href="/cc_essay_station" onclick="window.parent.postMessage({type:'streamlit:setComponentValue'},'*')">AI Essay Station</a>
+          <a class="cc-footer-link" href="/cc_college_list" onclick="window.parent.postMessage({type:'streamlit:setComponentValue'},'*')">College List Builder</a>
+          <a class="cc-footer-link" href="/cc_test_prep" onclick="window.parent.postMessage({type:'streamlit:setComponentValue'},'*')">SAT/ACT Prep</a>
+          <a class="cc-footer-link" href="/cc_fafsa_guide" onclick="window.parent.postMessage({type:'streamlit:setComponentValue'},'*')">FAFSA Guide</a>
         </div>
         <div>
           <div class="cc-footer-col-title">Connect</div>
@@ -1217,14 +1219,23 @@ username = user.get("username", "Student")
 
 render_sidebar_brand()
 st.sidebar.markdown("---")
-st.sidebar.page_link("cc_app.py",                       label="🏠 Home",            icon="🏠")
-st.sidebar.page_link("pages/80_cc_home.py",             label="🎓 Dashboard",       icon="🎓")
-st.sidebar.page_link("pages/81_cc_timeline.py",         label="📅 My Timeline",     icon="📅")
-st.sidebar.page_link("pages/82_cc_scholarships.py",     label="💰 Scholarships",    icon="💰")
-st.sidebar.page_link("pages/83_cc_essay_station.py",    label="✍️ Essay Station",   icon="✍️")
-st.sidebar.page_link("pages/84_cc_test_prep.py",        label="📚 SAT/ACT Prep",    icon="📚")
-# College List page not yet deployed
-# FAFSA Guide page not yet deployed
+st.sidebar.page_link("cc_app.py",                                label="Home",               icon="🏠")
+st.sidebar.page_link("pages/80_cc_home.py",                      label="Dashboard",           icon="🎓")
+st.sidebar.page_link("pages/81_cc_timeline.py",                  label="My Timeline",         icon="📅")
+st.sidebar.page_link("pages/82_cc_scholarships.py",              label="Scholarships",        icon="💰")
+st.sidebar.page_link("pages/83_cc_essay_station.py",             label="Essay Station",       icon="✍️")
+st.sidebar.page_link("pages/84_cc_test_prep.py",                 label="SAT/ACT Prep",        icon="📚")
+st.sidebar.page_link("pages/87_cc_college_list.py",              label="College List",        icon="🏫")
+st.sidebar.page_link("pages/88_cc_fafsa_guide.py",               label="FAFSA Guide",         icon="📋")
+st.sidebar.markdown("---")
+st.sidebar.page_link("pages/93_cc_application_tracker.py",       label="Applications",        icon="📝")
+st.sidebar.page_link("pages/97_cc_admissions_decision_tracker.py", label="Decisions",          icon="📬")
+st.sidebar.page_link("pages/94_cc_recommendation_letter_tracker.py", label="Rec Letters",      icon="📨")
+st.sidebar.page_link("pages/95_cc_interview_prep_ai.py",         label="Interview Prep",      icon="🎤")
+st.sidebar.page_link("pages/96_cc_financial_aid_appeal_generator.py", label="Aid Appeals",     icon="💸")
+st.sidebar.page_link("pages/98_cc_test_score_tracker.py",        label="Score Tracker",       icon="📊")
+st.sidebar.page_link("pages/99_cc_campus_visit_planner.py",      label="Campus Visits",       icon="🗺️")
+st.sidebar.page_link("pages/89_cc_student_inquiry_form.py",      label="Get Help",            icon="🙋")
 render_sidebar_user_widget()
 
 st.title("🎓 College Confused")
