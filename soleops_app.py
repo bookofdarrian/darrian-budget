@@ -1168,6 +1168,7 @@ if not user:
 # ═══════════════════════════════════════════════════════════════════════════════
 # AUTHENTICATED DASHBOARD — shown to logged-in users
 # ═══════════════════════════════════════════════════════════════════════════════
+user = user or {}
 uid = user.get("id", 0)
 username = user.get("username", "Reseller")
 

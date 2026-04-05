@@ -124,6 +124,41 @@ def _ensure_tables():
                 FOREIGN KEY (inventory_id) REFERENCES soleops_inventory(id) ON DELETE CASCADE
             )
         """)
+
+    # Backward-compatible migrations for older soleops_inventory schema.
+    if USE_POSTGRES:
+        cur.execute("""
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = 'soleops_inventory'
+        """)
+        inv_cols = {row[0] for row in cur.fetchall()}
+    else:
+        cur.execute("PRAGMA table_info(soleops_inventory)")
+        inv_cols = {row[1] for row in cur.fetchall()}
+
+    inv_col_defs = {
+        "user_id": "INTEGER DEFAULT 0",
+        "shoe_name": "TEXT DEFAULT ''",
+        "brand": "TEXT DEFAULT ''",
+        "colorway": "TEXT DEFAULT ''",
+        "size": "TEXT DEFAULT ''",
+        "cost_basis": "REAL DEFAULT 0",
+        "condition": "TEXT DEFAULT 'New with box'",
+        "listed_date": "TEXT",
+        "listed_price": "REAL",
+        "listed_platform": "TEXT DEFAULT 'Unlisted'",
+        "status": "TEXT DEFAULT 'inventory'",
+        "sell_price": "REAL",
+        "sold_date": "TEXT",
+        "sold_platform": "TEXT",
+        "notes": "TEXT DEFAULT ''",
+        "created_at": "TEXT DEFAULT CURRENT_TIMESTAMP",
+    }
+    for col, ddl in inv_col_defs.items():
+        if col not in inv_cols:
+            cur.execute(f"ALTER TABLE soleops_inventory ADD COLUMN {col} {ddl}")
+
     conn.commit()
     conn.close()
 
