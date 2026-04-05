@@ -1189,12 +1189,12 @@ if not user:
         </div>
         <div>
           <div class="cc-footer-col-title">Tools</div>
-          <a class="cc-footer-link" href="/cc_timeline" onclick="window.parent.postMessage({type:'streamlit:setComponentValue'},'*')">Application Timeline</a>
-          <a class="cc-footer-link" href="/cc_scholarships" onclick="window.parent.postMessage({type:'streamlit:setComponentValue'},'*')">Scholarship Finder</a>
-          <a class="cc-footer-link" href="/cc_essay_station" onclick="window.parent.postMessage({type:'streamlit:setComponentValue'},'*')">AI Essay Station</a>
-          <a class="cc-footer-link" href="/cc_college_list" onclick="window.parent.postMessage({type:'streamlit:setComponentValue'},'*')">College List Builder</a>
-          <a class="cc-footer-link" href="/cc_test_prep" onclick="window.parent.postMessage({type:'streamlit:setComponentValue'},'*')">SAT/ACT Prep</a>
-          <a class="cc-footer-link" href="/cc_fafsa_guide" onclick="window.parent.postMessage({type:'streamlit:setComponentValue'},'*')">FAFSA Guide</a>
+          <a class="cc-footer-link" href="/cc_timeline">📅 Application Timeline</a>
+          <a class="cc-footer-link" href="/cc_scholarships">💰 Scholarship Finder</a>
+          <a class="cc-footer-link" href="/cc_essay_station">✍️ AI Essay Station</a>
+          <a class="cc-footer-link" href="/cc_college_list">🏫 College List Builder</a>
+          <a class="cc-footer-link" href="/cc_test_prep">📚 SAT/ACT Prep</a>
+          <a class="cc-footer-link" href="/cc_fafsa_guide">📋 FAFSA Guide</a>
         </div>
         <div>
           <div class="cc-footer-col-title">Connect</div>

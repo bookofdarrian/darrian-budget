@@ -47,10 +47,17 @@ if [ -n "$1" ]; then
     ssh "$SERVER" "cp $CC_SOURCE/$FILE $CC_SERVE/$FILE"
     echo "✅ Copied $FILE"
 else
-    # Full sync: copy all pages and utils
-    echo "  Syncing all pages/ and utils/ ..."
+    # Full sync: copy all pages, utils, static, and root-level CC files
+    echo "  Syncing pages/ ..."
     ssh "$SERVER" "rsync -av --delete --exclude='__pycache__' $CC_SOURCE/pages/ $CC_SERVE/pages/ 2>&1 | tail -5"
+    echo "  Syncing utils/ ..."
     ssh "$SERVER" "rsync -av --delete --exclude='__pycache__' $CC_SOURCE/utils/ $CC_SERVE/utils/ 2>&1 | tail -3"
+    echo "  Syncing static/ (photos, CSS, assets) ..."
+    ssh "$SERVER" "rsync -av --exclude='__pycache__' $CC_SOURCE/static/ $CC_SERVE/static/ 2>&1 | tail -5"
+    echo "  Copying cc_app.py → app.py (entry point) ..."
+    ssh "$SERVER" "cp $CC_SOURCE/cc_app.py $CC_SERVE/app.py"
+    echo "  Copying cc_global_css.py ..."
+    ssh "$SERVER" "cp $CC_SOURCE/cc_global_css.py $CC_SERVE/cc_global_css.py 2>/dev/null || true"
     echo "✅ Full sync complete."
 fi
 echo ""

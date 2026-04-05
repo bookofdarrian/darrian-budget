@@ -1,4 +1,4 @@
-# BRD: College Confused Landing Page Link Fix
+ce# BRD: College Confused Landing Page Link Fix
 
 **Date:** 2026-04-05
 **Author:** Darrian Belcher (AI-assisted)
